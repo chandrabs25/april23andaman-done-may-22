@@ -1,0 +1,45 @@
+# wrangler.toml
+
+name = "andaman-travel-worker"
+
+
+compatibility_date = "2024-12-30"
+compatibility_flags = [ "nodejs_compat" ] 
+
+
+main = ".open-next/worker.js"
+
+# Configuration for serving static assets via the Worker
+[assets]
+binding = "ASSETS" 
+directory = ".open-next/assets" 
+
+
+[[d1_databases]]
+binding = "DB" 
+database_name = "travel_database" 
+database_id = "4f233e47-2250-44fe-94ff-12522a07766c" 
+
+
+[vars]
+JWT_SECRET = "my-jwt-secret"
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "andaman-travel-worker"
+
+[[r2_buckets]]
+binding = "NEXT_INC_CACHE_R2_BUCKET"
+bucket_name = "r2cache"
+preview_bucket_name = "r2cache"
+
+# Add a new R2 bucket for storing images
+[[r2_buckets]]
+binding = "IMAGES_BUCKET"
+bucket_name = "andaman-travel-images"
+preview_bucket_name = "andaman-travel-images-dev"

@@ -44,6 +44,7 @@ interface PackageCategoryDbPayload {
   hotel_details?: string | null;
   category_description?: string | null;
   max_pax_included_in_price?: number | null;
+  images?: string | null;
 }
 
 interface CreatePackageDbPayload {

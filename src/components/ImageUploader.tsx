@@ -8,7 +8,7 @@ interface ImageUploaderProps {
   onImagesUploaded: (imageUrls: string[]) => void;
   existingImages?: string[];
   parentId: string | number;
-  type: "hotel" | "room" | "service";
+  type: "hotel" | "room" | "service" | "package" | "package_category";
   maxImages?: number;
   helperText?: string;
 }

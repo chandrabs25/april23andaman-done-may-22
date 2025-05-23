@@ -44,7 +44,7 @@ interface PackageCategoryDbPayload {
   hotel_details?: string | null;
   category_description?: string | null;
   max_pax_included_in_price?: number | null;
-  images?: string | null;
+  images?: string | null; // Added for category images (JSON string)
 }
 
 interface CreatePackageDbPayload {
@@ -531,7 +531,7 @@ export class DatabaseService {
     return db
       .prepare(`
         SELECT id, package_id, category_name, price, hotel_details, 
-               category_description, max_pax_included_in_price, created_at, updated_at
+               category_description, max_pax_included_in_price, images, created_at, updated_at
         FROM package_categories
         WHERE package_id = ?
         ORDER BY price ASC
@@ -625,18 +625,23 @@ export class DatabaseService {
 
       const packageId = packageResult.meta.last_row_id;
       const categoryStatements = packageData.package_categories.map(cat => {
+        // Assuming cat.images is already a JSON string or null from the API layer
+        // If it could be an array here, stringifyIfNeeded(cat.images, 'category_images') would be used.
+        const categoryImagesStr = typeof cat.images === 'string' ? cat.images : (cat.images ? JSON.stringify(cat.images) : null);
+
         return db.prepare(`
           INSERT INTO package_categories (
             package_id, category_name, price, hotel_details, 
-            category_description, max_pax_included_in_price, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            category_description, max_pax_included_in_price, images, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         `).bind(
           packageId,
           cat.category_name,
           cat.price,
           cat.hotel_details ?? null,
           cat.category_description ?? null,
-          cat.max_pax_included_in_price ?? null
+          cat.max_pax_included_in_price ?? null,
+          categoryImagesStr // Use the potentially stringified images string
         );
       });
 
@@ -719,19 +724,24 @@ export class DatabaseService {
     
     if (packageData.package_categories && packageData.package_categories.length > 0) {
       packageData.package_categories.forEach(cat => {
+        // Assuming cat.images is already a JSON string or null from the API layer
+        // If it could be an array here, stringifyIfNeeded(cat.images, 'category_images') would be used.
+        const categoryImagesStr = typeof cat.images === 'string' ? cat.images : (cat.images ? JSON.stringify(cat.images) : null);
+        
         statements.push(
           db.prepare(`
             INSERT INTO package_categories (
               package_id, category_name, price, hotel_details, 
-              category_description, max_pax_included_in_price, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+              category_description, max_pax_included_in_price, images, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
           `).bind(
             packageId,
             cat.category_name,
             cat.price,
             cat.hotel_details ?? null,
             cat.category_description ?? null,
-            cat.max_pax_included_in_price ?? null
+            cat.max_pax_included_in_price ?? null,
+            categoryImagesStr // Use the potentially stringified images string
           )
         );
       });
@@ -1826,4 +1836,3 @@ export class DatabaseService {
   }
 
 }
-

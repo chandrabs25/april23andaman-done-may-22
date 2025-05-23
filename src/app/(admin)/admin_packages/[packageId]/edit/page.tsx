@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react'; // Removed useEffect
-import { useRouter } from 'next/navigation';
-import { PlusIcon, MinusIcon, ArrowLeftIcon, Loader2, Info } from 'lucide-react'; // Added Loader2, Info
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { PlusIcon, MinusIcon, ArrowLeftIcon, Loader2, Info } from 'lucide-react';
 import Link from 'next/link';
-import { ImageUploader } from '@/components/ImageUploader'; // Added ImageUploader
-import { toast } from '@/hooks/use-toast'; // Added toast
+import { ImageUploader } from '@/components/ImageUploader';
+import { toast } from '@/hooks/use-toast';
 
 // Define types
 interface PackageCategory {
+  id?: string | number; // Added for existing category IDs
   category_name: string;
   price: number;
   hotel_details: string;
@@ -25,262 +26,309 @@ interface PackageFormData {
   max_people: number;
   itinerary: string[];
   included_services: string;
-  images: string[]; // Changed to string[]
+  images: string[];
   cancellation_policy: string;
   is_active: boolean;
   package_categories: PackageCategory[];
 }
 
-interface CreatePackageApiResponse {
+// Generic API response type
+interface ApiResponse {
   success: boolean;
   message: string;
-  data?: { id: number }; // For successful response
-  error?: string; // For error response from API logic
-  warning?: string; // For partial success
+  data?: any; 
+  error?: string;
+  warning?: string;
 }
 
-export default function NewPackagePage() {
+export default function EditPackagePage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false); // Will be used for general loading, image updates
-  const [error, setError] = useState<string | null>(null);
-  const [createdPackageId, setCreatedPackageId] = useState<string | null>(null);
-  const [isSubmittingDetails, setIsSubmittingDetails] = useState(false);
-  // tempPackageId is not strictly needed as ImageUploader can take null/undefined parentId initially if desired,
-  // or we ensure it only renders when createdPackageId is set.
-  // For simplicity, we'll ensure ImageUploader only gets a valid createdPackageId.
+  const params = useParams();
+  const packageId = params.packageId as string;
 
-  // Initialize form data
   const [formData, setFormData] = useState<PackageFormData>({
     name: '',
     description: '',
     duration: '',
     base_price: 0,
     max_people: 2,
-    itinerary: [''], // Initialize with one empty day
+    itinerary: [''],
     included_services: '',
-    images: [], // Initialize as empty array
+    images: [],
     cancellation_policy: '',
     is_active: true,
-    package_categories: [
-      {
-        category_name: 'Standard',
-        price: 0,
-        hotel_details: '',
-        category_description: '',
-        max_pax_included_in_price: 2
-      }
-    ]
+    package_categories: [{ 
+      // id: undefined, // No ID for initial default category
+      category_name: 'Standard', 
+      price: 0, 
+      hotel_details: '', 
+      category_description: '', 
+      max_pax_included_in_price: 2,
+      images: [] 
+    }]
   });
+  
+  const [loading, setLoading] = useState(false); // For general form submission (PUT) / image updates by main uploader
+  const [isFetchingDetails, setIsFetchingDetails] = useState(true); // For initial data load
+  const [error, setError] = useState<string | null>(null);
 
-  // Handle input changes
+  useEffect(() => {
+    if (!packageId) {
+      setError("Package ID is missing.");
+      setIsFetchingDetails(false);
+      return;
+    }
+
+    const fetchPackageDetails = async () => {
+      setIsFetchingDetails(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/admin/packages/${packageId}`);
+        if (!response.ok) {
+          const errorData: ApiResponse = await response.json();
+          throw new Error(errorData.message || `Error: ${response.status}`);
+        }
+        const result: ApiResponse = await response.json();
+        if (result.success && result.data) {
+          const packageData = result.data;
+          // Transform itinerary from object to array
+          const itineraryArray = packageData.itinerary && typeof packageData.itinerary === 'object' 
+            ? Object.values(packageData.itinerary) as string[]
+            : ['']; // Default if no itinerary
+          
+          // Ensure images is an array
+          let mainImagesArray: string[] = [];
+          if (typeof packageData.images === 'string') {
+            try {
+              mainImagesArray = JSON.parse(packageData.images);
+              if (!Array.isArray(mainImagesArray)) mainImagesArray = [];
+            } catch (e) {
+              mainImagesArray = []; 
+            }
+          } else if (Array.isArray(packageData.images)) {
+            mainImagesArray = packageData.images;
+          }
+
+          const processedCategories = (packageData.package_categories || []).map((cat: any) => {
+            let categoryImagesArray: string[] = [];
+            if (typeof cat.images === 'string') {
+              try {
+                categoryImagesArray = JSON.parse(cat.images);
+                if (!Array.isArray(categoryImagesArray)) categoryImagesArray = [];
+              } catch (e) {
+                categoryImagesArray = [];
+              }
+            } else if (Array.isArray(cat.images)) {
+              categoryImagesArray = cat.images;
+            }
+            return {
+              ...cat,
+              id: cat.id, // Ensure ID is carried over
+              images: categoryImagesArray,
+            };
+          });
+
+          setFormData({
+            name: packageData.name || '',
+            description: packageData.description || '',
+            duration: packageData.duration || '',
+            base_price: packageData.base_price || 0,
+            max_people: packageData.max_people || 2,
+            itinerary: itineraryArray.length > 0 ? itineraryArray : [''],
+            included_services: packageData.included_services || '',
+            images: mainImagesArray,
+            cancellation_policy: packageData.cancellation_policy || '',
+            is_active: packageData.is_active !== undefined ? packageData.is_active : true,
+            package_categories: processedCategories.length > 0 
+              ? processedCategories 
+              : [{ category_name: 'Standard', price: 0, hotel_details: '', category_description: '', max_pax_included_in_price: 2, images: [] }]
+          });
+        } else {
+          throw new Error(result.message || "Failed to fetch package details.");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred while fetching details.');
+        console.error('Failed to fetch package details:', err);
+      } finally {
+        setIsFetchingDetails(false);
+      }
+    };
+
+    fetchPackageDetails();
+  }, [packageId]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
-    // Handle checkbox inputs
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
-      return;
-    }
-    
-    // Handle number inputs
-    if (type === 'number') {
+    } else if (type === 'number') {
       setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
-      return;
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
-    
-    // Handle text inputs
-    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle itinerary day input changes
   const handleItineraryChange = (index: number, value: string) => {
     const updatedItinerary = [...formData.itinerary];
     updatedItinerary[index] = value;
     setFormData(prev => ({ ...prev, itinerary: updatedItinerary }));
   };
 
-  // Add a new itinerary day
   const addItineraryDay = () => {
-    setFormData(prev => ({
-      ...prev,
-      itinerary: [...prev.itinerary, '']
-    }));
+    setFormData(prev => ({ ...prev, itinerary: [...prev.itinerary, ''] }));
   };
 
-  // Remove an itinerary day
   const removeItineraryDay = (index: number) => {
-    if (formData.itinerary.length === 1) {
-      // Optionally, clear the input if it's the last one instead of removing
-      // For now, we prevent removing the last day to avoid empty itinerary
-      return; 
-    }
+    if (formData.itinerary.length === 1) return;
     const updatedItinerary = formData.itinerary.filter((_, i) => i !== index);
     setFormData(prev => ({ ...prev, itinerary: updatedItinerary }));
   };
 
-  // Handle category input changes
   const handleCategoryChange = (index: number, field: keyof PackageCategory, value: string | number) => {
     const updatedCategories = [...formData.package_categories];
-    
-    // Handle number inputs
     if (field === 'price' || field === 'max_pax_included_in_price') {
       updatedCategories[index][field] = typeof value === 'number' ? value : parseFloat(value as string) || 0;
     } else {
-      // Handle text inputs
       updatedCategories[index][field] = value as string;
     }
-    
     setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
   };
 
-  // Add a new category
   const addCategory = () => {
     setFormData(prev => ({
       ...prev,
       package_categories: [
         ...prev.package_categories,
-        {
-          category_name: '',
-          price: 0,
-          hotel_details: '',
-          category_description: '',
+        { 
+          // id: `temp-${Date.now()}`, // Temporary ID for new categories for key prop, not sent to backend unless it's for parentId
+          category_name: '', 
+          price: 0, 
+          hotel_details: '', 
+          category_description: '', 
           max_pax_included_in_price: 2,
-          images: [] // Initialize category images
+          images: [] 
         }
       ]
     }));
   };
 
-  // Handle category image changes
-  const handleCategoryImagesChange = (index: number, imageUrls: string[]) => {
+  const handleCategoryImagesChange = (categoryIndex: number, imageUrls: string[]) => {
     const updatedCategories = [...formData.package_categories];
-    updatedCategories[index].images = imageUrls;
+    updatedCategories[categoryIndex].images = imageUrls;
     setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
   };
 
-  // Remove a category
   const removeCategory = (index: number) => {
-    if (formData.package_categories.length === 1) {
-      return; // Keep at least one category
-    }
-    
+    if (formData.package_categories.length === 1) return;
     const updatedCategories = formData.package_categories.filter((_, i) => i !== index);
     setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
   };
 
-  // Handle images uploaded by ImageUploader
-  const handleImagesUploaded = async (imageUrls: string[]) => {
-    setFormData(prev => ({ ...prev, images: imageUrls }));
+  // This function is called by ImageUploader and is responsible for updating the package with new image URLs
+  const handleImagesUpdatedByUploader = async (imageUrls: string[]) => {
+    setFormData(prev => ({ ...prev, images: imageUrls })); // Update local state first
 
-    if (!createdPackageId) {
-      toast({ variant: "destructive", title: "Error", description: "Package ID not found. Cannot associate images." });
+    if (!packageId) {
+      toast({ variant: "destructive", title: "Error", description: "Package ID not found. Cannot update images." });
       setError("Package ID missing, cannot update images.");
       return;
     }
-
-    setLoading(true); // Use general loading for this final update
+    
+    setLoading(true); // Indicate loading state for this specific action
     setError(null);
     try {
-      const response = await fetch(`/api/admin/packages/${createdPackageId}`, {
+      const response = await fetch(`/api/admin/packages/${packageId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           images: JSON.stringify(imageUrls), // Main package images
           package_categories: formData.package_categories.map(category => ({
             ...category,
-            images: JSON.stringify(category.images || []) // Ensure category images are also stringified
+            // Ensure category.id is included if it exists, for the backend to identify existing categories
+            id: category.id, 
+            images: JSON.stringify(category.images || []) 
           }))
-        }), 
+        }),
       });
-      const result: CreatePackageApiResponse = await response.json();
+      const result: ApiResponse = await response.json();
 
       if (response.ok && result.success) {
-        toast({ title: "Success", description: "Package created and images uploaded successfully!" });
-        router.push('/admin_packages'); 
+        toast({ title: "Images Updated", description: "Package images have been successfully updated." });
       } else {
-        throw new Error(result.message || "Failed to update package with images.");
+        // Restore previous images if update failed? Or let user retry?
+        // For now, just show error. User can try submitting main form again or re-upload.
+        throw new Error(result.message || "Failed to update package with new images.");
       }
     } catch (error: any) {
-      console.error("Update package with images error:", error);
-      setError(error.message || "Failed to save images to the package. You may need to edit the package to add them.");
+      console.error("Update package images error:", error);
+      setError(error.message || "Failed to save new images to the package.");
       toast({
         variant: "destructive",
-        title: "Image Association Error",
-        description: error.message || "Failed to save images. Edit the package to add them.",
+        title: "Image Update Error",
+        description: error.message || "Failed to save new images. Please try again or contact support.",
       });
-      // Optionally redirect to edit page or allow user to retry image upload
-      // router.push(`/admin_packages/edit/${createdPackageId}`); 
     } finally {
       setLoading(false);
     }
   };
 
-
-  // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     setError(null);
 
-    // If package details are not yet created
-    if (!createdPackageId) {
-      setIsSubmittingDetails(true);
+    const itineraryObject = formData.itinerary.reduce((obj, item, index) => {
+      obj[`day${index + 1}`] = item;
+      return obj;
+    }, {} as Record<string, string>);
 
-      const itineraryObject = formData.itinerary.reduce((obj, item, index) => {
-        obj[`day${index + 1}`] = item;
-        return obj;
-      }, {} as Record<string, string>);
+    const submissionData = {
+      ...formData,
+      itinerary: itineraryObject,
+      images: JSON.stringify(formData.images), // Main package images
+      package_categories: formData.package_categories.map(category => ({
+        ...category,
+        id: category.id, // Important for backend to match existing categories or create new ones
+        images: JSON.stringify(category.images || []) // Category images
+      })),
+    };
 
-      // Send empty images array or omit if API allows
-      const initialSubmissionData = {
-        ...formData,
-        itinerary: itineraryObject,
-        images: [], // Send empty array for initial creation
-      };
+    try {
+      const response = await fetch(`/api/admin/packages/${packageId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submissionData),
+      });
 
-      try {
-        const response = await fetch('/api/admin/packages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(initialSubmissionData),
-        });
+      const result: ApiResponse = await response.json();
 
-        const data: CreatePackageApiResponse = await response.json();
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || `Error: ${response.status}`);
-        }
-        
-        if (data.data?.id) {
-          setCreatedPackageId(String(data.data.id));
-          toast({ title: "Details Saved", description: "Package details saved. You can now upload images." });
-          // Do not redirect. Form stays, ImageUploader becomes active.
-        } else {
-          throw new Error(data.message || 'Failed to create package details, ID missing.');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred while saving details');
-        console.error('Failed to create package details:', err);
-      } finally {
-        setIsSubmittingDetails(false);
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || `Error: ${response.status}`);
       }
-    } else {
-      // This case is if user clicks "Finish" after images are uploaded (or chooses to skip)
-      // The actual image association happens in handleImagesUploaded
-      if (formData.images.length > 0) {
-        // Images have been uploaded and processed by handleImagesUploaded, which includes redirection.
-        // If not redirected there, redirect here.
-         toast({ title: "Package Ready", description: "Package created with images." });
-         router.push('/admin_packages');
-      } else {
-        // No images uploaded, or user chose to skip.
-        toast({ title: "Package Created", description: "Package created without images." });
-        router.push('/admin_packages');
-      }
+      
+      toast({ title: "Package Updated", description: "Package details updated successfully." });
+      router.push('/admin_packages'); 
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred while updating the package.');
+      console.error('Failed to update package:', err);
+      toast({ variant: "destructive", title: "Update Failed", description: err instanceof Error ? err.message : 'An unknown error occurred.' });
+    } finally {
+      setLoading(false);
     }
   };
+  
+  if (isFetchingDetails) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <p className="ml-2">Loading package details...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -291,7 +339,7 @@ export default function NewPackagePage() {
         >
           <ArrowLeftIcon className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-semibold">Create New Package</h1>
+        <h1 className="text-2xl font-semibold">Edit Package</h1>
       </div>
 
       {error && (
@@ -458,25 +506,20 @@ export default function NewPackagePage() {
               ></textarea>
             </div>
 
-            {/* Images Section - Conditional Rendering */}
             <div className="md:col-span-2">
               <h3 className="text-lg font-medium text-gray-700 mb-2">Package Images</h3>
-              {!createdPackageId ? (
-                <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-md border border-dashed border-gray-300">
-                  <Info size={20} className="mx-auto mb-2 text-gray-400" />
-                  <p>Please save package details first to enable image uploads.</p>
-                  <p className="text-xs mt-1">The "Save Details & Proceed to Images" button will appear below once all required fields are filled.</p>
-                </div>
-              ) : (
+              {packageId ? (
                 <ImageUploader
                   label="Upload Images for the Package"
-                  onImagesUploaded={handleImagesUploaded}
+                  onImagesUploaded={handleImagesUpdatedByUploader} // This callback updates images via PUT
                   existingImages={formData.images}
-                  parentId={createdPackageId}
-                  type="package" // Ensure this type is handled by your API and ImageUploader
+                  parentId={packageId}
+                  type="package"
                   maxImages={10}
-                  helperText="Upload images that showcase the package. Images are saved as they are uploaded via the uploader."
+                  helperText="Manage images for the package. New images are uploaded and associated automatically. Removed images are disassociated upon clicking 'Update Package'."
                 />
+              ) : (
+                 <p>Loading Image Uploader...</p> // Should not happen if packageId is present
               )}
             </div>
             
@@ -486,7 +529,7 @@ export default function NewPackagePage() {
                 id="is_active"
                 name="is_active"
                 checked={formData.is_active}
-                onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                onChange={handleInputChange}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
@@ -601,28 +644,17 @@ export default function NewPackagePage() {
                 {/* Image Uploader for Category */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category Images
+                    Category Images (ID: {category.id || 'New'})
                   </label>
-                  {createdPackageId ? ( // Only enable category image uploader after package details are saved
-                    <ImageUploader
-                      label={`Images for Category ${index + 1}`}
-                      onImagesUploaded={(imageUrls) => handleCategoryImagesChange(index, imageUrls)}
-                      existingImages={category.images}
-                      // For categories, parentId might be tricky. 
-                      // If categories are saved along with the package, they won't have an ID yet.
-                      // Using a temporary ID for upload, assuming backend /api/upload/images can handle it or it's mainly for client-side preview.
-                      // Or, this uploader is only fully functional in edit mode.
-                      // For now, using a temp ID. The actual association happens when the package is saved with category data.
-                      parentId={`temp-category-${index}-${createdPackageId || 'new'}`}
-                      type="package_category"
-                      maxImages={5} // Example: Max 5 images per category
-                      helperText="Upload images specific to this category."
-                    />
-                  ) : (
-                    <div className="p-3 text-center text-xs text-gray-400 bg-gray-50 rounded-md border border-dashed border-gray-300">
-                       Save package details to enable category image uploads.
-                    </div>
-                  )}
+                  <ImageUploader
+                    label={`Images for Category ${index + 1}`}
+                    onImagesUploaded={(imageUrls) => handleCategoryImagesChange(index, imageUrls)}
+                    existingImages={category.images || []}
+                    parentId={category.id || `temp-category-${index}-${packageId}`} // Use real ID if available
+                    type="package_category"
+                    maxImages={5}
+                    helperText="Upload images specific to this category."
+                  />
                 </div>
               </div>
             </div>
@@ -639,23 +671,19 @@ export default function NewPackagePage() {
           </Link>
           <button
             type="submit"
-            disabled={isSubmittingDetails || loading || (!createdPackageId && (formData.name === '' || formData.duration === '' || formData.base_price <=0))}
+            disabled={loading || isFetchingDetails}
             className={`px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-              (isSubmittingDetails || loading) ? 'opacity-75 cursor-not-allowed' : ''
+              (loading || isFetchingDetails) ? 'opacity-75 cursor-not-allowed' : ''
             }`}
           >
-            {isSubmittingDetails ? (
-              <><Loader2 size={16} className="animate-spin mr-2" /> Saving Details...</>
-            ) : loading ? (
-              <><Loader2 size={16} className="animate-spin mr-2" /> Processing Images...</>
-            ) : !createdPackageId ? (
-              "Save Details & Proceed to Images"
+            {loading ? (
+              <><Loader2 size={16} className="animate-spin mr-2" /> Updating...</>
             ) : (
-              "Finish & Create Package"
+              "Update Package"
             )}
           </button>
         </div>
       </form>
     </div>
   );
-} 
+}

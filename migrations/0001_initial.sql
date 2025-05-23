@@ -116,6 +116,7 @@ CREATE TABLE package_categories (
   category_name             TEXT NOT NULL,
   price                     REAL NOT NULL,
   hotel_details             TEXT,
+  images                    TEXT,
   category_description      TEXT,
   max_pax_included_in_price INTEGER,
   created_at                DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

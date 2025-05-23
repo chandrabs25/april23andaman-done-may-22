@@ -10,6 +10,7 @@ interface PackageCategoryPayload {
   hotel_details?: string | null;
   category_description?: string | null;
   max_pax_included_in_price?: number | null;
+  images?: string[];
 }
 
 interface CreatePackagePayload {
@@ -201,7 +202,10 @@ export async function POST(request: NextRequest) {
       images: typeof body.images === 'object' ? JSON.stringify(body.images) : body.images || null,
       cancellation_policy: body.cancellation_policy || null,
       created_by: adminId, // Use the fetched adminId
-      package_categories: body.package_categories || [],
+      package_categories: (body.package_categories || []).map(cat => ({
+        ...cat,
+        images: cat.images && Array.isArray(cat.images) ? JSON.stringify(cat.images) : null // Stringify category images
+      })),
       is_active: body.is_active === false ? 0 : 1 // Default to active if not specified
     };
 

@@ -90,55 +90,89 @@ export default function EditPackagePage() {
                 }
                 const result: ApiResponse = await response.json();
                 if (result.success && result.data) {
-                    const packageData = result.data;
-                    // Transform itinerary from object to array
-                    const itineraryArray = packageData.itinerary && typeof packageData.itinerary === 'object'
-                        ? Object.values(packageData.itinerary) as string[]
-                        : ['']; // Default if no itinerary
+                    const apiResponseData = result.data; // Renamed for clarity
+                    console.log("Fetched packageData:", JSON.stringify(apiResponseData, null, 2)); 
 
-                    // Ensure images is an array
-                    let mainImagesArray: string[] = [];
-                    if (typeof packageData.images === 'string') {
+                    if (!apiResponseData.package) {
+                        toast({ variant: "destructive", title: "Error", description: "Package data is missing in API response." });
+                        setError("Package data is missing in API response.");
+                        setIsFetchingDetails(false);
+                        return;
+                    }
+                    const mainPackageDetails = apiResponseData.package; // Access the nested package object
+
+                    // Transform itinerary from object to array
+                    let itineraryArray: string[] = [''];
+                    if (mainPackageDetails.itinerary && typeof mainPackageDetails.itinerary === 'string') {
                         try {
-                            mainImagesArray = JSON.parse(packageData.images);
-                            if (!Array.isArray(mainImagesArray)) mainImagesArray = [];
+                            const parsedItinerary = JSON.parse(mainPackageDetails.itinerary);
+                            if (typeof parsedItinerary === 'object' && parsedItinerary !== null) {
+                                itineraryArray = Object.values(parsedItinerary) as string[];
+                            }
                         } catch (e) {
-                            mainImagesArray = [];
+                            console.error("Failed to parse itinerary JSON:", e);
+                            toast({ variant: "destructive", title: "Data Error", description: "Could not parse itinerary data." });
                         }
-                    } else if (Array.isArray(packageData.images)) {
-                        mainImagesArray = packageData.images;
+                    } else if (typeof mainPackageDetails.itinerary === 'object' && mainPackageDetails.itinerary !== null) {
+                        itineraryArray = Object.values(mainPackageDetails.itinerary) as string[];
                     }
 
-                    const processedCategories = (packageData.package_categories || []).map((cat: any) => {
-                        let categoryImagesArray: string[] = [];
-                        if (typeof cat.images === 'string') {
-                            try {
-                                categoryImagesArray = JSON.parse(cat.images);
-                                if (!Array.isArray(categoryImagesArray)) categoryImagesArray = [];
-                            } catch (e) {
-                                categoryImagesArray = [];
+
+                    // Ensure images is an array (main images)
+                    let mainImagesArray: string[] = [];
+                    if (typeof mainPackageDetails.images === 'string') {
+                        try {
+                            const parsedImages = JSON.parse(mainPackageDetails.images);
+                            if (Array.isArray(parsedImages)) {
+                                mainImagesArray = parsedImages;
+                            } else {
+                                mainImagesArray = []; 
                             }
-                        } else if (Array.isArray(cat.images)) {
+                        } catch (e) {
+                            console.error("Failed to parse main package images JSON:", e);
+                            mainImagesArray = []; 
+                             toast({ variant: "destructive", title: "Data Error", description: "Could not parse main image data." });
+                        }
+                    } else if (Array.isArray(mainPackageDetails.images)) { 
+                        mainImagesArray = mainPackageDetails.images;
+                    }
+
+                    const processedCategories = (apiResponseData.categories || []).map((cat: any) => {
+                        let categoryImagesArray: string[] = [];
+                        if (typeof cat.images === 'string') { 
+                            try {
+                                const parsedCatImages = JSON.parse(cat.images);
+                                if (Array.isArray(parsedCatImages)) {
+                                    categoryImagesArray = parsedCatImages;
+                                } else {
+                                    categoryImagesArray = []; 
+                                }
+                            } catch (e) {
+                                console.error("Failed to parse category images JSON for category ID " + cat.id + ":", e);
+                                categoryImagesArray = []; 
+                                toast({ variant: "destructive", title: "Data Error", description: `Could not parse images for category ${cat.category_name}.` });
+                            }
+                        } else if (Array.isArray(cat.images)) { 
                             categoryImagesArray = cat.images;
                         }
                         return {
-                            ...cat,
-                            id: cat.id, // Ensure ID is carried over
-                            images: categoryImagesArray,
+                            ...cat, 
+                            id: cat.id,
+                            images: categoryImagesArray, 
                         };
                     });
 
                     setFormData({
-                        name: packageData.name || '',
-                        description: packageData.description || '',
-                        duration: packageData.duration || '',
-                        base_price: packageData.base_price || 0,
-                        max_people: packageData.max_people || 2,
+                        name: mainPackageDetails.name || '',
+                        description: mainPackageDetails.description || '',
+                        duration: mainPackageDetails.duration || '',
+                        base_price: mainPackageDetails.base_price || 0,
+                        max_people: mainPackageDetails.max_people || 2,
                         itinerary: itineraryArray.length > 0 ? itineraryArray : [''],
-                        included_services: packageData.included_services || '',
+                        included_services: mainPackageDetails.included_services || '',
                         images: mainImagesArray,
-                        cancellation_policy: packageData.cancellation_policy || '',
-                        is_active: packageData.is_active !== undefined ? packageData.is_active : true,
+                        cancellation_policy: mainPackageDetails.cancellation_policy || '',
+                        is_active: mainPackageDetails.is_active !== undefined ? (mainPackageDetails.is_active === 1 || mainPackageDetails.is_active === true) : true,
                         package_categories: processedCategories.length > 0
                             ? processedCategories
                             : [{ category_name: 'Standard', price: 0, hotel_details: '', category_description: '', max_pax_included_in_price: 2, images: [] }]

@@ -12,10 +12,10 @@ export default function AdminDashboardPage() {
           <h3 className="text-lg font-medium mb-3">Package Management</h3>
           <p className="text-gray-600 mb-4">Create, edit, and manage travel packages and their categories.</p>
           <div className="space-y-2">
-            <Link href="/admin_packages" className="text-blue-600 hover:underline block">
+            <Link href="/admin_packages/packages" className="text-blue-600 hover:underline block">
               View All Packages
             </Link>
-            <Link href="/admin_packages/new" className="text-blue-600 hover:underline block">
+            <Link href="/admin_packages/new/page" className="text-blue-600 hover:underline block">
               Create New Package
             </Link>
           </div>

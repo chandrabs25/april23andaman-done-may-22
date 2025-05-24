@@ -64,7 +64,7 @@ interface Package {
   duration: string;
   base_price: number;
   max_people: number | null;
-  images: string | null;
+  images: string[] | null;
   slug?: string;
 }
 
@@ -190,9 +190,17 @@ export default function Home() {
   // --- End Data Fetching ---
 
   // Helper to get the first image URL
-  const getImageUrl = (images: string | null): string => {
+  const getImageUrl = (images: string | string[] | null): string => {
     if (!images) return '/images/placeholder.jpg';
-    const imageUrl = images.split(',')[0]?.trim();
+
+    let imageUrl: string | undefined;
+
+    if (Array.isArray(images)) {
+      imageUrl = images[0]?.trim();
+    } else if (typeof images === 'string') {
+      imageUrl = images.split(',')[0]?.trim();
+    }
+
     return imageUrl && imageUrl.startsWith('/') ? imageUrl : '/images/placeholder.jpg';
   };
 

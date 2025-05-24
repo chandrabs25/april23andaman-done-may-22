@@ -16,7 +16,7 @@ import {
   X,
   Loader2,
   AlertTriangle,
-  Package,
+  Package as PackageIcon,
   SlidersHorizontal,
   DollarSign,
   RefreshCw,
@@ -51,9 +51,12 @@ interface Package {
   max_people: number | null;
   created_by: number;
   is_active: number;
-  itinerary: Record<string, string> | null; // Changed
-  included_services: string[] | null; // Changed
-  images: string[] | null; // Changed
+  itinerary_parsed: Record<string, any> | null; // From ProcessedPackage
+  included_services_parsed: string[]; // From ProcessedPackage
+  images_parsed: string[]; // From ProcessedPackage
+  cancellation_policy: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Island {
@@ -149,9 +152,9 @@ interface PackageCardProps {
 }
 
 const PackageCard = ({ pkg }: PackageCardProps) => {
-  const imageUrl = (pkg.images && pkg.images.length > 0) ? pkg.images[0] : '/images/placeholder.jpg';
-  const includedServices = pkg.included_services
-    ? pkg.included_services.split(',').slice(0, 3).map(service => service.trim())
+  const imageUrl = (pkg.images_parsed && pkg.images_parsed.length > 0) ? pkg.images_parsed[0] : '/images/placeholder.jpg';
+  const includedServicesToDisplay = Array.isArray(pkg.included_services_parsed)
+    ? pkg.included_services_parsed.slice(0, 3)
     : ['Hotel stays included', 'All transfers & sightseeing', 'Expert local guides'];
 
   return (
@@ -188,7 +191,7 @@ const PackageCard = ({ pkg }: PackageCardProps) => {
         </p>
         {/* Features List - Neutral */}
         <div className="mb-3 space-y-1">
-          {includedServices.map((service, index) => (
+          {includedServicesToDisplay.map((service: string, index: number) => (
             <div key={index} className={`flex items-center ${neutralTextLight} text-xs`}>
               <div className={`w-3 h-3 rounded-full ${neutralBg} flex items-center justify-center mr-1.5 flex-shrink-0 border ${neutralBorder}`}>
                 <div className={`w-1.5 h-1.5 rounded-full ${primaryButtonBg}`}></div>
@@ -668,7 +671,7 @@ function PackagesContent() {
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center mb-6">
             <div className={`w-12 h-12 bg-white rounded-full flex items-center justify-center mr-4 border ${neutralBorderLight}`}>
-              <Package className={infoIconColor} size={24} />
+              <PackageIcon className={infoIconColor} size={24} />
             </div>
             <h2 className={`${sectionHeadingStyle} ${infoText}`}>Can't Find the Perfect Package?</h2>
           </div>

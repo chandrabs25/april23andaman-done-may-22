@@ -159,10 +159,11 @@ function ItineraryPageContent() {
   }
 
   // At this point, packageData is guaranteed to be non-null.
-  const { 
-    name, description, duration, base_price, max_people, 
-    images_parsed: images, 
-    itinerary_parsed: itinerary, 
+  const {
+    // id: currentPackageId, // Removed as packageId from params is used directly
+    name, description, duration, base_price, max_people,
+    images_parsed: images,
+    itinerary_parsed: itinerary,
     included_services_parsed: includedServices,
     cancellation_policy,
     categories: package_categories // Destructure 'categories' and alias to 'package_categories'
@@ -173,6 +174,11 @@ function ItineraryPageContent() {
   const inclusions = itinerary?.inclusions ?? [];
   const exclusions = itinerary?.exclusions ?? [];
   const itineraryNotes = itinerary?.notes;
+
+  // Updated function signature and implementation as per subtask
+  const handleBookCategoryClick = (pkgId: string, catName: string) => {
+    router.push(`/bookings/create?packageId=${pkgId}&categoryId=${encodeURIComponent(catName)}`);
+  };
 
   return (
     <div className="bg-gray-100 min-h-screen py-8 md:py-12 font-sans">
@@ -294,12 +300,12 @@ function ItineraryPageContent() {
                         </p>
                       </div>
                       <div className="mt-auto pt-4"> {/* Button container */}
-                        <Link 
-                          href={`/packages/${packageId}/book?category=${encodeURIComponent(category.category_name)}`}
+                        <button
+                          onClick={() => handleBookCategoryClick(packageId, category.category_name)}
                           className="w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-3 px-4 rounded-lg transition duration-300 font-semibold text-lg flex items-center justify-center"
                         >
                           Book This Option <ArrowRight size={20} className="ml-2" />
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   ))}

@@ -45,8 +45,7 @@ function SignOutButton() {
       if (response.ok && data.success) {
         toast.success(data.message || 'Signed out successfully!');
         // For JWT, client-side redirection is enough after cookie is cleared by API
-        router.push('/auth/signin'); // Or your desired login page
-        router.refresh(); // Ensure layout re-renders and auth state is cleared
+        window.location.assign('/auth/signin'); // Or your desired login page
       } else {
         toast.error(data.message || 'Sign out failed. Please try again.');
       }

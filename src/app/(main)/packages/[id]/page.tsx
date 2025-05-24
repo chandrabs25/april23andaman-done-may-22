@@ -5,7 +5,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Calendar, Clock, Users, Check, Info, ArrowRight, Loader2, AlertTriangle, Utensils, BedDouble, ListChecks, ShieldX } from 'lucide-react';
+import { MapPin, Calendar, Clock, Users, Check, Info, ArrowRight, Loader2, AlertTriangle, Utensils, BedDouble, ListChecks, ShieldX, PackageIcon, TagIcon, HotelIcon, UserCheckIcon, FileTextIcon } from 'lucide-react';
 import { useFetch } from '@/hooks/useFetch';
 
 // --- Interfaces (Assume these are correct and match API/DB) ---
@@ -21,6 +21,16 @@ interface ItineraryDay {
   activities: ItineraryActivity[];
   meals: string[];
   accommodation: string;
+}
+
+// Define PackageCategory interface locally for use in PackageDataFromApi
+interface PackageCategory {
+  category_name: string;
+  price: number;
+  hotel_details: string;
+  category_description: string;
+  max_pax_included_in_price: number;
+  images: string[];
 }
 
 // Updated PackageData interface
@@ -47,6 +57,7 @@ interface PackageDataFromApi {
     notes?: string; // Added optional notes field
   } | null;
   included_services_parsed: string[] | null;
+  package_categories?: PackageCategory[]; // Added new optional field
 
   // Placeholders for potential future use or other data
   bestTimeToVisit?: string;
@@ -77,7 +88,7 @@ const LoadingSpinner = () => (
 function ItineraryPageContent() {
   const params = useParams();
   const router = useRouter();
-  const packageId = params.id as string;
+  const packageId = params.id as string; // packageId is available here
   const [selectedDay, setSelectedDay] = useState(1);
 
   const apiUrl = packageId ? `/api/packages/${packageId}` : null;
@@ -95,6 +106,7 @@ function ItineraryPageContent() {
           images_parsed: fetchedPackageData.images_parsed || [],
           itinerary_parsed: fetchedPackageData.itinerary_parsed || { days: [], highlights: [], inclusions: [], exclusions: [] },
           included_services_parsed: fetchedPackageData.included_services_parsed || [],
+          package_categories: fetchedPackageData.package_categories || [], // Initialize with empty array if not present
         };
         setPackageData(processedData);
         setSelectedDay(1); 
@@ -152,7 +164,8 @@ function ItineraryPageContent() {
     images_parsed: images, 
     itinerary_parsed: itinerary, 
     included_services_parsed: includedServices,
-    cancellation_policy 
+    cancellation_policy,
+    package_categories // Destructure package_categories
   } = packageData;
 
   const itineraryDays = itinerary?.days ?? [];
@@ -210,7 +223,7 @@ function ItineraryPageContent() {
               <div className="text-center md:text-left">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Starting From</h3>
                 <p className="text-3xl font-bold text-blue-600">₹{base_price.toLocaleString('en-IN')}</p>
-                <p className="text-xs text-gray-500">per person</p>
+                <p className="text-xs text-gray-500">per person (base price)</p>
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center">
@@ -236,17 +249,69 @@ function ItineraryPageContent() {
               </div>
             </div>
             
-            {/* Booking Button (Sticky on mobile, prominent on desktop) */} 
-            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 shadow-lg z-50">
-              <Link href={`/packages/${packageData.id}/book`} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-3 px-4 rounded-lg transition duration-300 font-semibold text-lg flex items-center justify-center">
-                Book Now <ArrowRight size={20} className="ml-2" />
-              </Link>
-            </div>
-            <div className="hidden md:block text-center mb-10">
-               <Link href={`/packages/${packageData.id}/book`} className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-10 rounded-lg transition duration-300 font-semibold text-xl inline-flex items-center">
-                Proceed to Booking <ArrowRight size={22} className="ml-3" />
-              </Link>
-            </div>
+            {/* General Booking Buttons REMOVED */}
+
+            {/* Package Categories Section */}
+            {package_categories && package_categories.length > 0 && (
+              <section className="mb-10">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3 flex items-center">
+                  <PackageIcon size={24} className="mr-3 text-blue-600" /> Available Package Options
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {package_categories.map((category, index) => (
+                    <div key={index} className="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
+                      <div className="flex-grow"> {/* Wrapper for content to allow button to push to bottom */}
+                        {category.images && category.images.length > 0 && (
+                          <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden bg-gray-200">
+                            <Image
+                              src={category.images[0]}
+                              alt={`${category.category_name} image`}
+                              fill
+                              className="object-cover"
+                              onError={(e) => { if (e.currentTarget.src !== '/images/placeholder.jpg') e.currentTarget.src = '/images/placeholder.jpg'; }}
+                            />
+                          </div>
+                        )}
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2 flex items-center">
+                          <TagIcon size={20} className="mr-2 text-blue-500" /> {category.category_name}
+                        </h3>
+                        <p className="text-2xl font-bold text-blue-600 mb-3">
+                          ₹{category.price.toLocaleString('en-IN')}
+                        </p>
+                        {category.category_description && (
+                          <p className="text-sm text-gray-600 mb-3 leading-relaxed flex items-start">
+                            <FileTextIcon size={15} className="mr-2 mt-1 text-gray-500 flex-shrink-0" /> {category.category_description}
+                          </p>
+                        )}
+                        {category.hotel_details && (
+                          <div className="mb-3">
+                             <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center"><HotelIcon size={16} className="mr-2 text-purple-500"/>Hotel Details:</h4>
+                             <p className="text-sm text-gray-600 pl-1 whitespace-pre-line">{category.hotel_details}</p>
+                          </div>
+                        )}
+                         <p className="text-sm text-gray-600 flex items-center">
+                          <UserCheckIcon size={16} className="mr-2 text-green-500" /> Max Pax Included: {category.max_pax_included_in_price}
+                        </p>
+                      </div>
+                      <div className="mt-auto pt-4"> {/* Button container */}
+                        <Link 
+                          href={`/packages/${packageId}/book?category=${encodeURIComponent(category.category_name)}`}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-3 px-4 rounded-lg transition duration-300 font-semibold text-lg flex items-center justify-center"
+                        >
+                          Book This Option <ArrowRight size={20} className="ml-2" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+            {package_categories && package_categories.length === 0 && (
+                 <section className="mb-10 py-10 text-center text-gray-500 italic bg-gray-50 rounded-lg border border-gray-200">
+                    No specific category options are currently available for this package.
+                 </section>
+            )}
+
 
             {/* Detailed Itinerary Section */} 
             {itineraryDays.length > 0 ? (

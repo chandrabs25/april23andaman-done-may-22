@@ -773,6 +773,59 @@ export class DatabaseService {
     return this._updatePackageAndCategories(packageId, packageData);
   }
 
+  /**
+   * Deletes a package and its associated categories from the database.
+   * @param packageId The ID of the package to delete.
+   * @returns Promise<{ success: boolean; error?: string }>
+   */
+  async deletePackage(packageId: number): Promise<{ success: boolean; error?: string }> {
+    const db = await getDatabase();
+    try {
+      // Statement to delete package categories
+      const deleteCategoriesStmt = db.prepare(
+        'DELETE FROM package_categories WHERE package_id = ?'
+      );
+
+      // Statement to delete the package itself
+      const deletePackageStmt = db.prepare('DELETE FROM packages WHERE id = ?');
+
+      // Execute in batch (simulates a transaction for D1)
+      // D1 batch operations are atomic: either all succeed or all fail.
+      const results = await db.batch([
+        deleteCategoriesStmt.bind(packageId),
+        deletePackageStmt.bind(packageId),
+      ]);
+
+      // Check if all operations in the batch were successful
+      // D1Result itself has a 'success' boolean. For batch, each result in the array has one.
+      const allSuccessful = results.every(res => res.success);
+
+      if (allSuccessful) {
+        // Check if the package was actually deleted (optional, but good for confirmation)
+        // The second result in the batch is for the packages table deletion.
+        const packageDeletionMeta = results[1]?.meta;
+        if (packageDeletionMeta && packageDeletionMeta.changes > 0) {
+          return { success: true };
+        } else if (packageDeletionMeta && packageDeletionMeta.changes === 0) {
+          // This means the package_categories might have been deleted (or none existed),
+          // but the package itself was not found.
+          return { success: false, error: 'Package not found or already deleted.' };
+        }
+        // If meta is undefined for some reason but allSuccessful was true
+        return { success: true }; 
+      } else {
+        // Find the first error
+        const firstErrorResult = results.find(res => !res.success);
+        const errorMessage = firstErrorResult?.error || 'One or more deletion operations failed.';
+        console.error(`Error deleting package ${packageId}:`, results);
+        return { success: false, error: errorMessage };
+      }
+    } catch (e: any) {
+      console.error(`Exception during deletePackage for packageId ${packageId}:`, e);
+      return { success: false, error: e.message || 'Unknown database error during package deletion.' };
+    }
+  }
+
   // --- Booking Methods ---
   async createBooking(bookingData: {
     user_id: number | null; // Nullable for guest bookings

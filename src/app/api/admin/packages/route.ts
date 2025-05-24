@@ -110,7 +110,48 @@ export async function GET(request: NextRequest) {
       throw new Error('Database query failed to fetch packages.');
     }
 
-    const packagesData = packagesResult.results || [];
+    const rawPackagesData = packagesResult.results || [];
+    
+    // Helper function to safely parse JSON strings (adapted from DatabaseService._parseJsonString)
+    const parseJsonStringForImages = (jsonString: string | null | undefined): string[] => {
+      if (jsonString === null || jsonString === undefined || typeof jsonString !== 'string' || jsonString.trim() === "") {
+        return [];
+      }
+      try {
+        const parsed = JSON.parse(jsonString);
+        if (Array.isArray(parsed) && parsed.every(item => typeof item === 'string')) {
+          return parsed;
+        }
+        if (typeof parsed === 'string' && parsed.trim()) {
+          return [parsed.trim()];
+        }
+        if (Array.isArray(parsed)) {
+          const stringArray = parsed.map(String).filter(Boolean);
+          return stringArray.length > 0 ? stringArray : [];
+        }
+        if (parsed !== null && parsed !== undefined) {
+          const strVal = String(parsed).trim();
+          return strVal ? [strVal] : [];
+        }
+        return [];
+      } catch (e) {
+        // If JSON.parse fails, treat the original string as a single item or comma-separated list
+        if (jsonString.includes(',')) {
+          return jsonString.split(',').map(s => s.trim()).filter(Boolean);
+        }
+        const trimmedString = jsonString.trim();
+        if (trimmedString) {
+          return [trimmedString];
+        }
+        return [];
+      }
+    };
+
+    const packagesData = rawPackagesData.map(pkg => ({
+      ...pkg,
+      images: parseJsonStringForImages(pkg.images),
+    }));
+
     const totalPages = Math.ceil(total / limit);
 
     // --- Format Response ---

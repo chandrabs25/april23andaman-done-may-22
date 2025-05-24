@@ -798,7 +798,7 @@ export class DatabaseService {
 
       // Check if all operations in the batch were successful
       // D1Result itself has a 'success' boolean. For batch, each result in the array has one.
-      const allSuccessful = results.every(res => res.success);
+      const allSuccessful = results.every((res: { success: any; }) => res.success);
 
       if (allSuccessful) {
         // Check if the package was actually deleted (optional, but good for confirmation)
@@ -815,7 +815,7 @@ export class DatabaseService {
         return { success: true }; 
       } else {
         // Find the first error
-        const firstErrorResult = results.find(res => !res.success);
+        const firstErrorResult = results.find((res: { success: any; }) => !res.success);
         const errorMessage = firstErrorResult?.error || 'One or more deletion operations failed.';
         console.error(`Error deleting package ${packageId}:`, results);
         return { success: false, error: errorMessage };

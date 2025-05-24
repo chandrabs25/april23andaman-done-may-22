@@ -22,7 +22,7 @@ export async function POST() {
         path: '/', // Ensure the path matches where the cookie was set
         httpOnly: true, // Match the httpOnly setting used when setting the cookie
         secure: process.env.NODE_ENV === 'production', // Match the secure setting
-        sameSite: 'lax', // Match the sameSite setting
+        sameSite: 'strict', // CORRECTED: Match the sameSite setting from login
         maxAge: -1, // Or expires: new Date(0)
       });
     } else {

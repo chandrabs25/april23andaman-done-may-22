@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    const packagesData = rawPackagesData.map(pkg => ({
+    const packagesData = rawPackagesData.map((pkg: { images: string | null | undefined; }) => ({
       ...pkg,
       images: parseJsonStringForImages(pkg.images),
     }));

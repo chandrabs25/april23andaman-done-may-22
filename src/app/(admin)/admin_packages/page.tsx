@@ -126,7 +126,7 @@ const PackageCard = ({
 
         <div className="flex items-center justify-between border-t border-gray-200 pt-3">
           <Link
-            href={`/admin/admin_packages/${pkg.id}/edit`} // Corrected Link
+            href={`/admin_packages/${pkg.id}/edit`} // Corrected Link
             className="text-indigo-600 hover:text-indigo-800 p-1.5 rounded-md hover:bg-indigo-50 transition-colors"
             title="Edit Package"
           >
@@ -162,7 +162,7 @@ function AdminPackagesPageContent() {
       try {
         const response = await fetch(`/api/admin/packages`); 
         if (!response.ok) {
-          const errorData = await response.json();
+          const errorData = await response.json() as { message?: string };
           throw new Error(errorData.message || `Failed to fetch packages: ${response.statusText}`);
         }
         const result: ApiResponse<{ packages: AdminPackageListItem[]; pagination?: any }> = await response.json();
@@ -230,7 +230,7 @@ function AdminPackagesPageContent() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Manage Packages</h1>
         <Link
-          href="/admin/admin_packages/new" // Corrected Link
+          href="/admin_packages/new" // Corrected Link
           className="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
         >
           <PlusCircle size={18} className="mr-2" /> Add New Package

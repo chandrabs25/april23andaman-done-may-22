@@ -1,6 +1,10 @@
-import { ReactNode } from 'react';
+'use client';
+
+import { ReactNode, useState } from 'react';
 import Link from 'next/link';
-import { HomeIcon, PackageIcon, CheckCircleIcon, UsersIcon, LogOutIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { HomeIcon, PackageIcon, CheckCircleIcon, UsersIcon, LogOutIcon, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Authentication is now handled by middleware or individual page components
 // using our custom JWT-based auth system from src/lib/auth.ts
@@ -14,6 +18,60 @@ interface NavItem {
   href: string;
   label: string;
   icon: ReactNode;
+}
+
+// Type for the logout API response
+interface LogoutApiResponse {
+  success: boolean;
+  message?: string;
+}
+
+// New SignOutButton client component
+function SignOutButton() {
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setIsLoggingOut(true);
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json() as LogoutApiResponse;
+
+      if (response.ok && data.success) {
+        toast.success(data.message || 'Signed out successfully!');
+        // For JWT, client-side redirection is enough after cookie is cleared by API
+        router.push('/auth/signin'); // Or your desired login page
+        router.refresh(); // Ensure layout re-renders and auth state is cleared
+      } else {
+        toast.error(data.message || 'Sign out failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast.error('An unexpected error occurred during sign out.');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleSignOut}
+      disabled={isLoggingOut}
+      className="flex w-full items-center space-x-2 text-gray-300 hover:text-white hover:bg-gray-700 px-2 py-2 rounded-md transition-colors disabled:opacity-70"
+    >
+      {isLoggingOut ? (
+        <Loader2 className="h-5 w-5 animate-spin" />
+      ) : (
+        <LogOutIcon className="h-5 w-5" />
+      )}
+      <span>{isLoggingOut ? 'Signing Out...' : 'Sign Out'}</span>
+    </button>
+  );
 }
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
@@ -65,13 +123,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
               </li>
             ))}
             <li className="px-4 py-2 mt-8">
-              <Link
-                href="/api/auth/logout"
-                className="flex items-center space-x-2 text-gray-300 hover:text-white hover:bg-gray-700 px-2 py-2 rounded-md transition-colors"
-              >
-                <LogOutIcon className="h-5 w-5" />
-                <span>Sign Out</span>
-              </Link>
+              <SignOutButton />
             </li>
           </ul>
         </nav>

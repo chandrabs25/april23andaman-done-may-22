@@ -68,7 +68,7 @@ interface PackageCategory { // This is the structure we want for the API respons
   package_id: number;
   category_name: string;
   price: number;
-  hotel_details: Record<string, any> | null; // Parsed from JSON string
+  hotel_details: string | null; // CHANGED: Was Record<string, any> | null
   category_description: string | null;
   max_pax_included_in_price: number | null;
   images: string[] | null; // Parsed from JSON string
@@ -260,15 +260,15 @@ export async function GET(
       // Use safeJsonParseArray for category images
       const parsedCatImages = safeJsonParseArray(cat.images, `category ${cat.id} images`);
       
-      // Use safeJsonParseObject for category hotel_details
-      const parsedHotelDetails = safeJsonParseObject(cat.hotel_details, `category ${cat.id} hotel_details`, {});
+      // REMOVED: Old parsing for hotel_details
+      // const parsedHotelDetails = safeJsonParseObject(cat.hotel_details, `category ${cat.id} hotel_details`, {});
 
       return {
         id: cat.id,
         package_id: cat.package_id,
         category_name: cat.category_name,
         price: cat.price,
-        hotel_details: Object.keys(parsedHotelDetails).length > 0 ? parsedHotelDetails : null, // ensure null if empty object
+        hotel_details: cat.hotel_details, // CHANGED: Directly use the string from DB
         category_description: cat.category_description,
         max_pax_included_in_price: cat.max_pax_included_in_price,
         images: parsedCatImages,

@@ -57,7 +57,7 @@ interface PackageDataFromApi {
     notes?: string; // Added optional notes field
   } | null;
   included_services_parsed: string[] | null;
-  package_categories?: PackageCategory[]; // Added new optional field
+  categories?: PackageCategory[]; // CHANGED: from package_categories to categories to match API
 
   // Placeholders for potential future use or other data
   bestTimeToVisit?: string;
@@ -106,7 +106,7 @@ function ItineraryPageContent() {
           images_parsed: fetchedPackageData.images_parsed || [],
           itinerary_parsed: fetchedPackageData.itinerary_parsed || { days: [], highlights: [], inclusions: [], exclusions: [] },
           included_services_parsed: fetchedPackageData.included_services_parsed || [],
-          package_categories: fetchedPackageData.package_categories || [], // Initialize with empty array if not present
+          categories: fetchedPackageData.categories || [], // CHANGED: use .categories and ensure it's an array
         };
         setPackageData(processedData);
         setSelectedDay(1); 
@@ -165,7 +165,7 @@ function ItineraryPageContent() {
     itinerary_parsed: itinerary, 
     included_services_parsed: includedServices,
     cancellation_policy,
-    package_categories // Destructure package_categories
+    categories: package_categories // Destructure 'categories' and alias to 'package_categories'
   } = packageData;
 
   const itineraryDays = itinerary?.days ?? [];

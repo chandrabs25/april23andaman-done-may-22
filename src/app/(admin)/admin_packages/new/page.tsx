@@ -7,6 +7,23 @@ import Link from 'next/link';
 import { ImageUploader } from '@/components/ImageUploader'; // Added ImageUploader
 import { toast } from '@/hooks/use-toast'; // Added toast
 
+// --- Define types for structured itinerary ---
+interface ItineraryActivityData {
+  name: string;
+  time: string;
+  duration: string;
+}
+
+interface ItineraryDayData {
+  dayNumber: number; // To keep track of the day
+  title: string;
+  description: string;
+  activities: ItineraryActivityData[];
+  meals: string[];
+  accommodation: string;
+}
+// --- End structured itinerary types ---
+
 // Define types
 interface PackageCategory {
   category_name: string;
@@ -23,7 +40,11 @@ interface PackageFormData {
   duration: string;
   base_price: number;
   max_people: number;
-  itinerary: string[];
+  itinerary_days: ItineraryDayData[]; // CHANGED: to structured days
+  itinerary_highlights: string[];
+  itinerary_inclusions: string[];
+  itinerary_exclusions: string[];
+  itinerary_notes: string;
   included_services: string;
   images: string[]; // Changed to string[]
   cancellation_policy: string;
@@ -41,13 +62,11 @@ interface CreatePackageApiResponse {
 
 export default function NewPackagePage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false); // Will be used for general loading, image updates
   const [error, setError] = useState<string | null>(null);
   const [createdPackageId, setCreatedPackageId] = useState<string | null>(null);
   const [isSubmittingDetails, setIsSubmittingDetails] = useState(false);
-  // tempPackageId is not strictly needed as ImageUploader can take null/undefined parentId initially if desired,
-  // or we ensure it only renders when createdPackageId is set.
-  // For simplicity, we'll ensure ImageUploader only gets a valid createdPackageId.
+  // const [loading, setLoading] = useState(false); // General loading, potentially for category image uploads if they become async internally.
+                                                // If not, this can be removed if isSubmittingDetails covers all loading for this page.
 
   // Initialize form data
   const [formData, setFormData] = useState<PackageFormData>({
@@ -56,7 +75,20 @@ export default function NewPackagePage() {
     duration: '',
     base_price: 0,
     max_people: 2,
-    itinerary: [''], // Initialize with one empty day
+    itinerary_days: [ // CHANGED: Initialize with one structured day
+      {
+        dayNumber: 1,
+        title: '',
+        description: '',
+        activities: [{ name: '', time: '', duration: '' }],
+        meals: [''],
+        accommodation: ''
+      }
+    ],
+    itinerary_highlights: [''],
+    itinerary_inclusions: [''],
+    itinerary_exclusions: [''],
+    itinerary_notes: '',
     included_services: '',
     images: [], // Initialize as empty array
     cancellation_policy: '',
@@ -96,28 +128,39 @@ export default function NewPackagePage() {
 
   // Handle itinerary day input changes
   const handleItineraryChange = (index: number, value: string) => {
-    const updatedItinerary = [...formData.itinerary];
-    updatedItinerary[index] = value;
-    setFormData(prev => ({ ...prev, itinerary: updatedItinerary }));
+    const updatedItinerary = [...formData.itinerary_days]; // CHANGED: use itinerary_days
+    updatedItinerary[index].description = value; // Assuming this was for description
+    setFormData(prev => ({ ...prev, itinerary_days: updatedItinerary }));
   };
 
   // Add a new itinerary day
   const addItineraryDay = () => {
     setFormData(prev => ({
       ...prev,
-      itinerary: [...prev.itinerary, '']
+      // OLD: itinerary: [...prev.itinerary, '']
+      itinerary_days: [ // CHANGED: add new structured day
+        ...prev.itinerary_days,
+        {
+          dayNumber: prev.itinerary_days.length + 1,
+          title: '',
+          description: '',
+          activities: [{ name: '', time: '', duration: '' }],
+          meals: [''],
+          accommodation: ''
+        }
+      ]
     }));
   };
 
   // Remove an itinerary day
   const removeItineraryDay = (index: number) => {
-    if (formData.itinerary.length === 1) {
+    if (formData.itinerary_days.length === 1) { // CHANGED: use itinerary_days
       // Optionally, clear the input if it's the last one instead of removing
       // For now, we prevent removing the last day to avoid empty itinerary
       return;
     }
-    const updatedItinerary = formData.itinerary.filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, itinerary: updatedItinerary }));
+    const updatedItinerary = formData.itinerary_days.filter((_, i) => i !== index); // CHANGED: use itinerary_days
+    setFormData(prev => ({ ...prev, itinerary_days: updatedItinerary }));
   };
 
   // Handle category input changes
@@ -170,116 +213,175 @@ export default function NewPackagePage() {
     setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
   };
 
-  // Handle images uploaded by ImageUploader
-  const handleImagesUploaded = async (imageUrls: string[]) => {
-    setFormData(prev => ({ ...prev, images: imageUrls }));
+  // --- NEW: Handlers for structured itinerary ---
 
-    if (!createdPackageId) {
-      toast({ variant: "destructive", title: "Error", description: "Package ID not found. Cannot associate images." });
-      setError("Package ID missing, cannot update images.");
-      return;
-    }
-
-    setLoading(true); // Use general loading for this final update
-    setError(null);
-    try {
-      const response = await fetch(`/api/admin/packages/${createdPackageId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          images: JSON.stringify(imageUrls), // Main package images
-          package_categories: formData.package_categories.map(category => ({
-            ...category,
-            images: JSON.stringify(category.images || []) // Ensure category images are also stringified
-          }))
-        }),
-      });
-      const result: CreatePackageApiResponse = await response.json();
-
-      if (response.ok && result.success) {
-        toast({ title: "Success", description: "Package created and images uploaded successfully!" });
-        router.push('/admin_packages');
-      } else {
-        throw new Error(result.message || "Failed to update package with images.");
-      }
-    } catch (error: any) {
-      console.error("Update package with images error:", error);
-      setError(error.message || "Failed to save images to the package. You may need to edit the package to add them.");
-      toast({
-        variant: "destructive",
-        title: "Image Association Error",
-        description: error.message || "Failed to save images. Edit the package to add them.",
-      });
-      // Optionally redirect to edit page or allow user to retry image upload
-      // router.push(`/admin_packages/edit/${createdPackageId}`); 
-    } finally {
-      setLoading(false);
-    }
+  // Generic handler for simple list inputs (highlights, inclusions, exclusions)
+  const handleListInputChange = (listName: keyof Pick<PackageFormData, 'itinerary_highlights' | 'itinerary_inclusions' | 'itinerary_exclusions'>, index: number, value: string) => {
+    setFormData(prev => {
+      const newList = [...(prev[listName] as string[])];
+      newList[index] = value;
+      return { ...prev, [listName]: newList };
+    });
   };
 
+  const addListItem = (listName: keyof Pick<PackageFormData, 'itinerary_highlights' | 'itinerary_inclusions' | 'itinerary_exclusions'>) => {
+    setFormData(prev => ({
+      ...prev,
+      [listName]: [...(prev[listName] as string[]), '']
+    }));
+  };
+
+  const removeListItem = (listName: keyof Pick<PackageFormData, 'itinerary_highlights' | 'itinerary_inclusions' | 'itinerary_exclusions'>, index: number) => {
+    setFormData(prev => {
+      const newList = (prev[listName] as string[]).filter((_, i) => i !== index);
+      // Ensure at least one item remains if it was the last one (optional, can be removed)
+      if (newList.length === 0) newList.push(''); 
+      return { ...prev, [listName]: newList };
+    });
+  };
+
+  // Handler for general itinerary notes
+  const handleItineraryNotesChange = (value: string) => {
+    setFormData(prev => ({ ...prev, itinerary_notes: value }));
+  };
+  
+  // Handler for day-specific fields (title, description, accommodation)
+  const handleDayInputChange = (dayIndex: number, field: keyof Pick<ItineraryDayData, 'title' | 'description' | 'accommodation'>, value: string) => {
+    const updatedDays = [...formData.itinerary_days];
+    updatedDays[dayIndex] = { ...updatedDays[dayIndex], [field]: value };
+    setFormData(prev => ({ ...prev, itinerary_days: updatedDays }));
+  };
+
+  // Handlers for day activities
+  const handleActivityChange = (dayIndex: number, activityIndex: number, field: keyof ItineraryActivityData, value: string) => {
+    const updatedDays = [...formData.itinerary_days];
+    const updatedActivities = [...updatedDays[dayIndex].activities];
+    updatedActivities[activityIndex] = { ...updatedActivities[activityIndex], [field]: value };
+    updatedDays[dayIndex].activities = updatedActivities;
+    setFormData(prev => ({ ...prev, itinerary_days: updatedDays }));
+  };
+
+  const addActivity = (dayIndex: number) => {
+    const updatedDays = [...formData.itinerary_days];
+    updatedDays[dayIndex].activities.push({ name: '', time: '', duration: '' });
+    setFormData(prev => ({ ...prev, itinerary_days: updatedDays }));
+  };
+
+  const removeActivity = (dayIndex: number, activityIndex: number) => {
+    const updatedDays = [...formData.itinerary_days];
+    updatedDays[dayIndex].activities = updatedDays[dayIndex].activities.filter((_, i) => i !== activityIndex);
+    // Ensure at least one activity input remains (optional)
+    if (updatedDays[dayIndex].activities.length === 0) {
+        updatedDays[dayIndex].activities.push({ name: '', time: '', duration: '' });
+    }
+    setFormData(prev => ({ ...prev, itinerary_days: updatedDays }));
+  };
+
+  // Handlers for day meals
+  const handleMealChange = (dayIndex: number, mealIndex: number, value: string) => {
+    const updatedDays = [...formData.itinerary_days];
+    const updatedMeals = [...updatedDays[dayIndex].meals];
+    updatedMeals[mealIndex] = value;
+    updatedDays[dayIndex].meals = updatedMeals;
+    setFormData(prev => ({ ...prev, itinerary_days: updatedDays }));
+  };
+
+  const addMeal = (dayIndex: number) => {
+    const updatedDays = [...formData.itinerary_days];
+    updatedDays[dayIndex].meals.push('');
+    setFormData(prev => ({ ...prev, itinerary_days: updatedDays }));
+  };
+
+  const removeMeal = (dayIndex: number, mealIndex: number) => {
+    const updatedDays = [...formData.itinerary_days];
+    updatedDays[dayIndex].meals = updatedDays[dayIndex].meals.filter((_, i) => i !== mealIndex);
+     // Ensure at least one meal input remains (optional)
+    if (updatedDays[dayIndex].meals.length === 0) {
+        updatedDays[dayIndex].meals.push('');
+    }
+    setFormData(prev => ({ ...prev, itinerary_days: updatedDays }));
+  };
+
+  // --- END: Handlers for structured itinerary ---
+
+  // MODIFIED: This function now only stages the main package images in formData
+  const handleMainImagesStaged = (imageUrls: string[]) => {
+    setFormData(prev => ({ ...prev, images: imageUrls }));
+    toast({ title: "Main Images Staged", description: "Images are ready to be saved with the package." });
+    // No API call here, images will be sent with the main form submission
+  };
 
   // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setIsSubmittingDetails(true); // Set submitting state for the whole process
 
-    // If package details are not yet created
-    if (!createdPackageId) {
-      setIsSubmittingDetails(true);
+    // Construct the detailed itinerary object for submission
+    const itineraryObject = {
+      days: formData.itinerary_days.map(day => ({
+        day: day.dayNumber,
+        title: day.title,
+        description: day.description,
+        activities: day.activities.filter(a => a.name.trim() !== ''),
+        meals: day.meals.filter(m => m.trim() !== ''),
+        accommodation: day.accommodation
+      })),
+      highlights: formData.itinerary_highlights.filter(h => h.trim() !== ''),
+      inclusions: formData.itinerary_inclusions.filter(i => i.trim() !== ''),
+      exclusions: formData.itinerary_exclusions.filter(e => e.trim() !== ''),
+      notes: formData.itinerary_notes
+    };
 
-      const itineraryObject = formData.itinerary.reduce((obj, item, index) => {
-        obj[`day${index + 1}`] = item;
-        return obj;
-      }, {} as Record<string, string>);
+    // Prepare the complete data for POSTing
+    // Images are already in formData.images (as string[])
+    // Category images are already in formData.package_categories[i].images (as string[])
+    const submissionData = {
+      ...formData, // Includes name, description, duration, base_price, max_people, images, cancellation_policy, is_active
+      itinerary: itineraryObject, // The structured itinerary object
+      package_categories: formData.package_categories.map(category => ({
+        ...category,
+        // Backend expects images to be stringified if it's an array. The POST /api/admin/packages handles this.
+        // So, we send the array as is from the client for categories.
+        images: category.images || [] 
+      })),
+    };
 
-      // Send empty images array or omit if API allows
-      const initialSubmissionData = {
-        ...formData,
-        itinerary: itineraryObject,
-        images: [], // Send empty array for initial creation
-      };
+    // Remove the individual itinerary fields from the top level of submissionData
+    // as they are now consolidated into the 'itinerary' object.
+    delete (submissionData as any).itinerary_days;
+    delete (submissionData as any).itinerary_highlights;
+    delete (submissionData as any).itinerary_inclusions;
+    delete (submissionData as any).itinerary_exclusions;
+    delete (submissionData as any).itinerary_notes;
 
-      try {
-        const response = await fetch('/api/admin/packages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(initialSubmissionData),
-        });
+    try {
+      const response = await fetch('/api/admin/packages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submissionData), // Send all data including images
+      });
 
-        const data: CreatePackageApiResponse = await response.json();
+      const data: CreatePackageApiResponse = await response.json();
 
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || `Error: ${response.status}`);
-        }
-
-        if (data.data?.id) {
-          setCreatedPackageId(String(data.data.id));
-          toast({ title: "Details Saved", description: "Package details saved. You can now upload images." });
-          // Do not redirect. Form stays, ImageUploader becomes active.
-        } else {
-          throw new Error(data.message || 'Failed to create package details, ID missing.');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred while saving details');
-        console.error('Failed to create package details:', err);
-      } finally {
-        setIsSubmittingDetails(false);
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || `Error: ${response.status}`);
       }
-    } else {
-      // This case is if user clicks "Finish" after images are uploaded (or chooses to skip)
-      // The actual image association happens in handleImagesUploaded
-      if (formData.images.length > 0) {
-        // Images have been uploaded and processed by handleImagesUploaded, which includes redirection.
-        // If not redirected there, redirect here.
-        toast({ title: "Package Ready", description: "Package created with images." });
-        router.push('/admin_packages');
-      } else {
-        // No images uploaded, or user chose to skip.
-        toast({ title: "Package Created", description: "Package created without images." });
-        router.push('/admin_packages');
-      }
+
+      // No need to setCreatedPackageId for further client-side operations if redirecting immediately.
+      // It was mainly for the two-step process.
+      // However, if we wanted to redirect to an edit page, data.data.id would be useful.
+      toast({ title: "Package Created!", description: "The new package has been saved successfully." });
+      router.push('/admin_packages'); // Redirect to admin packages list
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred while creating the package');
+      console.error('Failed to create package:', err);
+      toast({ variant: "destructive", title: "Creation Failed", description: err instanceof Error ? err.message : "Could not create package." });
+    } finally {
+      setIsSubmittingDetails(false);
     }
   };
 
@@ -383,10 +485,11 @@ export default function NewPackagePage() {
               ></textarea>
             </div>
 
+            {/* Itinerary Days */}
             <div className="md:col-span-2 space-y-4">
               <div className="flex justify-between items-center">
                 <label className="block text-sm font-medium text-gray-700">
-                  Itinerary
+                  Itinerary Days
                 </label>
                 <button
                   type="button"
@@ -397,14 +500,13 @@ export default function NewPackagePage() {
                   Add Day
                 </button>
               </div>
-
-              {formData.itinerary.map((dayDescription, index) => (
-                <div key={index} className="space-y-2">
+              {formData.itinerary_days.map((day, index) => (
+                <div key={index} className="space-y-2 border border-gray-200 p-4 rounded-md">
                   <div className="flex justify-between items-center">
-                    <label htmlFor={`itinerary_day_${index + 1}`} className="block text-sm font-medium text-gray-700">
-                      Day {index + 1}
-                    </label>
-                    {formData.itinerary.length > 1 && (
+                    <h4 className="text-md font-semibold text-gray-700">
+                      Day {day.dayNumber}
+                    </h4>
+                    {formData.itinerary_days.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeItineraryDay(index)}
@@ -415,18 +517,149 @@ export default function NewPackagePage() {
                       </button>
                     )}
                   </div>
-                  <textarea
-                    id={`itinerary_day_${index + 1}`}
-                    name={`itinerary_day_${index + 1}`}
-                    rows={3}
-                    value={dayDescription}
-                    onChange={(e) => handleItineraryChange(index, e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder={`Details for Day ${index + 1}...`}
-                  />
+                  
+                  {/* Day Title */}
+                  <div>
+                    <label htmlFor={`itinerary_day_title_${index}`} className="block text-xs font-medium text-gray-600">Title</label>
+                    <input
+                      type="text"
+                      id={`itinerary_day_title_${index}`}
+                      value={day.title}
+                      onChange={(e) => handleDayInputChange(index, 'title', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder={`Title for Day ${day.dayNumber}`}
+                    />
+                  </div>
+
+                  {/* Day Description */}
+                  <div>
+                    <label htmlFor={`itinerary_day_description_${index}`} className="block text-xs font-medium text-gray-600">Description</label>
+                    <textarea
+                      id={`itinerary_day_description_${index}`}
+                      rows={2}
+                      value={day.description}
+                      onChange={(e) => handleDayInputChange(index, 'description', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder={`Details for Day ${day.dayNumber}...`}
+                    />
+                  </div>
+
+                  {/* Day Activities */}
+                  <div className="space-y-2 pt-2">
+                    <div className="flex justify-between items-center">
+                        <h5 className="text-sm font-medium text-gray-600">Activities</h5>
+                        <button type="button" onClick={() => addActivity(index)} className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"><PlusIcon size={12} className="inline mr-1"/>Add Activity</button>
+                    </div>
+                    {day.activities.map((activity, actIndex) => (
+                        <div key={actIndex} className="grid grid-cols-12 gap-2 items-end text-xs">
+                            <div className="col-span-5">
+                                <label className="block text-xs font-extralight text-gray-500">Name</label>
+                                <input type="text" placeholder="Activity Name" value={activity.name} onChange={(e) => handleActivityChange(index, actIndex, 'name', e.target.value)} className="w-full px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"/>
+                            </div>
+                            <div className="col-span-3">
+                                <label className="block text-xs font-extralight text-gray-500">Time</label>
+                                <input type="text" placeholder="e.g. 09:00 AM" value={activity.time} onChange={(e) => handleActivityChange(index, actIndex, 'time', e.target.value)} className="w-full px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"/>
+                            </div>
+                            <div className="col-span-3">
+                                <label className="block text-xs font-extralight text-gray-500">Duration</label>
+                                <input type="text" placeholder="e.g. 2 hours" value={activity.duration} onChange={(e) => handleActivityChange(index, actIndex, 'duration', e.target.value)} className="w-full px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"/>
+                            </div>
+                            <div className="col-span-1">
+                                {day.activities.length > 1 && <button type="button" onClick={() => removeActivity(index, actIndex)} className="p-1 bg-red-500 text-white rounded hover:bg-red-600"><MinusIcon size={12}/></button>}
+                            </div>
+                        </div>
+                    ))}
+                  </div>
+
+                  {/* Day Meals */}
+                  <div className="space-y-2 pt-2">
+                    <div className="flex justify-between items-center">
+                        <h5 className="text-sm font-medium text-gray-600">Meals</h5>
+                        <button type="button" onClick={() => addMeal(index)} className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"><PlusIcon size={12} className="inline mr-1"/>Add Meal</button>
+                    </div>
+                    {day.meals.map((meal, mealIndex) => (
+                        <div key={mealIndex} className="flex items-center gap-2 text-xs">
+                            <input type="text" placeholder="e.g. Breakfast, Lunch" value={meal} onChange={(e) => handleMealChange(index, mealIndex, e.target.value)} className="flex-grow px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"/>
+                            {day.meals.length > 1 && <button type="button" onClick={() => removeMeal(index, mealIndex)} className="p-1 bg-red-500 text-white rounded hover:bg-red-600"><MinusIcon size={12}/></button>}
+                        </div>
+                    ))}
+                  </div>
+
+                  {/* Day Accommodation */}
+                  <div className="pt-2">
+                    <label htmlFor={`itinerary_day_accommodation_${index}`} className="block text-sm font-medium text-gray-600">Accommodation</label>
+                    <input
+                      type="text"
+                      id={`itinerary_day_accommodation_${index}`}
+                      value={day.accommodation}
+                      onChange={(e) => handleDayInputChange(index, 'accommodation', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="e.g., Hotel Name - Room Type"
+                    />
+                  </div>
                 </div>
               ))}
-              <p className="text-sm text-gray-500 mt-1">Enter detailed day-by-day itinerary.</p>
+              <p className="text-xs text-gray-500 mt-1">Click "Add Day" for multi-day packages.</p>
+            </div>
+            
+            {/* Overall Itinerary Details (Highlights, Inclusions, Exclusions, Notes) */}
+            <div className="md:col-span-2 space-y-4 p-4 border border-gray-200 rounded-md">
+              <h3 className="text-lg font-medium text-gray-700">Overall Itinerary Details</h3>
+              
+              {/* Highlights */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="block text-sm font-medium text-gray-600">Highlights</label>
+                  <button type="button" onClick={() => addListItem('itinerary_highlights')} className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"><PlusIcon size={12} className="inline mr-1"/>Add Highlight</button>
+                </div>
+                {formData.itinerary_highlights.map((highlight, hlIndex) => (
+                  <div key={hlIndex} className="flex items-center gap-2 text-xs">
+                    <input type="text" placeholder="e.g., Visit to Cellular Jail" value={highlight} onChange={(e) => handleListInputChange('itinerary_highlights', hlIndex, e.target.value)} className="flex-grow px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"/>
+                    {formData.itinerary_highlights.length > 1 && <button type="button" onClick={() => removeListItem('itinerary_highlights', hlIndex)} className="p-1 bg-red-500 text-white rounded hover:bg-red-600"><MinusIcon size={12}/></button>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Inclusions */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="block text-sm font-medium text-gray-600">Inclusions</label>
+                  <button type="button" onClick={() => addListItem('itinerary_inclusions')} className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"><PlusIcon size={12} className="inline mr-1"/>Add Inclusion</button>
+                </div>
+                {formData.itinerary_inclusions.map((inclusion, inIndex) => (
+                  <div key={inIndex} className="flex items-center gap-2 text-xs">
+                    <input type="text" placeholder="e.g., All Permits and Entry Tickets" value={inclusion} onChange={(e) => handleListInputChange('itinerary_inclusions', inIndex, e.target.value)} className="flex-grow px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"/>
+                    {formData.itinerary_inclusions.length > 1 && <button type="button" onClick={() => removeListItem('itinerary_inclusions', inIndex)} className="p-1 bg-red-500 text-white rounded hover:bg-red-600"><MinusIcon size={12}/></button>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Exclusions */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="block text-sm font-medium text-gray-600">Exclusions</label>
+                  <button type="button" onClick={() => addListItem('itinerary_exclusions')} className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"><PlusIcon size={12} className="inline mr-1"/>Add Exclusion</button>
+                </div>
+                {formData.itinerary_exclusions.map((exclusion, exIndex) => (
+                  <div key={exIndex} className="flex items-center gap-2 text-xs">
+                    <input type="text" placeholder="e.g., Personal Expenses" value={exclusion} onChange={(e) => handleListInputChange('itinerary_exclusions', exIndex, e.target.value)} className="flex-grow px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"/>
+                    {formData.itinerary_exclusions.length > 1 && <button type="button" onClick={() => removeListItem('itinerary_exclusions', exIndex)} className="p-1 bg-red-500 text-white rounded hover:bg-red-600"><MinusIcon size={12}/></button>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Itinerary Notes */}
+              <div>
+                <label htmlFor="itinerary_notes" className="block text-sm font-medium text-gray-600">Itinerary Notes</label>
+                <textarea
+                  id="itinerary_notes"
+                  rows={3}
+                  value={formData.itinerary_notes}
+                  onChange={(e) => handleItineraryNotesChange(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Any special notes for the itinerary..."
+                />
+              </div>
             </div>
 
             <div className="md:col-span-2">
@@ -462,23 +695,15 @@ export default function NewPackagePage() {
             {/* Images Section - Conditional Rendering */}
             <div className="md:col-span-2">
               <h3 className="text-lg font-medium text-gray-700 mb-2">Package Images</h3>
-              {!createdPackageId ? (
-                <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-md border border-dashed border-gray-300">
-                  <Info size={20} className="mx-auto mb-2 text-gray-400" />
-                  <p>Please save package details first to enable image uploads.</p>
-                  <p className="text-xs mt-1">The "Save Details & Proceed to Images" button will appear below once all required fields are filled.</p>
-                </div>
-              ) : (
-                <ImageUploader
-                  label="Upload Images for the Package"
-                  onImagesUploaded={handleImagesUploaded}
-                  existingImages={formData.images}
-                  parentId={createdPackageId}
-                  type="package" // Ensure this type is handled by your API and ImageUploader
-                  maxImages={10}
-                  helperText="Upload images that showcase the package. Images are saved as they are uploaded via the uploader."
-                />
-              )}
+              <ImageUploader
+                label="Upload Images for the Package"
+                onImagesUploaded={handleMainImagesStaged}
+                existingImages={formData.images}
+                parentId={createdPackageId || "new-package-main-images"}
+                type="package"
+                maxImages={10}
+                helperText="Upload images that showcase the package. These will be saved when you create the package."
+              />
             </div>
 
             <div className="flex items-center">
@@ -603,26 +828,17 @@ export default function NewPackagePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Category Images
                   </label>
-                  {createdPackageId ? ( // Only enable category image uploader after package details are saved
-                    <ImageUploader
-                      label={`Images for Category ${index + 1}`}
-                      onImagesUploaded={(imageUrls) => handleCategoryImagesChange(index, imageUrls)}
-                      existingImages={category.images}
-                      // For categories, parentId might be tricky. 
-                      // If categories are saved along with the package, they won't have an ID yet.
-                      // Using a temporary ID for upload, assuming backend /api/upload/images can handle it or it's mainly for client-side preview.
-                      // Or, this uploader is only fully functional in edit mode.
-                      // For now, using a temp ID. The actual association happens when the package is saved with category data.
-                      parentId={`temp-category-${index}-${createdPackageId || 'new'}`}
-                      type="package_category"
-                      maxImages={5} // Example: Max 5 images per category
-                      helperText="Upload images specific to this category."
-                    />
-                  ) : (
-                    <div className="p-3 text-center text-xs text-gray-400 bg-gray-50 rounded-md border border-dashed border-gray-300">
-                      Save package details to enable category image uploads.
-                    </div>
-                  )}
+                  <ImageUploader
+                    label={`Images for Category ${index + 1}`}
+                    onImagesUploaded={(imageUrls) => handleCategoryImagesChange(index, imageUrls)}
+                    existingImages={category.images}
+                    // Provide a unique temporary parentId if createdPackageId is not yet available.
+                    // This is for the ImageUploader's own potential needs; images are saved with the main form submission.
+                    parentId={createdPackageId || `new-pkg-category-${index}`}
+                    type="package_category"
+                    maxImages={5} // Example: Max 5 images per category
+                    helperText="Upload images specific to this category. Images will be saved when you create the package."
+                  />
                 </div>
               </div>
             </div>
@@ -639,18 +855,17 @@ export default function NewPackagePage() {
           </Link>
           <button
             type="submit"
-            disabled={isSubmittingDetails || loading || (!createdPackageId && (formData.name === '' || formData.duration === '' || formData.base_price <= 0))}
-            className={`px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${(isSubmittingDetails || loading) ? 'opacity-75 cursor-not-allowed' : ''
-              }`}
+            // Ensure `loading` state is considered if it still exists and is relevant for disabling the button during image uploads by category image uploaders.
+            // For a single main submit, `isSubmittingDetails` is the primary concern.
+            // The condition `(!createdPackageId && ...)` was for the old two-step save, which is no longer the case for the button's primary role.
+            // Basic validation (empty fields) for enabling the button before any submission attempt:
+            disabled={isSubmittingDetails || formData.name === '' || formData.duration === '' || formData.base_price <= 0}
+            className={`px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${(isSubmittingDetails) ? 'opacity-75 cursor-not-allowed' : ''}`}
           >
             {isSubmittingDetails ? (
-              <><Loader2 size={16} className="animate-spin mr-2" /> Saving Details...</>
-            ) : loading ? (
-              <><Loader2 size={16} className="animate-spin mr-2" /> Processing Images...</>
-            ) : !createdPackageId ? (
-              "Save Details & Proceed to Images"
+              <><Loader2 size={16} className="animate-spin mr-2" /> Creating Package...</>
             ) : (
-              "Finish & Create Package"
+              "Create Package"
             )}
           </button>
         </div>

@@ -72,11 +72,15 @@ const ErrorDisplay = ({ message }: { message: string }) => (
 const PackageCard = ({
   pkg,
   onDelete,
+  onToggleActive,
   isDeleting,
+  isTogglingStatus,
 }: {
   pkg: AdminPackageListItem;
   onDelete: (packageId: number) => void;
+  onToggleActive: (packageId: number, currentStatus: boolean) => void;
   isDeleting: boolean;
+  isTogglingStatus: boolean;
 }) => {
   let imageUrl: string | null = null;
   if (pkg.images) {
@@ -112,16 +116,18 @@ const PackageCard = ({
         <p className="text-sm text-gray-600 mb-3">Price: ${pkg.base_price.toFixed(2)}</p>
 
         <div className="mb-4 mt-auto">
-          <span
-            className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${
-              pkg.is_active
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
-            }`}
+          <button
+            onClick={() => onToggleActive(pkg.id, !!pkg.is_active)}
+            disabled={isTogglingStatus}
+            className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full transition-colors disabled:opacity-60 disabled:cursor-wait ${pkg.is_active
+                ? 'bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800'
+                : 'bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800'
+              }`}
+            title={pkg.is_active ? "Deactivate Package" : "Activate Package"}
           >
-            {pkg.is_active ? <Eye size={14} className="mr-1.5" /> : <EyeOff size={14} className="mr-1.5" />}
+            {isTogglingStatus ? <Loader2 size={14} className="animate-spin mr-1.5" /> : (pkg.is_active ? <Eye size={14} className="mr-1.5" /> : <EyeOff size={14} className="mr-1.5" />)}
             {pkg.is_active ? 'Active' : 'Inactive'}
-          </span>
+          </button>
         </div>
 
         <div className="flex items-center justify-between border-t border-gray-200 pt-3">
@@ -152,6 +158,7 @@ function AdminPackagesPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingPackageId, setDeletingPackageId] = useState<number | null>(null);
+  const [togglingStatusPackageId, setTogglingStatusPackageId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter(); 
 
@@ -198,7 +205,7 @@ function AdminPackagesPageContent() {
       const result: ApiResponse<null> = await response.json();
 
       if (response.ok && result.success) {
-        toast.success(result.message || 'Package deleted successfully.');
+        toast.success(result.message || 'Package deactivated successfully.');
         setPackages((prevPackages) => prevPackages.filter((p) => p.id !== packageId));
       } else {
         throw new Error(result.message || result.error || 'Failed to delete package.');
@@ -212,6 +219,38 @@ function AdminPackagesPageContent() {
     }
   };
   
+  const handleToggleActiveStatus = async (packageId: number, currentStatus: boolean) => {
+    setTogglingStatusPackageId(packageId);
+    const newStatus = !currentStatus;
+    try {
+      const response = await fetch(`/api/admin/packages/${packageId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_active: newStatus }),
+      });
+      const result: ApiResponse<{ is_active: boolean }> = await response.json();
+
+      if (response.ok && result.success) {
+        toast.success(`Package ${newStatus ? 'activated' : 'deactivated'} successfully.`);
+        setPackages((prevPackages) =>
+          prevPackages.map((p) =>
+            p.id === packageId ? { ...p, is_active: newStatus ? 1 : 0 } : p
+          )
+        );
+      } else {
+        throw new Error(result.message || result.error || 'Failed to update package status.');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      toast.error('Error updating status: ' + errorMessage);
+      console.error('Error updating package status:', err);
+    } finally {
+      setTogglingStatusPackageId(null);
+    }
+  };
+
   const filteredPackages = packages.filter(pkg => 
     pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (pkg.description && pkg.description.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -268,7 +307,9 @@ function AdminPackagesPageContent() {
               key={pkg.id}
               pkg={pkg}
               onDelete={handleDeletePackage}
+              onToggleActive={handleToggleActiveStatus}
               isDeleting={deletingPackageId === pkg.id}
+              isTogglingStatus={togglingStatusPackageId === pkg.id}
             />
           ))}
         </div>

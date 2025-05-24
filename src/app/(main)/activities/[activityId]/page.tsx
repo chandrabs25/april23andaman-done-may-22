@@ -323,7 +323,29 @@ const ActivityDetailsPage = () => {
               )}
               {activity.availability_summary && (typeof activity.availability_summary === 'string') && ( // Ensure it's a string
                 <DetailSection title="Availability Notes" icon={CalendarDays}>
-                  <p>{activity.availability_summary}</p>
+                  {(() => {
+                    try {
+                      const availabilityData = JSON.parse(activity.availability_summary);
+                      if (availabilityData && typeof availabilityData === 'object') {
+                        const availableDays = Array.isArray(availabilityData.days) ? availabilityData.days.join(', ') : null;
+                        const notes = typeof availabilityData.notes === 'string' ? availabilityData.notes : null;
+
+                        if (availableDays || notes) {
+                          return (
+                            <>
+                              {availableDays && <p className={`font-medium ${neutralText} mb-1`}>Available on: {availableDays}</p>}
+                              {notes && <p>{notes}</p>}
+                            </>
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      // Not a valid JSON or unexpected structure, render as plain text
+                      console.warn("Failed to parse availability_summary JSON:", e);
+                    }
+                    // Fallback to rendering the original string if parsing fails or structure is not as expected
+                    return <p>{activity.availability_summary}</p>;
+                  })()}
                 </DetailSection>
               )}
               <DetailSection title="Cancellation Policy" icon={ShieldCheck} className="border-b-0 pb-0">

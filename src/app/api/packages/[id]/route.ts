@@ -4,23 +4,21 @@ import { NextRequest, NextResponse } from 'next/server';
 // --- FIX: Import DatabaseService instead of getDatabase ---
 import { DatabaseService } from '@/lib/database';
 
-// Helper function for safe JSON parsing for objects (e.g. itinerary)
+// Helper function for safe JSON parsing for objects (e.g. itinerary, hotel_details)
 function safeJsonParseObject(jsonString: string | null | undefined, parsingFieldName: string, defaultValue: Record<string, any>): Record<string, any> {
   if (!jsonString) {
     return defaultValue;
   }
   try {
-    // If it's already an object (and not null), no need to parse. This case should ideally be handled before calling.
-    // However, keeping it here as a safeguard within the function itself.
     if (typeof jsonString === 'object' && jsonString !== null) {
-        console.warn(`safeJsonParseObject: ${parsingFieldName} was already an object. Returning as is. This might indicate redundant parsing call.`);
+        console.warn(`safeJsonParseObject: ${parsingFieldName} was already an object. Returning as is.`);
         return jsonString; 
     }
     const parsed = JSON.parse(jsonString);
     if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
         return parsed;
     }
-    console.warn(`safeJsonParseObject: ${parsingFieldName} did not parse to a valid object after JSON.parse. Original:`, jsonString);
+    console.warn(`safeJsonParseObject: ${parsingFieldName} did not parse to a valid object. Original:`, jsonString);
     return defaultValue;
   } catch (error) {
     console.warn(`safeJsonParseObject: Failed to parse JSON string for ${parsingFieldName}:`, jsonString, error);
@@ -28,8 +26,44 @@ function safeJsonParseObject(jsonString: string | null | undefined, parsingField
   }
 }
 
+// Helper function for safe JSON parsing for arrays (e.g. images, included_services)
+function safeJsonParseArray(jsonString: string | string[] | null | undefined, parsingFieldName: string): string[] {
+  if (!jsonString) {
+    return [];
+  }
+  if (Array.isArray(jsonString)) { // If it's already an array
+    return jsonString.map(s => String(s));
+  }
+  // If it's a string, try to parse
+  if (typeof jsonString === 'string') {
+    const str = jsonString.trim();
+    if ((str.startsWith('[') && str.endsWith(']')) || (str.startsWith('"') && str.endsWith('"'))) { // Check if it looks like a JSON array/string
+      try {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed)) {
+          return parsed.map(s => String(s));
+        } else if (typeof parsed === 'string') { // If JSON.parse results in a single string
+          return [parsed];
+        }
+        console.warn(`safeJsonParseArray: ${parsingFieldName} looked like JSON but parsed to an unexpected type. Original: '${str}'.`);
+        return []; // Or handle as comma-separated if that's a fallback
+      } catch (e) {
+        console.warn(`safeJsonParseArray: JSON.parse failed for ${parsingFieldName} ('${str}').`);
+        // Fallback for non-JSON strings if necessary, e.g., comma-separated
+        // For now, if it looks like JSON but fails to parse, return empty or handle as error
+        return (str.startsWith('http') || str.startsWith('/')) && !str.includes(',') ? [str] : str.split(',').map(s => s.trim()).filter(s => s !== '');
+      }
+    } else { // Treat as a single item or comma-separated list if not wrapped in [] or ""
+        return (str.startsWith('http') || str.startsWith('/')) && !str.includes(',') ? [str] : str.split(',').map(s => s.trim()).filter(s => s !== '');
+    }
+  }
+  console.warn(`safeJsonParseArray: ${parsingFieldName} was not a string or array. Returning empty array.`);
+  return [];
+}
+
+
 // --- Define PackageCategory interface ---
-interface PackageCategory {
+interface PackageCategory { // This is the structure we want for the API response for categories
   id: number;
   package_id: number;
   category_name: string;
@@ -40,6 +74,21 @@ interface PackageCategory {
   images: string[] | null; // Parsed from JSON string
   // created_at and updated_at can be added if needed for the response
 }
+
+// Raw DB structure for categories (assuming 'images' and 'hotel_details' are strings)
+interface DbPackageCategory {
+  id: number;
+  package_id: number;
+  category_name: string;
+  price: number;
+  hotel_details: string | null; // JSON string from DB
+  category_description: string | null;
+  max_pax_included_in_price: number | null;
+  images: string | null; // JSON string from DB
+  created_at?: string;
+  updated_at?: string;
+}
+
 
 // --- Updated Package interface ---
 // This interface reflects the structure of the data AS STORED IN THE DATABASE (raw form)
@@ -124,72 +173,19 @@ export async function GET(
     }
     console.log(`[API GET /api/packages/${packageId}] Raw package from DB:`, JSON.stringify(pkg));
 
-    // --- Parse included_services ---
-    let parsedIncludedServices: string[] = [];
-    if (pkg.included_services) {
-      if (Array.isArray(pkg.included_services)) {
-        parsedIncludedServices = pkg.included_services.map((s: any) => String(s));
-      } else if (typeof pkg.included_services === 'string') {
-        const serviceStr = pkg.included_services.trim();
-        if ((serviceStr.startsWith('[') && serviceStr.endsWith(']')) || (serviceStr.startsWith('"') && serviceStr.endsWith('"'))) {
-          try {
-            const tempParsed = JSON.parse(serviceStr);
-            if (Array.isArray(tempParsed)) {
-              parsedIncludedServices = tempParsed.map((s: any) => String(s));
-            } else if (typeof tempParsed === 'string') {
-              parsedIncludedServices = [tempParsed];
-            } else {
-              console.warn(`Package ID ${pkg.id}: included_services initially looked like JSON but parsed to an unexpected type. Original: '${serviceStr}'. Splitting by comma.`);
-              parsedIncludedServices = serviceStr.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
-            }
-          } catch (e) {
-            console.log(`Package ID ${pkg.id}: JSON.parse failed for apparent JSON included_services ('${serviceStr}'), attempting comma split.`);
-            parsedIncludedServices = serviceStr.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
-          }
-        } else {
-          parsedIncludedServices = serviceStr.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
-        }
-      }
-    }
+    const parsedIncludedServices = safeJsonParseArray(pkg.included_services, `pkg.included_services for Package ID ${pkg.id}`);
     console.log(`[API GET /api/packages/${packageId}] Parsed included_services:`, parsedIncludedServices);
 
-    // --- Parse images ---
-    let parsedImages: string[] = [];
-    if (pkg.images) {
-      if (Array.isArray(pkg.images)) {
-        parsedImages = pkg.images.map((s: any) => String(s));
-      } else if (typeof pkg.images === 'string') {
-        const imageStr = pkg.images.trim();
-        if ((imageStr.startsWith('[') && imageStr.endsWith(']')) || (imageStr.startsWith('"') && imageStr.endsWith('"'))) {
-          try {
-            const tempParsed = JSON.parse(imageStr);
-            if (Array.isArray(tempParsed)) {
-              parsedImages = tempParsed.map((s: any) => String(s));
-            } else if (typeof tempParsed === 'string') {
-              parsedImages = [tempParsed];
-            } else {
-              console.warn(`Package ID ${pkg.id}: images initially looked like JSON but parsed to an unexpected type. Original: '${imageStr}'. Splitting/treating as single.`);
-              parsedImages = (imageStr.startsWith('http') || imageStr.startsWith('/')) && !imageStr.includes(',') ? [imageStr] : imageStr.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
-            }
-          } catch (e) {
-            console.log(`Package ID ${pkg.id}: JSON.parse failed for apparent JSON images ('${imageStr}'), attempting comma split or treating as single.`);
-            parsedImages = (imageStr.startsWith('http') || imageStr.startsWith('/')) && !imageStr.includes(',') ? [imageStr] : imageStr.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
-          }
-        } else {
-          parsedImages = (imageStr.startsWith('http') || imageStr.startsWith('/')) && !imageStr.includes(',') ? [imageStr] : imageStr.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
-        }
-      }
-    }
+    const parsedImages = safeJsonParseArray(pkg.images, `pkg.images for Package ID ${pkg.id}`);
     console.log(`[API GET /api/packages/${packageId}] Parsed images:`, parsedImages);
-
-    // --- Transform itinerary --- 
+    
     let parsedItineraryRaw: Record<string, any>;
     if (typeof pkg.itinerary === 'object' && pkg.itinerary !== null) {
-        parsedItineraryRaw = pkg.itinerary; // Use directly if already an object
+        parsedItineraryRaw = pkg.itinerary; 
     } else if (typeof pkg.itinerary === 'string') {
         parsedItineraryRaw = safeJsonParseObject(pkg.itinerary, `pkg.itinerary for Package ID ${pkg.id}`, {});
     } else {
-        parsedItineraryRaw = {}; // Default to empty object if null or undefined
+        parsedItineraryRaw = {};
     }
     console.log(`[API GET /api/packages/${packageId}] Raw parsed itinerary object:`, parsedItineraryRaw);
 
@@ -202,7 +198,6 @@ export async function GET(
     };
 
     if (Array.isArray(parsedItineraryRaw.days)) {
-        // If a 'days' array already exists, use it directly, ensuring structure.
         finalItineraryForClient.days = parsedItineraryRaw.days.map((d: any) => ({
             day: typeof d.day === 'number' ? d.day : 0,
             title: typeof d.title === 'string' ? d.title : "Untitled Day",
@@ -216,15 +211,13 @@ export async function GET(
             accommodation: typeof d.accommodation === 'string' ? d.accommodation : "N/A"
         }));
     } else {
-        // If no 'days' array, try to construct it from dayN properties
         const dayEntries = Object.entries(parsedItineraryRaw)
             .filter(([key]) => key.startsWith('day') && !isNaN(parseInt(key.substring(3))))
-            .sort(([keyA], [keyB]) => parseInt(keyA.substring(3)) - parseInt(keyB.substring(3))); // Sort by day number
+            .sort(([keyA], [keyB]) => parseInt(keyA.substring(3)) - parseInt(keyB.substring(3))); 
         
         if (dayEntries.length > 0) {
             finalItineraryForClient.days = dayEntries.map(([key, value]) => {
                 const dayNum = parseInt(key.substring(3));
-                // Attempt to get more structured day data if value is an object
                 let dayTitle = `Day ${dayNum}`;
                 let dayDesc = "";
                 let dayActivities: ApiItineraryActivity[] = [];
@@ -242,7 +235,7 @@ export async function GET(
                     dayMeals = (Array.isArray((value as any).meals) ? (value as any).meals.map((m: any) => String(m)) : []) as string[];
                     dayAccommodation = typeof (value as any).accommodation === 'string' ? (value as any).accommodation : "N/A";
                 } else if (typeof value === 'string') {
-                    dayDesc = value; // Simple string value is the description
+                    dayDesc = value;
                 }
                 
                 return {
@@ -258,8 +251,33 @@ export async function GET(
     }
     console.log(`[API GET /api/packages/${packageId}] Final itinerary_parsed for client:`, JSON.stringify(finalItineraryForClient));
     
-    // TODO: Fetch and parse categories similarly
-    const categories: PackageCategory[] = []; // Placeholder
+    // --- Fetch and process package categories ---
+    const categoriesResult = await dbService.getPackageCategories(packageId); // D1Result<any[]>
+    const rawCategories: DbPackageCategory[] = categoriesResult?.results || [];
+    console.log(`[API GET /api/packages/${packageId}] Raw categories from DB:`, JSON.stringify(rawCategories));
+
+    const processedCategories: PackageCategory[] = rawCategories.map(cat => {
+      // Use safeJsonParseArray for category images
+      const parsedCatImages = safeJsonParseArray(cat.images, `category ${cat.id} images`);
+      
+      // Use safeJsonParseObject for category hotel_details
+      const parsedHotelDetails = safeJsonParseObject(cat.hotel_details, `category ${cat.id} hotel_details`, {});
+
+      return {
+        id: cat.id,
+        package_id: cat.package_id,
+        category_name: cat.category_name,
+        price: cat.price,
+        hotel_details: Object.keys(parsedHotelDetails).length > 0 ? parsedHotelDetails : null, // ensure null if empty object
+        category_description: cat.category_description,
+        max_pax_included_in_price: cat.max_pax_included_in_price,
+        images: parsedCatImages,
+        // created_at: cat.created_at, // uncomment if needed
+        // updated_at: cat.updated_at, // uncomment if needed
+      };
+    });
+    console.log(`[API GET /api/packages/${packageId}] Processed categories for client:`, JSON.stringify(processedCategories));
+
 
     const enrichedPkg: ApiPackageResponse = {
       id: pkg.id,
@@ -275,7 +293,7 @@ export async function GET(
       images_parsed: parsedImages,
       created_at: pkg.created_at,
       updated_at: pkg.updated_at,
-      categories: categories, 
+      categories: processedCategories, 
       cancellation_policy: pkg.cancellation_policy
     };
 

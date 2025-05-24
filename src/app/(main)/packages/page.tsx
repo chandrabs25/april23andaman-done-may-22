@@ -47,12 +47,13 @@ interface Package {
   description: string | null;
   duration: string;
   base_price: number;
+  starting_price: number | null; // Added
   max_people: number | null;
   created_by: number;
   is_active: number;
-  itinerary: string | null;
-  included_services: string | null;
-  images: string | null;
+  itinerary: Record<string, string> | null; // Changed
+  included_services: string[] | null; // Changed
+  images: string[] | null; // Changed
 }
 
 interface Island {
@@ -148,7 +149,7 @@ interface PackageCardProps {
 }
 
 const PackageCard = ({ pkg }: PackageCardProps) => {
-  const imageUrl = pkg.images?.split(',')[0]?.trim() || '/images/placeholder.jpg';
+  const imageUrl = (pkg.images && pkg.images.length > 0) ? pkg.images[0] : '/images/placeholder.jpg';
   const includedServices = pkg.included_services
     ? pkg.included_services.split(',').slice(0, 3).map(service => service.trim())
     : ['Hotel stays included', 'All transfers & sightseeing', 'Expert local guides'];
@@ -259,10 +260,27 @@ function PackagesContent() {
     }
   }, [destinationsStatus, destinationsResponse]);
 
+  // Construct API URL based on filters and pagination
+  const apiUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    params.append('page', currentPage.toString());
+    params.append('limit', itemsPerPage.toString());
+    if (filters.searchQuery) {
+      // The backend /api/packages/route.ts expects 'searchQuery' as the parameter name
+      params.append('searchQuery', filters.searchQuery); 
+    }
+    if (filters.duration) {
+      params.append('duration', filters.duration);
+    }
+    if (filters.priceRange) {
+      params.append('priceRange', filters.priceRange);
+    }
+    return `/api/packages?${params.toString()}`;
+  }, [currentPage, itemsPerPage, filters]);
+
   // Fetch packages
-  const apiUrl = `/api/packages?page=${currentPage}&limit=${itemsPerPage}`;
   const { data: packagesApiResponse, error: packagesError, status: packagesStatus } =
-    useFetch<GetPackagesApiResponse>(apiUrl);
+    useFetch<GetPackagesApiResponse>(apiUrl); // useFetch will re-fetch when apiUrl changes
 
   useEffect(() => {
     if (packagesStatus === 'success' && packagesApiResponse) {
@@ -282,46 +300,8 @@ function PackagesContent() {
     );
   }, [filters]);
 
-  // Apply filters client-side (Keep logic as is)
-  const filteredPackages = useMemo(() => {
-    let tempFiltered = [...packages];
-    if (filters.searchQuery) {
-      const searchLower = filters.searchQuery.toLowerCase();
-      tempFiltered = tempFiltered.filter(pkg =>
-        pkg.name.toLowerCase().includes(searchLower) ||
-        (pkg.description && pkg.description.toLowerCase().includes(searchLower))
-      );
-    }
-    if (filters.duration) {
-      tempFiltered = tempFiltered.filter(pkg => {
-        const durationMatch = pkg.duration.match(/^(\d+)\s*D/i);
-        if (!durationMatch) return false;
-        const pkgDays = parseInt(durationMatch[1], 10);
-        const filterDaysStr = filters.duration.replace('+', '');
-        const filterDays = parseInt(filterDaysStr, 10);
-        if (isNaN(pkgDays) || isNaN(filterDays)) return false;
-        return filters.duration.includes('+') ? pkgDays >= filterDays : pkgDays === filterDays;
-      });
-    }
-    if (filters.priceRange) {
-      const range = filters.priceRange.split('-').map(Number);
-      const min = range[0];
-      const max = range.length > 1 ? range[1] : Infinity;
-      if (!isNaN(min)) {
-        tempFiltered = tempFiltered.filter(pkg => pkg.base_price >= min && pkg.base_price <= max);
-      } else {
-        const singleVal = Number(filters.priceRange.replace('+', ''));
-        if (!isNaN(singleVal)) {
-          if (filters.priceRange.includes('+')) {
-            tempFiltered = tempFiltered.filter(pkg => pkg.base_price >= singleVal);
-          } else {
-            tempFiltered = tempFiltered.filter(pkg => pkg.base_price === singleVal);
-          }
-        }
-      }
-    }
-    return tempFiltered;
-  }, [filters, packages]);
+  // Packages from API are now directly used, client-side filtering is removed.
+  const filteredPackages = packages; // No more client-side filtering
 
   // --- Handlers (Keep logic as is, update URL params) ---
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -362,10 +342,11 @@ function PackagesContent() {
     const current = new URLSearchParams(Array.from(searchParams.entries()));
     Object.entries(currentFilters).forEach(([key, value]) => {
       if (value) {
-        if (key === 'searchQuery') current.set('q', value);
+        // Ensure frontend URL parameter for search matches backend ('searchQuery')
+        if (key === 'searchQuery') current.set('searchQuery', value);
         else current.set(key, value);
       } else {
-        if (key === 'searchQuery') current.delete('q');
+        if (key === 'searchQuery') current.delete('searchQuery');
         else current.delete(key);
       }
     });

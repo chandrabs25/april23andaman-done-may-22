@@ -11,12 +11,13 @@ interface Package {
   description: string | null;
   duration: string;
   base_price: number;
+  starting_price: number | null; // Added starting_price
   max_people: number | null;
   created_by: number;
   is_active: number; // 0 or 1
-  itinerary: string | null;
-  included_services: string | null;
-  images: string | null;
+  itinerary: Record<string, string> | null; // Changed type
+  included_services: string[] | null; // Changed type
+  images: string[] | null; // Changed type
   cancellation_policy: string | null;
   created_at: string;
   updated_at: string;
@@ -61,10 +62,23 @@ interface CreatePackagePayload {
 }
 
 interface PackageFilters {
-  minPrice?: number;
-  maxPrice?: number;
-  duration?: string;
+  searchQuery?: string; // Added searchQuery
+  duration?: string; // Type remains string, logic will handle specific formats
+  priceRange?: string; // Added priceRange, replacing minPrice and maxPrice
   maxPeople?: number;
+}
+
+// Helper function for safe JSON parsing
+function safeJsonParse<T>(jsonString: string | null | undefined, defaultValue: T): T {
+  if (!jsonString) {
+    return defaultValue;
+  }
+  try {
+    return JSON.parse(jsonString) as T;
+  } catch (error) {
+    console.warn('Failed to parse JSON string:', jsonString, error);
+    return defaultValue;
+  }
 }
 
 // GET handler to retrieve packages
@@ -89,21 +103,19 @@ export async function GET(request: NextRequest) {
 
     // Filtering
     const filters: PackageFilters = {};
-    const minPriceParam = searchParams.get('minPrice');
-    const maxPriceParam = searchParams.get('maxPrice');
+    const searchQuery = searchParams.get('searchQuery');
     const durationParam = searchParams.get('duration');
+    const priceRangeParam = searchParams.get('priceRange');
     const maxPeopleParam = searchParams.get('maxPeople');
 
-    if (minPriceParam) {
-      const minPrice = parseFloat(minPriceParam);
-      if (!isNaN(minPrice)) filters.minPrice = minPrice;
-    }
-    if (maxPriceParam) {
-      const maxPrice = parseFloat(maxPriceParam);
-      if (!isNaN(maxPrice)) filters.maxPrice = maxPrice;
+    if (searchQuery) {
+      filters.searchQuery = searchQuery;
     }
     if (durationParam) {
       filters.duration = durationParam;
+    }
+    if (priceRangeParam) {
+      filters.priceRange = priceRangeParam;
     }
     if (maxPeopleParam) {
       const maxPeople = parseInt(maxPeopleParam, 10);
@@ -121,12 +133,42 @@ export async function GET(request: NextRequest) {
       throw new Error('Database query failed to fetch packages.');
     }
 
-    const packagesData = packagesResult.results || [];
+    const rawPackages = packagesResult.results || [];
+    
+    // Process packages: calculate starting_price and parse JSON fields
+    const processedPackages: Package[] = await Promise.all(rawPackages.map(async (pkg: any) => {
+      // TODO: Replace with actual DB call: const categories = await dbService.getPackageCategoriesByPackageId(pkg.id);
+      // TODO: Replace with actual DB call: const categories = await dbService.getPackageCategoriesByPackageId(pkg.id);
+      // For now, mocking categories or assuming none. This will be part of lib/database.ts changes.
+      const categories: PackageCategoryPayload[] = []; // Mock: assuming no categories for now
+
+      let calculatedStartingPrice: number | null = null;
+      if (categories && categories.length > 0) {
+        calculatedStartingPrice = categories.reduce((min, cat) => Math.min(min, cat.price), Infinity);
+        if (calculatedStartingPrice === Infinity) { // Should not happen if categories is not empty and prices are valid
+            calculatedStartingPrice = null; 
+        }
+      } else {
+        // If no categories, starting_price is null.
+        // Alternative: calculatedStartingPrice = pkg.base_price; if base_price should be the fallback.
+      }
+
+      return {
+        ...pkg,
+        starting_price: calculatedStartingPrice,
+        images: safeJsonParse<string[] | null>(pkg.images, null),
+        itinerary: safeJsonParse<Record<string, string> | null>(pkg.itinerary, null),
+        included_services: safeJsonParse<string[] | null>(pkg.included_services, null),
+        // Ensure other fields like base_price, duration etc. are correctly passed through
+        // The ...pkg spread should handle this, but explicit mapping can be done if needed.
+      };
+    }));
+
     const totalPages = Math.ceil(total / limit);
 
     // Format Response
     const responseData: GetPackagesResponse = {
-      packages: packagesData,
+      packages: processedPackages,
       pagination: {
         totalItems: total,
         currentPage: page,

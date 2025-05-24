@@ -4,7 +4,35 @@ import { NextRequest, NextResponse } from 'next/server';
 // --- FIX: Import DatabaseService instead of getDatabase ---
 import { DatabaseService } from '@/lib/database';
 
-// --- Keep the Package interface (matches DB schema and expected data) ---
+// Helper function for safe JSON parsing
+function safeJsonParse<T>(jsonString: string | null | undefined, defaultValue: T): T {
+  if (!jsonString) {
+    return defaultValue;
+  }
+  try {
+    // For good measure, ensure it's not already an object (though DB should give string)
+    if (typeof jsonString === 'object') return jsonString as T;
+    return JSON.parse(jsonString) as T;
+  } catch (error) {
+    console.warn('Failed to parse JSON string:', jsonString, error);
+    return defaultValue;
+  }
+}
+
+// --- Define PackageCategory interface ---
+interface PackageCategory {
+  id: number;
+  package_id: number;
+  category_name: string;
+  price: number;
+  hotel_details: Record<string, any> | null; // Parsed from JSON string
+  category_description: string | null;
+  max_pax_included_in_price: number | null;
+  images: string[] | null; // Parsed from JSON string
+  // created_at and updated_at can be added if needed for the response
+}
+
+// --- Updated Package interface ---
 interface Package {
   id: number;
   name: string;
@@ -14,13 +42,14 @@ interface Package {
   max_people: number | null;
   created_by: number;
   is_active: number; // 0 or 1
-  itinerary: string | null; // Raw TEXT/JSON string from DB
-  included_services: string | null; // Raw TEXT/JSON string from DB
-  images: string | null; // Raw TEXT/JSON string from DB
+  itinerary: Record<string, any> | null; // Parsed from JSON string
+  included_services: string[] | null; // Parsed from JSON string
+  images: string[] | null; // Parsed from JSON string
   created_at: string;
   updated_at: string;
+  categories: PackageCategory[]; // Added categories field
 }
-// --- End Interface ---
+// --- End Interface Definitions ---
 
 
 export async function GET(
@@ -59,11 +88,19 @@ export async function GET(
     // --- Package found, return its data ---
     // The page.tsx component handles parsing JSON fields (itinerary, included_services)
     // So, we return the raw data from the database here.
+    // enriqueta: Adding placeholder fields for categories and parsed fields
+    const enrichedPkg = { 
+      ...(pkg as any), // Spread existing package data
+      categories: [], // Placeholder for package categories
+      images_parsed: typeof pkg.images === 'string' ? JSON.parse(pkg.images) : (Array.isArray(pkg.images) ? pkg.images : []), 
+      itinerary_parsed: typeof pkg.itinerary === 'string' ? JSON.parse(pkg.itinerary) : (typeof pkg.itinerary === 'object' ? pkg.itinerary : {}),
+      included_services_parsed: typeof pkg.included_services === 'string' ? JSON.parse(pkg.included_services) : (Array.isArray(pkg.included_services) ? pkg.included_services : [])
+    };
+
     return NextResponse.json({
       success: true,
       message: `Package details retrieved successfully for ID: ${idAsNumber}`,
-      // Cast the result if needed, though the service method might already return the correct type implicitly
-      data: pkg as Package // Explicit cast can add type safety
+      data: enrichedPkg
     });
 
   } catch (err) {

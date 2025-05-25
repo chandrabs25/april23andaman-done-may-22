@@ -67,15 +67,8 @@ function NewBookingPageContent() {
   const { data: fetchedPackageData, error: fetchError, status: fetchStatus } = useFetch<PackageData>(packageApiUrl);
 
   useEffect(() => {
-    // Redirect if not authenticated and auth loading is complete
-    if (!authIsLoading && !isAuthenticated) {
-      const callbackUrl = encodeURIComponent(window.location.pathname + window.location.search);
-      router.push(`/auth/signin?callbackUrl=${callbackUrl}`);
-      return;
-    }
-
-    // Do not proceed with data fetching if auth is still loading or not authenticated
-    if (authIsLoading || !isAuthenticated) {
+    // Do not proceed with data fetching if auth is still loading
+    if (authIsLoading) {
       return;
     }
 
@@ -102,12 +95,11 @@ function NewBookingPageContent() {
   }, [packageId, categoryId, fetchedPackageData, fetchStatus, fetchError, isAuthenticated, authIsLoading, router]);
 
   // Show loading spinner if auth is loading or data is fetching
-  if (authIsLoading || (isAuthenticated && (fetchStatus === 'loading' || fetchStatus === 'idle'))) {
+  if (authIsLoading || (fetchStatus === 'loading' || fetchStatus === 'idle')) {
     return <LoadingSpinner message={authIsLoading ? "Authenticating..." : "Loading package details..."} />;
   }
   
-  // If not authenticated after loading, it implies redirection is or should be happening.
-  // Or, if essential IDs are missing.
+  // If essential IDs are missing.
   if (!packageId || !categoryId) {
      // Error should have been set by useEffect, but this is a safeguard.
     return <ErrorDisplay message={error || "Package ID or Category ID is missing."} />;

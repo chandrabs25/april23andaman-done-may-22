@@ -4,11 +4,37 @@ import { DatabaseService } from '../../../../lib/database'; // Import D1 Databas
 import { verifyXVerifyHeader } from '../../../../lib/phonepeUtils';
 import crypto from 'crypto';
 
+// --- Interface Definition for PhonePe S2S Callback Body ---
+interface PhonePeS2SCallbackBody {
+  response: string; // This is a Base64 encoded JSON string
+}
+// --- End Interface Definition ---
+
+// --- Interface Definition for PhonePe Check Status API Response ---
+interface PhonePeCheckStatusApiResponse {
+  success: boolean;
+  code: string; // Main status code, e.g., "PAYMENT_SUCCESS", "PAYMENT_ERROR", "INTERNAL_SERVER_ERROR"
+  message: string;
+  data?: {
+    merchantId?: string;
+    merchantTransactionId: string; // This is our booking ID
+    transactionId: string; // PhonePe's transaction ID
+    amount: number; // Amount in paise
+    state: string; // e.g., "COMPLETED", "FAILED", "PENDING"
+    responseCode: string; // More granular response code, e.g., "SUCCESS", "TIMED_OUT"
+    paymentInstrument?: any; // Can be an object with payment details, define more strictly if needed
+    providerReferenceId?: string; // Often same as transactionId or a bank reference
+    payResponseCode?: string; // Sometimes present, might be same as responseCode
+    // ... any other relevant fields from PhonePe's status API response ...
+  };
+}
+// --- End Interface Definition ---
+
 const dbService = new DatabaseService(); // Instantiate DatabaseService
 
 export async function POST(request: NextRequest) {
   try {
-    const requestBody = await request.json();
+    const requestBody: PhonePeS2SCallbackBody = await request.json();
     const base64Response = requestBody.response;
     const receivedXVerifyHeader = request.headers.get('x-verify');
 
@@ -72,7 +98,7 @@ export async function POST(request: NextRequest) {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'X-MERCHANT-ID': merchantId, 'X-VERIFY': xVerifyStatusCheck, 'Accept': 'application/json' },
         });
-        statusResponse = await statusResponseRaw.json();
+        statusResponse = await statusResponseRaw.json() as PhonePeCheckStatusApiResponse; // Type assertion
     } catch (statusApiError) {
         console.error(`PhonePe Check Status API call failed for MTID ${merchantTransactionId}:`, statusApiError);
         return NextResponse.json({ success: true, message: "Callback processed, but status check API failed. Manual reconciliation may be needed." });

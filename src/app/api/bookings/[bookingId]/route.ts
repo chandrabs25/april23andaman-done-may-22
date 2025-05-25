@@ -1,71 +1,68 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma'; // Assuming Prisma client is at @/lib/prisma
+import { DatabaseService } from '@/lib/database'; // Adjust path if necessary
 
-// Define an interface for the route parameters, though often Next.js infers this.
-interface RouteContext {
-  params: {
-    bookingId: string;
-  };
-}
+interface RouteParams { params: { bookingId: string; }; }
 
-export async function GET(request: Request, { params }: RouteContext) {
-  const { bookingId } = params;
+const dbService = new DatabaseService();
 
-  if (!bookingId) {
+export async function GET(request: Request, { params }: RouteParams) {
+  const { bookingId: bookingIdStr } = params;
+
+  if (!bookingIdStr) {
     return NextResponse.json({ message: "Booking ID is required" }, { status: 400 });
+  }
+  const parsedBookingId = parseInt(bookingIdStr, 10);
+  if (isNaN(parsedBookingId)) {
+    return NextResponse.json({ message: "Invalid Booking ID format" }, { status: 400 });
   }
 
   try {
-    const booking = await prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: {
-        // These includes are based on the BookingData interface used by the confirmation page:
-        // package: { name: string }
-        // packageCategory: { name: string }
-        // user: { name?: string, email?: string }
-        // Prisma fetches all direct scalar fields of Booking model by default (id, status, paymentStatus, totalAmount, guestName etc.)
-        package: {
-          select: {
-            name: true,
-          },
-        },
-        packageCategory: {
-          select: {
-            name: true,
-            // category_price_per_person: true, // Example if needed by frontend
-          },
-        },
-        user: { // This will be null if there's no associated user (e.g., guest booking)
-          select: {
-            name: true,
-            email: true,
-            // id: true, // Include user ID if needed by frontend for any reason
-          },
-        },
-      },
-    });
+    const bookingFromDb = await dbService.getBookingDetailsWithRelations(parsedBookingId);
 
-    if (!booking) {
+    if (!bookingFromDb) {
       return NextResponse.json({ message: "Booking not found" }, { status: 404 });
     }
 
-    // The structure of `booking` object here should match the `BookingData` interface
-    // used in `src/app/(main)/booking/confirmation/[bookingId]/page.tsx`.
-    // `totalAmount` is stored in paise and will be returned as such (number).
-    // Date fields like `createdAt`, `startDate`, `endDate` are Date objects from Prisma and
-    // will be serialized to ISO strings by NextResponse.json().
-    return NextResponse.json(booking);
+    // Transform flat DB result to nested structure for frontend
+    // Ensure all fields from the 'bookings' table (selected by b.* in the SQL query)
+    // that are needed by the frontend are explicitly mapped here.
+    const responseData = {
+      // Direct fields from booking (ensure all needed fields are selected by b.* or explicitly)
+      id: String(bookingFromDb.id), // D1 returns number for ID, frontend might expect string
+      status: bookingFromDb.status,
+      paymentStatus: bookingFromDb.payment_status,
+      totalAmount: bookingFromDb.total_amount, // In paise
+      phonepeTransactionId: bookingFromDb.phonepe_transaction_id, // Field name from schema
+      createdAt: bookingFromDb.created_at, // ISO string from D1
+      updatedAt: bookingFromDb.updated_at, // ISO string from D1
+      startDate: bookingFromDb.start_date, // Date string from D1
+      endDate: bookingFromDb.end_date,     // Date string from D1
+      totalPeople: bookingFromDb.total_people,
+      specialRequests: bookingFromDb.special_requests,
+      guestName: bookingFromDb.guest_name,
+      guestEmail: bookingFromDb.guest_email,
+      guestPhone: bookingFromDb.guest_phone, // Schema uses guest_phone
+      userId: bookingFromDb.user_id, // Foreign key
+      packageId: bookingFromDb.package_id, // Foreign key
+      packageCategoryId: bookingFromDb.package_category_id, // Foreign key
+      // Add any other direct booking fields the frontend might need from b.*
+
+      // Nested related data based on aliased names from the SQL query
+      package: bookingFromDb.packageName ? { name: bookingFromDb.packageName } : undefined,
+      packageCategory: bookingFromDb.packageCategoryName ? { category_name: bookingFromDb.packageCategoryName } : undefined,
+      user: (bookingFromDb.userEmail || bookingFromDb.userFirstName || bookingFromDb.userLastName) // Check if any user detail is present
+        ? { 
+            name: [bookingFromDb.userFirstName, bookingFromDb.userLastName].filter(Boolean).join(' ').trim() || undefined, 
+            email: bookingFromDb.userEmail || undefined
+          } 
+        : undefined,
+    };
+
+    return NextResponse.json(responseData);
 
   } catch (error) {
-    console.error(`Error fetching booking ${bookingId}:`, error);
-    // In a production environment, you might want to log the error to a monitoring service.
-    // Avoid sending raw or detailed error messages to the client for security reasons.
+    console.error(`Error fetching booking ${parsedBookingId}:`, error);
+    // Avoid sending raw error messages to client in production
     return NextResponse.json({ message: "An internal server error occurred while fetching booking details." }, { status: 500 });
   }
 }
-
-// Optional: Add an OPTIONS handler if you need to support CORS preflight requests,
-// though typically not needed for same-origin API routes in Next.js.
-// export async function OPTIONS() {
-//   return NextResponse.json({}, { headers: { 'Allow': 'GET' } });
-// }

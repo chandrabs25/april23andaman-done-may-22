@@ -1,8 +1,8 @@
+export const dynamic = 'force-dynamic';
 // src/app/api/bookings/[bookingId]/route.ts
 import { NextResponse, NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // Adjust if your authOptions are elsewhere
-import { dbQuery } from '@/lib/database'; // Assuming DB utility
+import { verifyAuth } from '@/lib/auth'; // Custom auth
+import { dbQuery } from '@/lib/database'; // DB utility
 
 export async function GET(request: NextRequest, { params }: { params: { bookingId: string } }) {
   try {
@@ -12,10 +12,9 @@ export async function GET(request: NextRequest, { params }: { params: { bookingI
       return NextResponse.json({ message: 'Invalid booking ID format.' }, { status: 400 });
     }
 
-    const session = await getServerSession(authOptions);
-    const currentUserId = session?.user?.id;
+    const { isAuthenticated, user: apiUser } = await verifyAuth(request);
+    const currentUserId = isAuthenticated && apiUser ? apiUser.id : null;
 
-    // Query to fetch booking details along with package and category names
     const query = `
       SELECT 
         b.id AS booking_id,
@@ -50,20 +49,14 @@ export async function GET(request: NextRequest, { params }: { params: { bookingI
 
     const bookingDetails = result.rows[0];
 
-    // Security Check: If the booking has a user_id, it must match the current session user_id.
-    // If booking.user_id is null, it's considered a guest booking (for this scope).
     if (bookingDetails.user_id && bookingDetails.user_id !== currentUserId) {
-        // To avoid leaking information that a booking exists, return 404 instead of 403 for non-matching users.
-        // A true 403 might be reserved for roles/permissions checks if an admin system were in place.
         return NextResponse.json({ message: 'Booking not found or access denied.' }, { status: 404 });
     }
 
-    // If booking.user_id is null, or if it matches currentUserId, proceed.
     return NextResponse.json(bookingDetails, { status: 200 });
 
   } catch (error) {
     console.error(`Error fetching booking ${params.bookingId}:`, error);
-    // Check if error is due to DB connection or query syntax, etc.
     if (error instanceof Error && (error.message.includes("database") || error.message.includes("syntax"))) {
         return NextResponse.json({ message: 'Database error occurred.' }, { status: 500 });
     }
@@ -71,7 +64,6 @@ export async function GET(request: NextRequest, { params }: { params: { bookingI
   }
 }
 
-// Basic OPTIONS handler for CORS preflight (if needed by your setup)
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: { 'Allow': 'GET, OPTIONS' } });
 }

@@ -24,6 +24,7 @@ interface PackageDetails {
 }
 
 interface User {
+  id?: string; // Added id to User interface
   name?: string | null;
   email?: string | null;
   phone?: string | null; // Assuming phone might be available
@@ -117,43 +118,48 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
 
     setIsSubmitting(true);
 
-    const bookingPayload = {
-      packageId: packageDetails.id,
-      packageCategoryId: categoryDetails.id,
-      total_people: formData.total_people,
-      start_date: formData.start_date,
-      end_date: formData.end_date,
-      guest_name: formData.guest_name,
-      guest_email: formData.guest_email,
-      guest_phone: formData.guest_phone,
-      special_requests: formData.special_requests || '',
-      // total_amount is calculated server-side
+    // Prepare payload for /api/bookings/initiate-payment
+    const paymentPayload = {
+      packageId: packageDetails.id.toString(), // Ensure string
+      categoryId: categoryDetails.id.toString(), // Ensure string
+      userId: user?.id || null, // Send null if user or user.id is not available
+      guestDetails: {
+        name: formData.guest_name,
+        email: formData.guest_email,
+        mobileNumber: formData.guest_phone,
+      },
+      dates: {
+        startDate: formData.start_date,
+        endDate: formData.end_date,
+      },
+      totalPeople: formData.total_people,
+      // special_requests from formData.special_requests is not part of BookingDetails for payment
     };
 
     try {
-      const response = await fetch('/api/bookings', {
+      const response = await fetch('/api/bookings/initiate-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(bookingPayload),
+        body: JSON.stringify(paymentPayload),
       });
 
-      // Assume responseData can be { booking_id: string; message?: string } on success/error
-      const responseData = await response.json() as { booking_id?: string; message?: string };
+      const responseData = await response.json();
 
-      if (response.ok && response.status === 201 && responseData.booking_id) {
-        // Success
-        // console.log('Booking successful:', responseData);
-        router.push(`/booking/confirmation/${responseData.booking_id}`);
+      if (response.ok && responseData.success && responseData.redirectUrl) {
+        // Successfully initiated payment, redirect to PhonePe
+        window.location.href = responseData.redirectUrl;
+        // No need to setIsSubmitting(false) here as page will change
+        return; 
       } else {
         // Handle API errors
-        // console.error('API Error:', responseData);
-        setErrors(prev => ({ ...prev, general: responseData.message || `An unexpected error occurred (Status: ${response.status})` }));
+        setErrors(prev => ({ ...prev, general: responseData.message || `Failed to initiate payment. Please try again. (Status: ${response.status})` }));
+        console.error('Payment initiation failed:', responseData);
       }
-    } catch (err) { // Changed error variable name to avoid conflict if any
-      // console.error('Network or submission error:', err);
-      setErrors(prev => ({ ...prev, general: 'Failed to submit booking. Please check your connection and try again.' }));
+    } catch (err) {
+      console.error('Error submitting booking form for payment:', err);
+      setErrors(prev => ({ ...prev, general: 'An unexpected error occurred while initiating payment. Please try again later.' }));
     } finally {
       setIsSubmitting(false);
     }

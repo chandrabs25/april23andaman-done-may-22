@@ -1,72 +1,71 @@
-export const dynamic = 'force-dynamic';
-// src/app/api/bookings/[bookingId]/route.ts
-import { NextResponse, NextRequest } from 'next/server';
-import { verifyAuth } from '@/lib/auth'; // Custom auth
-import { dbQuery } from '@/lib/database'; // DB utility
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma'; // Assuming Prisma client is at @/lib/prisma
 
-export async function GET(request: NextRequest, { params }: { params: { bookingId: string } }) {
+// Define an interface for the route parameters, though often Next.js infers this.
+interface RouteContext {
+  params: {
+    bookingId: string;
+  };
+}
+
+export async function GET(request: Request, { params }: RouteContext) {
+  const { bookingId } = params;
+
+  if (!bookingId) {
+    return NextResponse.json({ message: "Booking ID is required" }, { status: 400 });
+  }
+
   try {
-    const { bookingId } = params;
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        // These includes are based on the BookingData interface used by the confirmation page:
+        // package: { name: string }
+        // packageCategory: { name: string }
+        // user: { name?: string, email?: string }
+        // Prisma fetches all direct scalar fields of Booking model by default (id, status, paymentStatus, totalAmount, guestName etc.)
+        package: {
+          select: {
+            name: true,
+          },
+        },
+        packageCategory: {
+          select: {
+            name: true,
+            // category_price_per_person: true, // Example if needed by frontend
+          },
+        },
+        user: { // This will be null if there's no associated user (e.g., guest booking)
+          select: {
+            name: true,
+            email: true,
+            // id: true, // Include user ID if needed by frontend for any reason
+          },
+        },
+      },
+    });
 
-    if (!bookingId || isNaN(parseInt(bookingId))) {
-      return NextResponse.json({ message: 'Invalid booking ID format.' }, { status: 400 });
+    if (!booking) {
+      return NextResponse.json({ message: "Booking not found" }, { status: 404 });
     }
 
-    const { isAuthenticated, user: apiUser } = await verifyAuth(request);
-    const currentUserId = isAuthenticated && apiUser ? apiUser.id : null;
-
-    const query = `
-      SELECT 
-        b.id AS booking_id,
-        b.package_id,
-        b.package_category_id,
-        b.user_id,
-        b.total_people,
-        strftime('%Y-%m-%d', b.start_date) AS start_date,
-        strftime('%Y-%m-%d', b.end_date) AS end_date,
-        b.status AS booking_status,
-        b.total_amount,
-        b.payment_status,
-        b.guest_name,
-        b.guest_email,
-        b.guest_phone,
-        b.special_requests,
-        b.created_at AS booking_created_at,
-        p.name AS package_name,
-        pc.category_name AS package_category_name,
-        pc.price AS category_price_per_person
-      FROM bookings b
-      JOIN packages p ON b.package_id = p.id
-      JOIN package_categories pc ON b.package_category_id = pc.id
-      WHERE b.id = $1;
-    `;
-
-    const result = await dbQuery(query, [parseInt(bookingId)]);
-    console.log(result);
-    console.log(currentUserId);
-    console.log(typeof currentUserId);
-    if (result.rowCount === 0) {
-      return NextResponse.json({ message: 'Booking not found.' }, { status: 404 });
-    }
-
-    const bookingDetails = result.rows[0];
-    console.log( bookingDetails.user_id);
-    console.log(typeof bookingDetails.user_id);
-    if (bookingDetails.user_id && String(bookingDetails.user_id) !== currentUserId) {
-        return NextResponse.json({ message: 'Booking not found or access denied.' }, { status: 404 });
-    }
-
-    return NextResponse.json(bookingDetails, { status: 200 });
+    // The structure of `booking` object here should match the `BookingData` interface
+    // used in `src/app/(main)/booking/confirmation/[bookingId]/page.tsx`.
+    // `totalAmount` is stored in paise and will be returned as such (number).
+    // Date fields like `createdAt`, `startDate`, `endDate` are Date objects from Prisma and
+    // will be serialized to ISO strings by NextResponse.json().
+    return NextResponse.json(booking);
 
   } catch (error) {
-    console.error(`Error fetching booking ${params.bookingId}:`, error);
-    if (error instanceof Error && (error.message.includes("database") || error.message.includes("syntax"))) {
-        return NextResponse.json({ message: 'Database error occurred.' }, { status: 500 });
-    }
-    return NextResponse.json({ message: 'An unexpected error occurred on the server.' }, { status: 500 });
+    console.error(`Error fetching booking ${bookingId}:`, error);
+    // In a production environment, you might want to log the error to a monitoring service.
+    // Avoid sending raw or detailed error messages to the client for security reasons.
+    return NextResponse.json({ message: "An internal server error occurred while fetching booking details." }, { status: 500 });
   }
 }
 
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: { 'Allow': 'GET, OPTIONS' } });
-}
+// Optional: Add an OPTIONS handler if you need to support CORS preflight requests,
+// though typically not needed for same-origin API routes in Next.js.
+// export async function OPTIONS() {
+//   return NextResponse.json({}, { headers: { 'Allow': 'GET' } });
+// }

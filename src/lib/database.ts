@@ -961,6 +961,72 @@ export class DatabaseService {
       .all();
   }
 
+  // --- PhonePe Specific Booking Methods ---
+  async createInitialPhonePeBooking(bookingData: {
+    package_id: number | null;
+    package_category_id: number | null;
+    user_id: number | null;
+    total_amount: number;
+    guest_name: string | null;
+    guest_email: string | null;
+    guest_phone: string | null;
+    start_date: string;
+    end_date: string;
+    total_people: number;
+    special_requests: string | null;
+  }) {
+    const db = await getDatabase();
+    return db
+      .prepare(
+        `INSERT INTO bookings (
+          package_id, package_category_id, user_id, total_amount, 
+          status, payment_status, 
+          guest_name, guest_email, guest_phone, 
+          start_date, end_date, total_people, special_requests,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, 'PENDING_PAYMENT', 'INITIATED', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+      )
+      .bind(
+        bookingData.package_id,
+        bookingData.package_category_id,
+        bookingData.user_id,
+        bookingData.total_amount,
+        bookingData.guest_name,
+        bookingData.guest_email,
+        bookingData.guest_phone,
+        bookingData.start_date,
+        bookingData.end_date,
+        bookingData.total_people,
+        bookingData.special_requests
+      )
+      .run(); // Returns Promise<D1Result> which includes meta.last_row_id
+  }
+
+  async updateBookingStatusAndPaymentStatus(
+    bookingId: string, // Assuming bookingId from D1 (last_row_id) will be a number, but API might pass string
+    status: string,
+    paymentStatus: string,
+    phonepeTransactionId?: string | null // Optional: to store PhonePe's own transaction ID
+  ) {
+    const db = await getDatabase();
+    let query = 'UPDATE bookings SET status = ?, payment_status = ?, updated_at = CURRENT_TIMESTAMP';
+    const params: (string | number | null)[] = [status, paymentStatus];
+
+    if (phonepeTransactionId !== undefined) {
+      query += ', phonepe_transaction_id = ?';
+      params.push(phonepeTransactionId);
+    }
+    
+    query += ' WHERE id = ?';
+    params.push(parseInt(bookingId, 10)); // Ensure bookingId is a number for the query
+
+    return db
+      .prepare(query)
+      .bind(...params)
+      .run();
+  }
+  // End PhonePe Specific Booking Methods
+  
   /**
    * Retrieves reviews for all services belonging to a specific vendor (user).
    * @param userId The user ID of the vendor.
@@ -1916,4 +1982,29 @@ export class DatabaseService {
       .first<{ total: number }>();
   }
 
+  async getBookingDetailsWithRelations(bookingId: number): Promise<any | null> {
+    const db = await getDatabase();
+    const query = `
+      SELECT
+        b.*,
+        p.name AS packageName,
+        pc.category_name AS packageCategoryName,
+        u.first_name AS userFirstName,
+        u.last_name AS userLastName,
+        u.email AS userEmail
+      FROM bookings b
+      LEFT JOIN packages p ON b.package_id = p.id
+      LEFT JOIN package_categories pc ON b.package_category_id = pc.id
+      LEFT JOIN users u ON b.user_id = u.id
+      WHERE b.id = ?;
+    `;
+    try {
+      const stmt = db.prepare(query).bind(bookingId);
+      const result = await stmt.first<any>(); // Expect a single object or null
+      return result; // This will be the flat object with aliased names
+    } catch (e: any) {
+      console.error(`Error fetching booking with relations for ID ${bookingId}:`, e.message);
+      return null; // Or throw, depending on desired error handling for the service layer
+    }
+  }
 }

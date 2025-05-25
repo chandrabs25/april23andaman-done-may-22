@@ -1,13 +1,20 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import prisma from '../../../../lib/prisma';
+import { DatabaseService } from '../../../../lib/database'; // Import D1 Database Service
 import crypto from 'crypto';
 
-export async function GET(request: NextRequest) {
-  const merchantTransactionId = request.nextUrl.searchParams.get('mtid');
+const dbService = new DatabaseService(); // Instantiate DatabaseService
 
-  if (!merchantTransactionId) {
+export async function GET(request: NextRequest) {
+  const mtidString = request.nextUrl.searchParams.get('mtid');
+
+  if (!mtidString) {
     return NextResponse.json({ success: false, message: "Merchant transaction ID (mtid) is required." }, { status: 400 });
+  }
+
+  const bookingIdInt = parseInt(mtidString, 10);
+  if (isNaN(bookingIdInt)) {
+    return NextResponse.json({ success: false, message: "Invalid Merchant Transaction ID format." }, { status: 400 });
   }
 
   try {
@@ -22,7 +29,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: false, message: "Server configuration error." }, { status: 500 });
     }
 
-    const statusApiEndpointPath = `/pg/v1/status/${merchantId}/${merchantTransactionId}`;
+    const statusApiEndpointPath = `/pg/v1/status/${merchantId}/${mtidString}`; // Use original string mtidString for PhonePe API
     const stringToHash = statusApiEndpointPath + saltKey;
     const sha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
     const xVerifyStatus = `${sha256}###${saltIndex}`;
@@ -39,96 +46,73 @@ export async function GET(request: NextRequest) {
         },
       });
       if (!apiResponse.ok) {
-        // Attempt to parse error from PhonePe if possible, but prioritize our own error message
         let errorBody = {};
-        try {
-            errorBody = await apiResponse.json();
-        } catch (e) { /* ignore parsing error */ }
-        console.error(`PhonePe Status API request failed for ${merchantTransactionId} with status: ${apiResponse.status}`, errorBody);
+        try { errorBody = await apiResponse.json(); } catch (e) { /* ignore */ }
+        console.error(`PhonePe Status API request failed for ${mtidString} with status: ${apiResponse.status}`, errorBody);
         return NextResponse.json({ success: false, message: `Payment provider API error (HTTP ${apiResponse.status}).`, details: errorBody }, { status: apiResponse.status });
       }
       phonePeStatusResponse = await apiResponse.json();
     } catch (fetchError) {
-      console.error(`Fetch error calling PhonePe Status API for ${merchantTransactionId}:`, fetchError);
-      return NextResponse.json({ success: false, message: "Could not connect to payment provider to check status." }, { status: 503 }); // Service Unavailable
+      console.error(`Fetch error calling PhonePe Status API for ${mtidString}:`, fetchError);
+      return NextResponse.json({ success: false, message: "Could not connect to payment provider to check status." }, { status: 503 });
     }
     
-    // 2. Process PhonePe Status API Response
     if (!phonePeStatusResponse.success) {
-      console.warn(`PhonePe Status API returned failure for ${merchantTransactionId}:`, phonePeStatusResponse.message, `Code: ${phonePeStatusResponse.code}`);
+      console.warn(`PhonePe Status API returned failure for ${mtidString}:`, phonePeStatusResponse.message, `Code: ${phonePeStatusResponse.code}`);
       return NextResponse.json({
         success: false,
         message: phonePeStatusResponse.message || "Failed to get status from PhonePe.",
-        phonePeCode: phonePeStatusResponse.code, // e.g. "F404" if transaction not found on their end
-        merchantTransactionId: merchantTransactionId,
-      }, { status: 400 }); // Or appropriate status based on PhonePe's error (e.g. 404 if F404)
+        phonePeCode: phonePeStatusResponse.code,
+        merchantTransactionId: mtidString,
+      }, { status: 400 });
     }
 
-    const phonePePaymentCode = phonePeStatusResponse.code; // e.g. PAYMENT_SUCCESS
-    const phonePeTransactionState = phonePeStatusResponse.data?.state; // e.g. COMPLETED
-    const phonePeApiTransactionId = phonePeStatusResponse.data?.transactionId;
-    const phonePeAmount = phonePeStatusResponse.data?.amount; // Amount in Paise from PhonePe
+    const phonePePaymentCode = phonePeStatusResponse.code;
+    const phonePeTransactionState = phonePeStatusResponse.data?.state;
+    const phonePeApiTransactionId = phonePeStatusResponse.data?.transactionId; // This is string
+    const phonePeAmount = phonePeStatusResponse.data?.amount;
 
     // 3. Fetch Current Booking & Idempotent Database Update
-    const booking = await prisma.booking.findUnique({ where: { id: merchantTransactionId } });
+    const booking = await dbService.getBookingById(bookingIdInt); // Use parsed integer ID
 
     if (!booking) {
-      return NextResponse.json({ success: false, message: "Booking not found locally.", merchantTransactionId: merchantTransactionId }, { status: 404 });
+      return NextResponse.json({ success: false, message: "Booking not found locally.", merchantTransactionId: mtidString }, { status: 404 });
     }
 
     let updatedBookingStatus = booking.status;
     let updatedPaymentStatus = booking.paymentStatus;
 
-    // Only update if not in a terminal state AND if there's a change needed
     if (booking.status !== 'CONFIRMED' && booking.status !== 'FAILED') {
       if (phonePePaymentCode === 'PAYMENT_SUCCESS') {
         if (booking.status !== 'CONFIRMED' || booking.paymentStatus !== 'PAID') {
-            await prisma.booking.update({
-              where: { id: merchantTransactionId },
-              data: {
-                paymentStatus: 'PAID',
-                status: 'CONFIRMED',
-                phonepeTransactionId: phonePeApiTransactionId || booking.phonepeTransactionId,
-                // Optional: Verify amount from PhonePe matches booking.totalAmount
-                // paymentDetails: phonePeStatusResponse.data, // Store more details if needed
-              },
-            });
+            await dbService.updateBookingStatusAndPaymentStatus(String(bookingIdInt), 'CONFIRMED', 'PAID', phonePeApiTransactionId);
             updatedBookingStatus = 'CONFIRMED';
             updatedPaymentStatus = 'PAID';
-            console.log(`Booking ${merchantTransactionId} updated to CONFIRMED/PAID via check-status.`);
+            console.log(`Booking ${bookingIdInt} updated to CONFIRMED/PAID via check-status using D1.`);
         }
       } else if (['PAYMENT_ERROR', 'TRANSACTION_NOT_FOUND', 'PAYMENT_FAILURE', 'TIMED_OUT', 'PAYMENT_DECLINED', 'CARD_NOT_SUPPORTED', 'BANK_OFFLINE'].includes(phonePePaymentCode)) {
          if (booking.status !== 'FAILED' || booking.paymentStatus !== 'FAILED') {
-            await prisma.booking.update({
-              where: { id: merchantTransactionId },
-              data: { 
-                paymentStatus: 'FAILED', 
-                status: 'FAILED',
-                phonepeTransactionId: phonePeApiTransactionId || booking.phonepeTransactionId,
-                // paymentDetails: phonePeStatusResponse.data, // Store more details if needed
-              },
-            });
+            await dbService.updateBookingStatusAndPaymentStatus(String(bookingIdInt), 'FAILED', 'FAILED', phonePeApiTransactionId);
             updatedBookingStatus = 'FAILED';
             updatedPaymentStatus = 'FAILED';
-            console.log(`Booking ${merchantTransactionId} updated to FAILED via check-status due to ${phonePePaymentCode}.`);
+            console.log(`Booking ${bookingIdInt} updated to FAILED via check-status due to ${phonePePaymentCode} using D1.`);
         }
       }
-      // If PAYMENT_PENDING, no DB update is made here by check-payment-status, client can interpret PENDING status
     }
     
     return NextResponse.json({
       success: true,
       message: "Status successfully retrieved.",
-      merchantTransactionId: merchantTransactionId,
-      phonePePaymentStatus: phonePePaymentCode,         // e.g. "PAYMENT_SUCCESS", "PAYMENT_PENDING"
-      phonePeTransactionState: phonePeTransactionState, // e.g. "COMPLETED", "PENDING", "FAILED"
-      phonePeAmount: phonePeAmount,                     // Amount from PhonePe (in paise)
-      bookingStatus: updatedBookingStatus,              // Reflects updated local status
-      paymentStatus: updatedPaymentStatus,              // Reflects updated local status
+      merchantTransactionId: mtidString, // Return original string mtid
+      phonePePaymentStatus: phonePePaymentCode,
+      phonePeTransactionState: phonePeTransactionState,
+      phonePeAmount: phonePeAmount,
+      bookingStatus: updatedBookingStatus,
+      paymentStatus: updatedPaymentStatus,
     });
 
   } catch (error) {
-    console.error(`Error in check-payment-status for ${merchantTransactionId}:`, error);
+    console.error(`Error in check-payment-status for ${mtidString}:`, error);
     const errorMessage = error instanceof Error ? error.message : "Unknown server error.";
     return NextResponse.json({ success: false, message: "An unexpected error occurred while checking payment status.", errorDetail: errorMessage }, { status: 500 });
   }

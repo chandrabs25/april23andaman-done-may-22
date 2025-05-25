@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import crypto from 'crypto';
 import { generateXVerifyHeader } from '../../../../lib/phonepeUtils';
-import prisma from '../../../../lib/prisma'; // Import Prisma client
+import { DatabaseService } from '../../../../lib/database'; // Import D1 Database Service
+
+const dbService = new DatabaseService();
 
 interface GuestDetails {
   name?: string;
@@ -13,97 +15,86 @@ interface GuestDetails {
 interface BookingDetails {
   packageId: string;
   categoryId: string;
-  userId: string; // Assuming userId will be available from auth or request
+  userId: string; 
   guestDetails: GuestDetails;
   dates: {
     startDate: string;
     endDate: string;
   };
   totalPeople: number;
+  specialRequests?: string; // Added specialRequests
 }
 
 export async function POST(request: NextRequest) {
-  let merchantTransactionId = crypto.randomUUID(); // Define here to be accessible in catch block if needed
+  let newBookingId: string | null = null; // To store D1 generated booking ID
 
   try {
     const body: BookingDetails = await request.json();
 
-    // TODO: Add proper validation for body (e.g., using Zod or a similar library)
-    if (!body.packageId || !body.categoryId || !body.userId || !body.totalPeople || body.totalPeople <= 0 || !body.dates?.startDate || !body.dates?.endDate) {
+    if (!body.packageId || !body.categoryId || !body.totalPeople || body.totalPeople <= 0 || !body.dates?.startDate || !body.dates?.endDate) {
+      // Removed userId check from here as it can be null for guests.
+      // The backend (D1 insert) will handle userId: null if body.userId is not present.
       return NextResponse.json({ success: false, message: "Missing or invalid booking details." }, { status: 400 });
     }
 
-    // Mock Package Price Fetching
-    // TODO: Integrate with actual price fetching from /api/packages/[id]/route.ts
+    // Mock Package Price Fetching - TODO: Replace with actual logic
     let pricePerPersonInPaise: number;
     switch (body.categoryId) {
-      case 'A':
-        pricePerPersonInPaise = 100000; // Rs. 1000.00
-        break;
-      case 'B':
-        pricePerPersonInPaise = 200000; // Rs. 2000.00
-        break;
-      default:
-        pricePerPersonInPaise = 150000; // Default price Rs. 1500.00
+      case 'A': pricePerPersonInPaise = 100000; break;
+      case 'B': pricePerPersonInPaise = 200000; break;
+      default: pricePerPersonInPaise = 150000;
     }
     console.log(`TODO: Fetch actual price for packageId: ${body.packageId}, categoryId: ${body.categoryId}`);
-
     const totalAmountInPaise = pricePerPersonInPaise * body.totalPeople;
     
-    // Use userId from request for merchantUserId, or generate one for guests
-    const merchantUserId = body.userId || "GUEST_" + crypto.randomUUID();
+    const merchantUserId = body.userId || `GUEST_${crypto.randomUUID()}`;
 
-    // 1. Database Interaction - Create Booking
-    let newBooking;
+    // 1. Database Interaction - Create Booking using D1
+    const d1BookingData = {
+      package_id: parseInt(body.packageId, 10) || null,
+      package_category_id: parseInt(body.categoryId, 10) || null,
+      // Ensure userId is parsed to int if present, otherwise null. D1 schema expects INT for user_id.
+      user_id: body.userId ? parseInt(body.userId, 10) : null, 
+      total_amount: totalAmountInPaise,
+      guest_name: body.guestDetails?.name || null,
+      guest_email: body.guestDetails?.email || null,
+      guest_phone: body.guestDetails?.mobileNumber || null,
+      start_date: body.dates.startDate,
+      end_date: body.dates.endDate,
+      total_people: body.totalPeople,
+      special_requests: body.specialRequests || null,
+    };
+
     try {
-      newBooking = await prisma.booking.create({
-        data: {
-          id: merchantTransactionId,
-          userId: body.userId || null, // Handle guest users by allowing null if DB schema permits
-          packageId: body.packageId,
-          packageCategoryId: body.categoryId,
-          totalAmount: totalAmountInPaise,
-          status: 'PENDING_PAYMENT', // Ensure this enum value exists in your schema
-          paymentStatus: 'INITIATED', // Ensure this enum value exists in your schema
-          startDate: new Date(body.dates.startDate),
-          endDate: new Date(body.dates.endDate),
-          totalPeople: body.totalPeople,
-          guestName: body.guestDetails?.name,
-          guestEmail: body.guestDetails?.email,
-          guestMobile: body.guestDetails?.mobileNumber,
-          // Add other relevant fields as per your schema
-        },
-      });
+      const createBookingResult = await dbService.createInitialPhonePeBooking(d1BookingData);
+      if (!createBookingResult.success || !createBookingResult.meta?.last_row_id) {
+        console.error("D1 error creating booking:", createBookingResult.error);
+        throw new Error(createBookingResult.error || 'Failed to create booking in D1 or get last_row_id.');
+      }
+      newBookingId = String(createBookingResult.meta.last_row_id);
     } catch (dbError) {
-      console.error("Database error creating booking:", dbError);
+      console.error("Database error creating booking with D1:", dbError);
       return NextResponse.json({ success: false, message: "Failed to save booking details." }, { status: 500 });
     }
 
-    const clientRedirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/booking-payment-status?mtid=${newBooking.id}`;
+    const clientRedirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/booking-payment-status?mtid=${newBookingId}`;
     const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/bookings/phonepe-callback`;
 
-    // Prepare PhonePe Pay API Request Payload
     const payload = {
       merchantId: process.env.PHONEPE_MERCHANT_ID,
-      merchantTransactionId: newBooking.id, // Use the ID from the created booking record
+      merchantTransactionId: newBookingId, // Use D1 generated ID
       merchantUserId: merchantUserId,
       amount: totalAmountInPaise,
       redirectUrl: clientRedirectUrl,
       redirectMode: "POST", 
       callbackUrl: callbackUrl,
       mobileNumber: body.guestDetails?.mobileNumber,
-      paymentInstrument: {
-        type: "PAY_PAGE"
-      }
+      paymentInstrument: { type: "PAY_PAGE" }
     };
-
-    if (!payload.mobileNumber) {
-      delete payload.mobileNumber;
-    }
+    if (!payload.mobileNumber) delete payload.mobileNumber;
 
     const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString('base64');
     const apiEndpointPath = "/pg/v1/pay";
-
     const xVerify = generateXVerifyHeader(
       payloadBase64,
       apiEndpointPath,
@@ -114,34 +105,25 @@ export async function POST(request: NextRequest) {
     // 3. Call PhonePe Pay API
     const phonePeResponseRaw = await fetch(process.env.PHONEPE_PAY_API_URL!, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-VERIFY': xVerify,
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({ request: payloadBase64 }), // IMPORTANT: Wrap base64 payload
+      headers: { 'Content-Type': 'application/json', 'X-VERIFY': xVerify, 'Accept': 'application/json' },
+      body: JSON.stringify({ request: payloadBase64 }),
     });
-
     const phonePeResponse = await phonePeResponseRaw.json();
 
     if (phonePeResponse.success && phonePeResponse.data?.instrumentResponse?.redirectInfo?.url) {
-      // Optional: Update booking with PhonePe's transaction ID if different or any other reference
-      // await prisma.booking.update({
-      //   where: { id: newBooking.id },
-      //   data: { phonepeTransactionId: phonePeResponse.data.transactionId (example) }, 
-      // });
+      // Optional: Update booking with PhonePe's own transaction ID if needed (e.g., from phonePeResponse.data.transactionId)
+      // await dbService.updateBookingStatusAndPaymentStatus(newBookingId, 'PENDING_PAYMENT', 'INITIATED', phonePeResponse.data.transactionId);
       return NextResponse.json({
         success: true,
         redirectUrl: phonePeResponse.data.instrumentResponse.redirectInfo.url,
-        merchantTransactionId: newBooking.id,
+        merchantTransactionId: newBookingId,
       });
     } else {
       console.error("PhonePe API call failed:", phonePeResponse);
-      // Update booking status to FAILED in DB
-      await prisma.booking.update({
-        where: { id: newBooking.id },
-        data: { status: 'FAILED', paymentStatus: 'FAILED' }, // Ensure these enum values exist
-      });
+      // Update booking status to FAILED in D1
+      if (newBookingId) { // Ensure newBookingId was set
+        await dbService.updateBookingStatusAndPaymentStatus(newBookingId, 'FAILED', 'FAILED');
+      }
       return NextResponse.json({
         success: false,
         message: phonePeResponse.message || "Payment initiation failed with PhonePe.",
@@ -152,10 +134,16 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error in initiate-payment route:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    // If a booking record was potentially created before an unhandled error
-    // you might want to attempt to update its status to FAILED here,
-    // but ensure `merchantTransactionId` is defined and the error isn't from the DB creation itself.
-    // This part can be complex and depends on how you want to handle partial failures.
+    // If a booking record was potentially created (newBookingId is not null) and an error occurred AFTERWARD (e.g., during PhonePe API call preparation or fetch itself)
+    // We might want to mark this booking as FAILED in D1.
+    if (newBookingId && !(error instanceof Error && error.message.includes('Failed to save booking details'))) { // Avoid double update if initial DB save failed
+        try {
+            await dbService.updateBookingStatusAndPaymentStatus(newBookingId, 'FAILED', 'FAILED');
+            console.log(`Booking ${newBookingId} marked as FAILED due to error: ${errorMessage}`);
+        } catch (dbUpdateError) {
+            console.error(`Failed to update booking ${newBookingId} to FAILED after an error:`, dbUpdateError);
+        }
+    }
     return NextResponse.json({ success: false, message: "Error processing payment initiation.", errorDetail: errorMessage }, { status: 500 });
   }
 }

@@ -3,6 +3,26 @@ import type { NextRequest } from 'next/server';
 import { DatabaseService } from '../../../../lib/database'; // Import D1 Database Service
 import crypto from 'crypto';
 
+// --- Interface Definition for PhonePe Check Status API Response ---
+interface PhonePeCheckStatusApiResponse {
+  success: boolean;
+  code: string; // Main status code from PhonePe, e.g., "PAYMENT_SUCCESS", "PAYMENT_ERROR", "INTERNAL_SERVER_ERROR"
+  message: string;
+  data?: {
+    merchantId?: string;
+    merchantTransactionId: string; // This is our booking ID (mtid)
+    transactionId: string; // PhonePe's unique transaction ID
+    amount: number; // Amount in paise
+    state: string; // Overall state of the transaction, e.g., "COMPLETED", "FAILED", "PENDING"
+    responseCode: string; // Detailed response code from PhonePe, e.g., "SUCCESS", "TIMED_OUT", "U01"
+    paymentInstrument?: any; // Can be an object with payment details (e.g., type, cardType, etc.)
+    providerReferenceId?: string; // Bank reference number or similar
+    payResponseCode?: string; // May sometimes be present, often similar to responseCode
+    // Other fields might be present depending on PhonePe API version and transaction type.
+  };
+}
+// --- End Interface Definition ---
+
 const dbService = new DatabaseService(); // Instantiate DatabaseService
 
 export async function GET(request: NextRequest) {
@@ -51,7 +71,7 @@ export async function GET(request: NextRequest) {
         console.error(`PhonePe Status API request failed for ${mtidString} with status: ${apiResponse.status}`, errorBody);
         return NextResponse.json({ success: false, message: `Payment provider API error (HTTP ${apiResponse.status}).`, details: errorBody }, { status: apiResponse.status });
       }
-      phonePeStatusResponse = await apiResponse.json();
+      phonePeStatusResponse = await apiResponse.json() as PhonePeCheckStatusApiResponse; // Type assertion
     } catch (fetchError) {
       console.error(`Fetch error calling PhonePe Status API for ${mtidString}:`, fetchError);
       return NextResponse.json({ success: false, message: "Could not connect to payment provider to check status." }, { status: 503 });

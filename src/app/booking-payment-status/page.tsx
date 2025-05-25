@@ -162,13 +162,18 @@ function PaymentStatusContent() {
 
 export default function PaymentStatusPage() {
   return (
-    <Suspense fallback={
-      <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Arial, sans-serif', minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-        <h1 style={{ fontSize: '2em', marginBottom: '20px' }}>Loading Payment Details...</h1>
-        {/* Simple spinner or text */}
-        <p style={{ fontStyle: 'italic', color: '#777' }}>Please wait...</p>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Arial, sans-serif', minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <h1 style={{ fontSize: '2em', marginBottom: '20px' }}>
+            Loading Payment Details...
+          </h1>
+          <p style={{ fontStyle: 'italic', color: '#777' }}>
+            Please wait...
+          </p>
+        </div>
+      }
+    >
       <PaymentStatusContent />
     </Suspense>
   );

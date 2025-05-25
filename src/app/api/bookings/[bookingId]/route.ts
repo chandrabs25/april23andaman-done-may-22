@@ -22,8 +22,8 @@ export async function GET(request: NextRequest, { params }: { params: { bookingI
         b.package_category_id,
         b.user_id,
         b.total_people,
-        TO_CHAR(b.start_date, 'YYYY-MM-DD') AS start_date,
-        TO_CHAR(b.end_date, 'YYYY-MM-DD') AS end_date,
+        strftime('%Y-%m-%d', b.start_date) AS start_date,
+        strftime('%Y-%m-%d', b.end_date) AS end_date,
         b.status AS booking_status,
         b.total_amount,
         b.payment_status,
@@ -42,14 +42,17 @@ export async function GET(request: NextRequest, { params }: { params: { bookingI
     `;
 
     const result = await dbQuery(query, [parseInt(bookingId)]);
-
+    console.log(result);
+    console.log(currentUserId);
+    console.log(typeof currentUserId);
     if (result.rowCount === 0) {
       return NextResponse.json({ message: 'Booking not found.' }, { status: 404 });
     }
 
     const bookingDetails = result.rows[0];
-
-    if (bookingDetails.user_id && bookingDetails.user_id !== currentUserId) {
+    console.log( bookingDetails.user_id);
+    console.log(typeof bookingDetails.user_id);
+    if (bookingDetails.user_id && String(bookingDetails.user_id) !== currentUserId) {
         return NextResponse.json({ message: 'Booking not found or access denied.' }, { status: 404 });
     }
 

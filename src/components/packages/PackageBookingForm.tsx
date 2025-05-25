@@ -46,6 +46,12 @@ interface FormErrors {
   general?: string;
 }
 
+interface PaymentResponse {
+  success: boolean;
+  redirectUrl?: string;
+  message?: string;
+}
+
 export function PackageBookingForm({ packageDetails, categoryDetails, user }: PackageBookingFormProps) {
   const [formData, setFormData] = useState({
     total_people: 1,
@@ -145,7 +151,7 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
         body: JSON.stringify(paymentPayload),
       });
 
-      const responseData = await response.json();
+      const responseData = await response.json() as PaymentResponse;
 
       if (response.ok && responseData.success && responseData.redirectUrl) {
         // Successfully initiated payment, redirect to PhonePe

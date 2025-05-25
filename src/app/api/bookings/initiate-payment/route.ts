@@ -114,11 +114,25 @@ export async function POST(request: NextRequest) {
 
     const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString('base64');
     const apiEndpointPath = "/pg/v1/pay";
+
+    const saltKey = process.env.PHONEPE_SALT_KEY;
+    const saltIndex = process.env.PHONEPE_SALT_INDEX;
+
+    if (!saltKey) {
+      console.error("CRITICAL: PHONEPE_SALT_KEY environment variable is not set.");
+      // Return a generic error to the client, but log the specific issue for server admins.
+      return NextResponse.json({ success: false, message: "Payment gateway configuration error. Please contact support. [Ref: SK_MISSING]" }, { status: 500 });
+    }
+    if (!saltIndex) {
+      console.error("CRITICAL: PHONEPE_SALT_INDEX environment variable is not set.");
+      return NextResponse.json({ success: false, message: "Payment gateway configuration error. Please contact support. [Ref: SI_MISSING]" }, { status: 500 });
+    }
+
     const xVerify = generateXVerifyHeader(
       payloadBase64,
       apiEndpointPath,
-      process.env.PHONEPE_SALT_KEY!,
-      process.env.PHONEPE_SALT_INDEX!
+      saltKey, // Use the validated saltKey
+      saltIndex // Use the validated saltIndex
     );
 
     // 3. Call PhonePe Pay API

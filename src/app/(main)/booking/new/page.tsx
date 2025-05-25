@@ -167,7 +167,12 @@ function NewBookingPageContent() {
             <PackageBookingForm
               packageDetails={selectedPackage}
               categoryDetails={selectedCategory}
-              user={user} // Pass user from useAuth
+              user={user ? {
+                id: user.id.toString(), // Ensure id is a string
+                name: user.first_name || undefined,
+                email: user.email || undefined,
+                phone: undefined // Phone is not available in the User type from useAuth
+              } : null}
             />
           </section>
           

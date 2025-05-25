@@ -9,7 +9,9 @@ import Link from 'next/link';
 // For this example, basic HTML and inline styles will represent structure
 import {
   Loader2, AlertTriangle, ArrowLeft, CheckCircle, XCircle, PackageIcon, TagIcon, CalendarDaysIcon,
-  UsersIcon, UserCircle2Icon, MailIcon, PhoneIcon, CreditCardIcon, FileTextIcon, ShoppingCartIcon, LandmarkIcon, InfoIcon
+  UsersIcon, UserCircle2Icon, MailIcon, PhoneIcon, CreditCardIcon, FileTextIcon, ShoppingCartIcon, LandmarkIcon, InfoIcon,
+  ListOrdered,
+  HomeIcon
 } from 'lucide-react';
 
 // --- Updated Interface ---
@@ -93,8 +95,8 @@ function BookingConfirmationContent() {
         if (!response.ok) {
           let errorMessage = `Error: ${response.status}`;
           try {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorMessage;
+            const errorData = await response.json() as { message?: string };
+            errorMessage = errorData?.message || errorMessage;
           } catch (e) { /* response not JSON */ }
           throw new Error(errorMessage);
         }

@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react'; // For authentication
+import { useAuth } from '@/hooks/useAuth'; // Import useAuth
 import { Loader2, AlertTriangle, ArrowLeft, PackageIcon, TagIcon, UsersIcon, CreditCardIcon, InfoIcon } from 'lucide-react';
 import { useFetch } from '@/hooks/useFetch'; // Assuming useFetch can be reused
 import { PackageBookingForm } from '@/components/packages/PackageBookingForm'; // Import the form component
@@ -53,7 +53,7 @@ const ErrorDisplay = ({ title = "Error", message, showBackButton = true }: { tit
 function NewBookingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status: authStatus } = useSession();
+  const { user, isAuthenticated, isLoading: authIsLoading } = useAuth(); // Use useAuth
 
   const packageId = searchParams.get('packageId');
   const categoryId = searchParams.get('categoryId');
@@ -67,10 +67,15 @@ function NewBookingPageContent() {
   const { data: fetchedPackageData, error: fetchError, status: fetchStatus } = useFetch<PackageData>(packageApiUrl);
 
   useEffect(() => {
-    if (authStatus === 'unauthenticated') {
-      // Store current path to redirect back after login
+    // Redirect if not authenticated and auth loading is complete
+    if (!authIsLoading && !isAuthenticated) {
       const callbackUrl = encodeURIComponent(window.location.pathname + window.location.search);
       router.push(`/auth/signin?callbackUrl=${callbackUrl}`);
+      return;
+    }
+
+    // Do not proceed with data fetching if auth is still loading or not authenticated
+    if (authIsLoading || !isAuthenticated) {
       return;
     }
 
@@ -94,13 +99,15 @@ function NewBookingPageContent() {
       setSelectedPackage(null);
       setSelectedCategory(null);
     }
-  }, [packageId, categoryId, fetchedPackageData, fetchStatus, fetchError, authStatus, router]);
+  }, [packageId, categoryId, fetchedPackageData, fetchStatus, fetchError, isAuthenticated, authIsLoading, router]);
 
-  if (authStatus === 'loading' || (fetchStatus === 'loading' || fetchStatus === 'idle')) {
-    return <LoadingSpinner message={authStatus === 'loading' ? "Authenticating..." : "Loading package details..."} />;
+  // Show loading spinner if auth is loading or data is fetching
+  if (authIsLoading || (isAuthenticated && (fetchStatus === 'loading' || fetchStatus === 'idle'))) {
+    return <LoadingSpinner message={authIsLoading ? "Authenticating..." : "Loading package details..."} />;
   }
   
-  // Early exit if essential IDs are missing, after loading states.
+  // If not authenticated after loading, it implies redirection is or should be happening.
+  // Or, if essential IDs are missing.
   if (!packageId || !categoryId) {
      // Error should have been set by useEffect, but this is a safeguard.
     return <ErrorDisplay message={error || "Package ID or Category ID is missing."} />;
@@ -168,18 +175,17 @@ function NewBookingPageContent() {
             <PackageBookingForm
               packageDetails={selectedPackage}
               categoryDetails={selectedCategory}
-              user={session?.user}
+              user={user} // Pass user from useAuth
             />
           </section>
           
           <section className="text-sm text-gray-500 border-t pt-4">
-            {authStatus === 'authenticated' && session?.user?.email ? (
-              <p>Logged in as: <span className="font-medium text-gray-700">{session.user.email}</span>. Not you? <Link href="/auth/signout" className="text-blue-600 hover:underline">Sign out</Link></p>
-            ) : authStatus === 'unauthenticated' ? (
+            {isAuthenticated && user?.email ? (
+              <p>Logged in as: <span className="font-medium text-gray-700">{user.email}</span>. Not you? <Link href="/auth/signout" className="text-blue-600 hover:underline">Sign out</Link></p>
+            ) : !authIsLoading && !isAuthenticated ? (
               <p>Please <Link href={`/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`} className="text-blue-600 hover:underline">sign in</Link> to complete your booking.</p>
-            ) : (
-              <p>Checking authentication status...</p>
-            )}
+            ) : null} 
+            {/* Removed "Checking authentication status..." as loading spinner covers this */}
           </section>
 
         </div>

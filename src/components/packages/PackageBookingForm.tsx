@@ -111,7 +111,7 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
     setErrors(prev => ({ ...prev, general: undefined })); // Clear previous general errors
 
     if (!validateForm()) {
-      console.log("Client-side validation failed:", errors);
+      // console.log("Client-side validation failed:", errors);
       return;
     }
 
@@ -139,19 +139,20 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
         body: JSON.stringify(bookingPayload),
       });
 
-      const responseData = await response.json();
+      // Assume responseData can be { booking_id: string; message?: string } on success/error
+      const responseData = await response.json() as { booking_id?: string; message?: string };
 
-      if (response.ok && response.status === 201) {
+      if (response.ok && response.status === 201 && responseData.booking_id) {
         // Success
-        console.log('Booking successful:', responseData);
+        // console.log('Booking successful:', responseData);
         router.push(`/booking/confirmation/${responseData.booking_id}`);
       } else {
         // Handle API errors
-        console.error('API Error:', responseData);
-        setErrors(prev => ({ ...prev, general: responseData.message || 'An unexpected error occurred.' }));
+        // console.error('API Error:', responseData);
+        setErrors(prev => ({ ...prev, general: responseData.message || `An unexpected error occurred (Status: ${response.status})` }));
       }
-    } catch (error) {
-      console.error('Network or submission error:', error);
+    } catch (err) { // Changed error variable name to avoid conflict if any
+      // console.error('Network or submission error:', err);
       setErrors(prev => ({ ...prev, general: 'Failed to submit booking. Please check your connection and try again.' }));
     } finally {
       setIsSubmitting(false);

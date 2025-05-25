@@ -3,9 +3,9 @@
 export const dynamic = 'force-dynamic'; // Ensure dynamic rendering for session/data fetching
 
 import React, { useEffect, useState, Suspense } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation'; // Removed useRouter
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/hooks/useAuth'; // Import useAuth
 import {
   Loader2, AlertTriangle, ArrowLeft, CheckCircle, PackageIcon, TagIcon, CalendarDaysIcon,
   UsersIcon, UserCircle2Icon, MailIcon, PhoneIcon, CreditCardIcon, FileTextIcon, ShoppingCartIcon, LandmarkIcon
@@ -57,8 +57,8 @@ const ErrorDisplay = ({ title = "Error", message, showBackButton = true, backHre
 
 function BookingConfirmationContent() {
   const params = useParams();
-  const router = useRouter();
-  const { data: session, status: authStatus } = useSession();
+  // const router = useRouter(); // Unused
+  const { user, isAuthenticated, isLoading: authIsLoading } = useAuth(); // Use useAuth
   const bookingId = params.bookingId as string;
 
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null);
@@ -66,9 +66,12 @@ function BookingConfirmationContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authStatus === 'loading') {
-      return; // Wait for session to load
-    }
+    // Wait for auth to be determined before fetching if user context is strictly needed for the fetch call,
+    // or if the fetch should only proceed for authenticated users.
+    // Given the API itself protects the data, we might not need to block fetching on authIsLoading,
+    // but it's good practice if the page shouldn't be shown at all to unauthenticated users.
+    // For this page, the API does the heavy lifting of auth for data access.
+    // We'll keep a check for authIsLoading primarily for the UI loading state.
 
     if (!bookingId) {
       setError("Booking ID is missing from the URL.");
@@ -81,30 +84,33 @@ function BookingConfirmationContent() {
       setError(null);
       try {
         const response = await fetch(`/api/bookings/${bookingId}`);
-        const data = await response.json();
+        // Assume 'data' can be of BookingDetails type on success, or { message: string } on error
+        const data = await response.json() as BookingDetails | { message?: string };
 
         if (!response.ok) {
-          throw new Error(data.message || `Failed to fetch booking (Status: ${response.status})`);
+          // Type guard to check if 'message' exists on data
+          const errorMessage = (data as { message?: string })?.message || `Failed to fetch booking (Status: ${response.status})`;
+          throw new Error(errorMessage);
         }
-        setBookingDetails(data);
+        setBookingDetails(data as BookingDetails); // Assert to BookingDetails after ok check
       } catch (err: any) {
-        console.error("Fetch booking error:", err);
+        // console.error("Fetch booking error:", err);
         setError(err.message || "An unexpected error occurred while fetching booking details.");
       }
       setLoading(false);
     };
 
     fetchBookingDetails();
-  }, [bookingId, authStatus]); // Re-fetch if bookingId or authStatus changes
+  }, [bookingId]); // Removed authStatus from dependencies as API handles auth for data access
 
   const handlePayNow = () => {
     alert(`Pay Now clicked for booking ID: ${bookingId}. Payment integration is pending.`);
-    console.log(`Pay Now clicked for booking ID: ${bookingId}`);
+    // console.log(`Pay Now clicked for booking ID: ${bookingId}`);
     // Future: router.push(`/payment?bookingId=${bookingId}`);
   };
 
-  if (loading || authStatus === 'loading') {
-    return <LoadingSpinner />;
+  if (loading || authIsLoading) { // Check authIsLoading as well
+    return <LoadingSpinner message={authIsLoading ? "Verifying session..." : "Loading booking confirmation..."} />;
   }
 
   if (error) {

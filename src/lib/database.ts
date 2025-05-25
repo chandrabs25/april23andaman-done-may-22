@@ -108,6 +108,34 @@ export async function getDatabase(): Promise<CloudflareEnv['DB']> {
   }
 }
 
+// Generic query function
+export async function dbQuery(query: string, params: any[] = []): Promise<{ rows: any[], rowCount: number, success?: boolean, error?: string, meta?: any }> {
+  const db = await getDatabase();
+  try {
+    const stmt = db.prepare(query).bind(...params);
+    // For SELECT queries, .all() is typical. For INSERT/UPDATE/DELETE, .run() is typical.
+    // We need to infer based on the query type, or the calling code needs to handle it.
+    // Given the usage in API routes, they expect 'rows' and 'rowCount'.
+    // .all() provides 'results' (rows) and 'success'/'meta'. .run() provides 'success'/'meta'.
+    // Let's try to make it somewhat compatible.
+    
+    const queryType = query.trim().toUpperCase().split(" ")[0];
+
+    if (queryType === "SELECT") {
+      const result = await stmt.all();
+      return { rows: result.results || [], rowCount: result.results?.length || 0, success: result.success, meta: result.meta };
+    } else { // INSERT, UPDATE, DELETE
+      const result = await stmt.run();
+      // For INSERT returning id, D1 stores it in meta.last_row_id
+      // The API routes expect 'rows' for RETURNING id.
+      const returnedRows = result.meta?.last_row_id ? [{ id: result.meta.last_row_id }] : [];
+      return { rows: returnedRows, rowCount: result.meta?.changes || 0, success: result.success, meta: result.meta };
+    }
+  } catch (e: any) {
+    console.error("Error executing dbQuery:", e.message, "Query:", query, "Params:", params);
+    return { rows: [], rowCount: 0, success: false, error: e.message };
+  }
+}
 
 // --- Database Service Layer ---
 

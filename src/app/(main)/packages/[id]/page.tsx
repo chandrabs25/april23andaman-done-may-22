@@ -67,12 +67,6 @@ interface PackageDataFromApi {
   // Removed client-side parsedItinerary field
 }
 
-// Interface for the API response that wraps PackageDataFromApi
-interface GetSinglePackageApiResponse {
-  success: boolean; 
-  data: PackageDataFromApi | null; 
-  message?: string;
-}
 // --- End Interfaces ---
 
 
@@ -113,11 +107,11 @@ function ItineraryPageContent() {
         setSelectedDay(1); 
       } else {
         // This case means status is 'success' but fetchedPackageData is null/undefined
-        console.warn(`[Page ${packageId}] API call successful but no data was returned from useFetch.`);
+        // console.warn(`[Page ${packageId}] API call successful but no data was returned from useFetch.`);
         setPackageData(null); // No valid data to display
       }
     } else if (status === 'error') {
-      console.error(`[Page ${packageId}] Fetch error from useFetch:`, error);
+      // console.error(`[Page ${packageId}] Fetch error from useFetch:`, error);
       setPackageData(null);
     }
   }, [status, fetchedPackageData, error, packageId]); // Depend on fetchedPackageData directly
@@ -259,8 +253,8 @@ function ItineraryPageContent() {
                   <PackageIcon size={24} className="mr-3 text-blue-600" /> Available Package Options
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {package_categories.map((category, index) => (
-                    <div key={index} className="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
+                  {package_categories.map((category) => (
+                    <div key={category.id} className="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
                       <div className="flex-grow"> {/* Wrapper for content to allow button to push to bottom */}
                         {category.images && category.images.length > 0 && (
                           <div className="relative w-full h-48 mb-4 rounded-md overflow-hidden bg-gray-200">

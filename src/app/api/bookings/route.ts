@@ -1,8 +1,8 @@
+export const dynamic = 'force-dynamic';
 // src/app/api/bookings/route.ts
 import { NextResponse, NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // Adjust path as needed
-import { dbQuery } from '@/lib/database'; // Assuming this is the DB utility
+import { verifyAuth } from '@/lib/auth'; // Custom auth
+import { dbQuery } from '@/lib/database'; // DB utility
 
 interface BookingRequestBody {
   packageId: number;
@@ -28,8 +28,8 @@ function isValidDate(dateString: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.id || null; // Get user ID or null if not logged in
+    const { isAuthenticated, user: apiUser } = await verifyAuth(request);
+    const userId = isAuthenticated && apiUser ? apiUser.id : null;
 
     const body: BookingRequestBody = await request.json();
 
@@ -110,9 +110,7 @@ export async function POST(request: NextRequest) {
     // 5. Calculate Total Amount (Server-Side)
     const packageCategoryPrice = parseFloat(category.price);
     if (isNaN(packageCategoryPrice)) {
-        // This should ideally not happen if DB data is clean
-        console.error('Invalid price for category:', category);
-        return NextResponse.json({ message: 'Error calculating total amount due to invalid category price.' }, { status: 500 });
+        return NextResponse.json({ message: 'Error calculating total amount due to invalid category price. Please contact support.' }, { status: 500 });
     }
     const totalAmount = packageCategoryPrice * body.total_people;
 
@@ -126,21 +124,20 @@ export async function POST(request: NextRequest) {
       RETURNING id;
     `;
     
-    // Default status values from schema: status = 'pending', payment_status = 'pending'
     const bookingParams = [
-      userId,                           // user_id
-      body.packageId,                 // package_id
-      body.packageCategoryId,         // package_category_id
-      body.total_people,              // total_people
-      body.start_date,                // start_date
-      body.end_date,                  // end_date
-      'pending',                      // status (default)
-      totalAmount,                    // total_amount (server-calculated)
-      'pending',                      // payment_status (default)
-      body.guest_name,                // guest_name
-      body.guest_email,               // guest_email
-      body.guest_phone,               // guest_phone
-      body.special_requests || null   // special_requests (null if empty or not provided)
+      userId,
+      body.packageId,
+      body.packageCategoryId,
+      body.total_people,
+      body.start_date,
+      body.end_date,
+      'pending', // status (default)
+      totalAmount, // total_amount (server-calculated)
+      'pending', // payment_status (default)
+      body.guest_name,
+      body.guest_email,
+      body.guest_phone,
+      body.special_requests || null
     ];
 
     const bookingInsertResult = await dbQuery(insertQuery, bookingParams);
@@ -164,8 +161,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Basic OPTIONS handler for CORS preflight (if needed by your setup)
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: { 'Allow': 'POST, OPTIONS' } });
 }
-

@@ -827,45 +827,6 @@ export class DatabaseService {
   }
 
   // --- Booking Methods ---
-  async createBooking(bookingData: {
-    user_id: number | null; // Nullable for guest bookings
-    package_id?: number | null; // Optional package ID
-    total_people: number;
-    start_date: string; // Format: 'YYYY-MM-DD'
-    end_date: string;   // Format: 'YYYY-MM-DD'
-    total_amount: number;
-    special_requests?: string | null;
-    guest_name?: string | null;
-    guest_email?: string | null;
-    guest_phone?: string | null;
-  }) {
-    const db = await getDatabase();
-    return db
-      .prepare(
-        `
-        INSERT INTO bookings (
-          user_id, package_id, total_people, start_date, end_date, total_amount,
-          status, payment_status, special_requests, guest_name, guest_email,
-          guest_phone, created_at, updated_at
-        ) VALUES (
-          ?, ?, ?, ?, ?, ?, 'pending', 'pending', ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-        )`
-      )
-      .bind(
-        bookingData.user_id, // Can be null
-        bookingData.package_id ?? null,
-        bookingData.total_people,
-        bookingData.start_date,
-        bookingData.end_date,
-        bookingData.total_amount,
-        bookingData.special_requests ?? null,
-        bookingData.guest_name ?? null,
-        bookingData.guest_email ?? null,
-        bookingData.guest_phone ?? null
-      )
-      .run(); // Returns Promise<D1Result>
-  }
-
   async getPackageCategoryById(categoryId: number): Promise<any | null> { // Define a proper interface for category later
     const db = await getDatabase();
     const sql = 'SELECT * FROM package_categories WHERE id = ?';

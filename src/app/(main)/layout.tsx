@@ -1,4 +1,5 @@
 import React from 'react';
+import { AuthProvider } from '../../hooks/useAuth'; // Ensure this import is present
 // --- TEST: Use corrected relative path ---
 import Header from '../../components/Header'; // Corrected relative path
 import Footer from '../../components/Footer'; // Assuming Footer is also in src/components/
@@ -12,14 +13,16 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      {/* Add padding-top if Header is fixed and overlaps content, adjust value as needed */}
-      {/* Example: <main className="flex-grow pt-16"> */}
-      <main className="flex-grow">
-        {children}
-      </main>
-      <Footer />
-    </div>
+    <AuthProvider> {/* Wrap with AuthProvider */}
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        {/* Add padding-top if Header is fixed and overlaps content, adjust value as needed */}
+        {/* Example: <main className="flex-grow pt-16"> */}
+        <main className="flex-grow">
+          {children}
+        </main>
+        <Footer />
+      </div>
+    </AuthProvider>
   );
 }

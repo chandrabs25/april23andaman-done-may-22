@@ -176,23 +176,32 @@ CREATE TABLE hotel_seasonal_rates (
 );
 
 CREATE TABLE bookings (
-  id                    INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id               INTEGER,
-  package_id            INTEGER,
-  package_category_id   INTEGER,
-  total_people          INTEGER NOT NULL,
-  start_date            DATE NOT NULL,
-  end_date              DATE NOT NULL,
-  status                TEXT NOT NULL DEFAULT 'pending',
-  total_amount          REAL NOT NULL,
-  payment_status        TEXT NOT NULL DEFAULT 'pending',
-  payment_details       TEXT,
-  special_requests      TEXT,
-  guest_name            TEXT,
-  guest_email           TEXT,
-  guest_phone           TEXT,
-  created_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id                          INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id                     INTEGER,
+  package_id                  INTEGER,
+  package_category_id         INTEGER,
+  total_people                INTEGER NOT NULL,
+  start_date                  DATE NOT NULL,
+  end_date                    DATE NOT NULL,
+  status                      TEXT NOT NULL DEFAULT 'pending', -- Booking status (e.g., PENDING_PAYMENT, CONFIRMED, CANCELLED)
+  total_amount                REAL NOT NULL,
+  special_requests            TEXT,
+  guest_name                  TEXT,
+  guest_email                 TEXT,
+  guest_phone                 TEXT,
+
+  -- PhonePe Integration Fields
+  payment_gateway             TEXT, -- To store 'phonepe' or other gateways in the future
+  merchant_transaction_id     TEXT UNIQUE, -- Unique ID sent to and received from PhonePe for this transaction
+  provider_reference_id       TEXT, -- PhonePe's own transaction ID (e.g., UTR from bank) if available
+  payment_status              TEXT NOT NULL DEFAULT 'PENDING', -- More specific payment statuses: PENDING, SUCCESS, FAILED, REFUNDED etc.
+  payment_gateway_response    TEXT, -- To store raw/key JSON responses from PhonePe (e.g., callback data)
+  payment_initiated_at        DATETIME, -- Timestamp when payment was initiated
+  payment_completed_at        DATETIME, -- Timestamp when payment was completed/failed
+
+  created_at                  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at                  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
   FOREIGN KEY (user_id)             REFERENCES users(id),
   FOREIGN KEY (package_id)          REFERENCES packages(id),
   FOREIGN KEY (package_category_id) REFERENCES package_categories(id)

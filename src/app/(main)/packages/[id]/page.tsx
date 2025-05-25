@@ -25,7 +25,6 @@ interface ItineraryDay {
 
 // Define PackageCategory interface locally for use in PackageDataFromApi
 interface PackageCategory {
-  id: number; // Add this line
   category_name: string;
   price: number;
   hotel_details: string;
@@ -296,10 +295,10 @@ function ItineraryPageContent() {
                       </div>
                       <div className="mt-auto pt-4"> {/* Button container */}
                         <Link 
-                          href={`/booking/new?packageId=${packageId}&categoryId=${category.id}`}
+                          href={`/packages/${packageId}/book?category=${encodeURIComponent(category.category_name)}`}
                           className="w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-3 px-4 rounded-lg transition duration-300 font-semibold text-lg flex items-center justify-center"
                         >
-                          Book Now <ArrowRight size={20} className="ml-2" />
+                          Book This Option <ArrowRight size={20} className="ml-2" />
                         </Link>
                       </div>
                     </div>

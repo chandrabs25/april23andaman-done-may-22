@@ -866,66 +866,6 @@ export class DatabaseService {
       .run(); // Returns Promise<D1Result>
   }
 
-  async getPackageCategoryById(categoryId: number): Promise<any | null> { // Define a proper interface for category later
-    const db = await getDatabase();
-    const sql = 'SELECT * FROM package_categories WHERE id = ?';
-    try {
-      const stmt = db.prepare(sql).bind(categoryId);
-      const result = await stmt.first(); // For D1, first() gets a single row
-      return result || null;
-    } catch (error) {
-      console.error(`Error fetching package category by ID ${categoryId}:`, error);
-      throw error;
-    }
-  }
-
-  async createBooking(data: {
-    user_id: number | string | null;
-    package_id: number;
-    package_category_id: number;
-    total_people: number;
-    start_date: string;
-    end_date: string;
-    guest_name: string;
-    guest_email: string;
-    guest_phone: string;
-    special_requests: string | null;
-    total_amount: number;
-    status: string;
-    payment_status: string;
-  }): Promise<{ id: number }> {
-    const db = await getDatabase();
-    const sql = `
-      INSERT INTO bookings (
-        user_id, package_id, package_category_id, total_people, start_date, end_date,
-        guest_name, guest_email, guest_phone, special_requests, total_amount, status, payment_status,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `;
-    // Parameters must be in the same order as the SQL query placeholders.
-    const params = [
-      data.user_id, data.package_id, data.package_category_id, data.total_people, data.start_date, data.end_date,
-      data.guest_name, data.guest_email, data.guest_phone, data.special_requests, data.total_amount,
-      data.status, data.payment_status
-    ];
-    try {
-      // Assuming db is the D1Database instance from Cloudflare D1
-      const stmt = db.prepare(sql).bind(...params);
-      const result = await stmt.run(); // For D1, run() is used for INSERT/UPDATE/DELETE
-                                          // and result.meta.last_row_id gives the ID.
-      if (result.meta && result.meta.last_row_id) {
-        return { id: result.meta.last_row_id };
-      } else {
-        // Fallback or error if last_row_id is not available (should not happen with AUTOINCREMENT PK)
-        console.error('Booking insertion did not return an ID.', result);
-        throw new Error('Booking created but failed to retrieve ID.');
-      }
-    } catch (error) {
-      console.error('Error in createBooking:', error);
-      throw error; // Re-throw to be caught by the API route
-    }
-  }
-
   async getBookingById(id: number) {
     const db = await getDatabase();
     return db.prepare('SELECT * FROM bookings WHERE id = ?').bind(id).first();

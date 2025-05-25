@@ -49,7 +49,7 @@ function BookingConfirmationPageContent() {
   const [bookingDetails, setBookingDetails] = useState<BookingDetailsType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, token, loading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth(); // Corrected: use isLoading, remove token
 
   useEffect(() => {
     if (!bookingId) {
@@ -71,7 +71,8 @@ function BookingConfirmationPageContent() {
         method: 'GET',
         headers: {
         'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }), 
+        // Authorization header removed as token is not available from useAuth directly
+        // API will rely on session cookies for authentication
         },
     })
     .then(res => {
@@ -89,14 +90,14 @@ function BookingConfirmationPageContent() {
         setError(data.message || "Could not retrieve booking details.");
         }
     })
-    .catch(err => {
+    .catch((err: any) => { // Typed err here
         console.error("Fetch error for booking details:", err);
         setError(err.message || "An unexpected error occurred.");
     })
     .finally(() => {
         setIsLoading(false);
     });
-  }, [bookingId, token, authLoading]);
+  }, [bookingId, authLoading]); // Removed token from dependencies
 
   if (isLoading || authLoading) { // Show spinner if fetching data OR if auth state is still loading
     return <PageLoadingSpinner />;

@@ -58,13 +58,16 @@ function CreateBookingPageContent() {
     fetch(`/api/booking-context?packageId=${packageId}&categoryName=${encodeURIComponent(categoryNameParam)}`)
       .then(res => {
         if (!res.ok) {
-          return res.json().then(errData => {
-            throw new Error(errData.message || `Server error: ${res.status}`);
+          // Try to parse error response body if available for more specific message
+          return res.json().then(errData => { // errData here is from error response
+            throw new Error(errData.message || `Failed to fetch booking context (${res.status})`);
+          }).catch(() => { // Fallback if error response isn't JSON or res.json() fails
+            throw new Error(`Failed to fetch booking context (${res.status})`);
           });
         }
-        return res.json();
+        return res.json(); // Type assertion can be done here: as Promise<BookingContextResponse>
       })
-      .then((data: BookingContextResponse) => {
+      .then((data: BookingContextResponse) => { // Or explicitly type data here (current approach)
         if (data.success && data.packageDetails && data.categoryDetails) {
           setPackageDetails(data.packageDetails);
           setCategoryDetails({ ...data.categoryDetails, category_name: data.categoryDetails.category_name || categoryNameParam });
@@ -72,7 +75,7 @@ function CreateBookingPageContent() {
           setError(data.message || 'Could not retrieve complete booking details.');
         }
       })
-      .catch(err => {
+      .catch((err: any) => { // Typed err here
         console.error("Fetch error for booking context:", err);
         setError(err.message || 'An unexpected error occurred while fetching booking details.');
       })

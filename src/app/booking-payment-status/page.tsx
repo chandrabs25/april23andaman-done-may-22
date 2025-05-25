@@ -8,6 +8,22 @@ import Link from 'next/link';
 // import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 // import { Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
+// --- Interface Definition ---
+interface CheckStatusResponse {
+  success: boolean;
+  message: string;
+  // Fields present on successful response from /api/bookings/check-payment-status
+  merchantTransactionId?: string;
+  phonePePaymentStatus?: string;
+  phonePeTransactionState?: string;
+  phonePeAmount?: number;
+  bookingStatus?: string;
+  paymentStatus?: string;
+  // Fields present on error response from /api/bookings/check-payment-status
+  phonePeCode?: string; // e.g., when PhonePe API itself returns success: false
+  // errorDetail?: string; // If your general error responses include this
+}
+// --- End Interface Definition ---
 
 function PaymentStatusContent() {
   const router = useRouter();
@@ -41,7 +57,8 @@ function PaymentStatusContent() {
         if (!response.ok) {
             let errorMsg = `Error: ${response.status} ${response.statusText || 'Failed to fetch status'}`;
             try {
-                const errorData = await response.json(); // Try to get more specific error from API
+                // Type errorData to allow checking for a message property
+                const errorData: { message?: string } = await response.json(); 
                 errorMsg = errorData.message || errorMsg;
             } catch (e) { /* Ignore if error response is not JSON */ }
             
@@ -52,7 +69,7 @@ function PaymentStatusContent() {
             return;
         }
         
-        const data = await response.json();
+        const data: CheckStatusResponse = await response.json();
 
         if (data.success) {
           if (data.phonePePaymentStatus === 'PAYMENT_SUCCESS' || data.bookingStatus === 'CONFIRMED') {
@@ -134,10 +151,10 @@ function PaymentStatusContent() {
       )}
        {!isLoading && statusMessage.includes("successful!") && (
          <div style={{ marginTop: '30px' }}>
-          <Link href="/user/bookings" style={{ padding: '10px 15px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' }}>
-            View My Bookings
-          </Link>
-        </div>
+           <Link href="/user/bookings" style={{ padding: '10px 15px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' }}>
+             View My Bookings
+           </Link>
+         </div>
        )}
     </div>
   );

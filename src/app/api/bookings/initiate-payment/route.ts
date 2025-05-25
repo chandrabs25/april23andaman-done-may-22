@@ -4,6 +4,25 @@ import crypto from 'crypto';
 import { generateXVerifyHeader } from '../../../../lib/phonepeUtils';
 import { DatabaseService } from '../../../../lib/database'; // Import D1 Database Service
 
+// --- Interface Definition for PhonePe Pay API Response ---
+interface PhonePePayApiResponse {
+  success: boolean;
+  code: string; // e.g., "PAYMENT_INITIATED", "BAD_REQUEST", "INTERNAL_SERVER_ERROR", etc.
+  message: string;
+  data?: {
+    merchantId?: string;
+    merchantTransactionId?: string;
+    instrumentResponse?: {
+      type?: string; // e.g., "PAY_PAGE"
+      redirectInfo?: {
+        url: string;
+        method: string; // e.g., "GET" or "POST"
+      };
+    };
+  };
+}
+// --- End Interface Definition ---
+
 const dbService = new DatabaseService();
 
 interface GuestDetails {
@@ -108,7 +127,7 @@ export async function POST(request: NextRequest) {
       headers: { 'Content-Type': 'application/json', 'X-VERIFY': xVerify, 'Accept': 'application/json' },
       body: JSON.stringify({ request: payloadBase64 }),
     });
-    const phonePeResponse = await phonePeResponseRaw.json();
+    const phonePeResponse: PhonePePayApiResponse = await phonePeResponseRaw.json();
 
     if (phonePeResponse.success && phonePeResponse.data?.instrumentResponse?.redirectInfo?.url) {
       // Optional: Update booking with PhonePe's own transaction ID if needed (e.g., from phonePeResponse.data.transactionId)

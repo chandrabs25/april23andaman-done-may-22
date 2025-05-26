@@ -76,6 +76,8 @@ function BookingConfirmationContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // TODO: Implement booking download as PDF functionality
+  // TODO: Implement sending booking details mail to the user functionality
   useEffect(() => {
     if (!bookingId) {
       setError("Booking ID is missing from the URL.");

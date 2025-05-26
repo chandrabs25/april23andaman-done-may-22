@@ -1006,15 +1006,15 @@ export class DatabaseService {
     bookingId: string, // Assuming bookingId from D1 (last_row_id) will be a number, but API might pass string
     status: string,
     paymentStatus: string,
-    phonepeTransactionId?: string | null // Optional: to store PhonePe's own transaction ID
+    providerReferenceId?: string | null // Optional: to store PhonePe's own transaction ID
   ) {
     const db = await getDatabase();
     let query = 'UPDATE bookings SET status = ?, payment_status = ?, updated_at = CURRENT_TIMESTAMP';
     const params: (string | number | null)[] = [status, paymentStatus];
 
-    if (phonepeTransactionId !== undefined) {
-      query += ', phonepe_transaction_id = ?';
-      params.push(phonepeTransactionId);
+    if (providerReferenceId !== undefined) {
+      query += ', provider_reference_id = ?';
+      params.push(providerReferenceId);
     }
     
     query += ' WHERE id = ?';

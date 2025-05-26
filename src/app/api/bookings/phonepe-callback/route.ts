@@ -1,7 +1,8 @@
+// File: src/app/api/bookings/phonepe-callback/route.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { DatabaseService } from '../../../../lib/database'; // Import D1 Database Service
-import { verifyXVerifyHeader } from '../../../../lib/phonepeUtils';
+import { DatabaseService } from '../../../../lib/database'; // Adjust path if your lib is elsewhere
+import { verifyXVerifyHeader } from '../../../../lib/phonepeUtils'; // Adjust path if your lib is elsewhere
 import crypto from 'crypto';
 
 // --- Interface Definition for PhonePe S2S Callback Body ---
@@ -13,123 +14,151 @@ interface PhonePeS2SCallbackBody {
 // --- Interface Definition for PhonePe Check Status API Response ---
 interface PhonePeCheckStatusApiResponse {
   success: boolean;
-  code: string; // Main status code, e.g., "PAYMENT_SUCCESS", "PAYMENT_ERROR", "INTERNAL_SERVER_ERROR"
+  code: string;
   message: string;
   data?: {
     merchantId?: string;
-    merchantTransactionId: string; // This is our booking ID
-    transactionId: string; // PhonePe's transaction ID
-    amount: number; // Amount in paise
-    state: string; // e.g., "COMPLETED", "FAILED", "PENDING"
-    responseCode: string; // More granular response code, e.g., "SUCCESS", "TIMED_OUT"
-    paymentInstrument?: any; // Can be an object with payment details, define more strictly if needed
-    providerReferenceId?: string; // Often same as transactionId or a bank reference
-    payResponseCode?: string; // Sometimes present, might be same as responseCode
-    // ... any other relevant fields from PhonePe's status API response ...
+    merchantTransactionId: string;
+    transactionId: string;
+    amount: number;
+    state: string;
+    responseCode: string;
+    paymentInstrument?: any;
+    providerReferenceId?: string;
+    payResponseCode?: string;
   };
 }
 // --- End Interface Definition ---
 
-const dbService = new DatabaseService(); // Instantiate DatabaseService
+const dbService = new DatabaseService();
 
 export async function POST(request: NextRequest) {
+  console.log('--- PhonePe Callback Endpoint Hit ---'); // LOG 1
   try {
+    console.log('LOG 2: Attempting to parse request.json()');
     const requestBody: PhonePeS2SCallbackBody = await request.json();
-    const base64Response = requestBody.response;
-    const receivedXVerifyHeader = request.headers.get('x-verify');
+    console.log('LOG 3: Successfully parsed request.json(). requestBody content snippet:', JSON.stringify(requestBody, null, 2)?.substring(0, 200) + "...");
 
-    if (!base64Response) {
-        console.warn("Missing 'response' field in PhonePe callback body.");
-        return NextResponse.json({ success: false, message: "Missing 'response' field in callback body." }, { status: 400 });
+    const base64Response = requestBody.response;
+    console.log('LOG 4: base64Response (type):', typeof base64Response);
+    console.log('LOG 5: base64Response (content snippet):', String(base64Response).substring(0, 100) + "...");
+
+    if (!base64Response || typeof base64Response !== 'string') {
+        console.warn("LOG Error: Missing or invalid 'response' field (not a string) in PhonePe callback body. Value:", base64Response);
+        return NextResponse.json({ success: false, message: "Missing or invalid 'response' field in callback body." }, { status: 400 });
     }
+
+    const receivedXVerifyHeader = request.headers.get('x-verify');
     if (!receivedXVerifyHeader) {
-      console.warn("X-Verify header missing in callback from PhonePe.");
+      console.warn("LOG Error: X-Verify header missing in callback from PhonePe.");
       return NextResponse.json({ success: false, message: "X-Verify header missing." }, { status: 400 });
     }
 
     const saltKey = process.env.PHONEPE_SALT_KEY;
     const saltIndex = process.env.PHONEPE_SALT_INDEX;
     if (!saltKey || !saltIndex) {
-      console.error("PhonePe salt key or salt index is not configured.");
-      return NextResponse.json({ success: false, message: "Server configuration error." }, { status: 500 });
+      console.error("LOG Error: PhonePe salt key or salt index is not configured in environment.");
+      return NextResponse.json({ success: false, message: "Server configuration error (salt)." }, { status: 500 });
     }
 
     const isAuthenticCallback = verifyXVerifyHeader(base64Response, receivedXVerifyHeader, saltKey, saltIndex);
     if (!isAuthenticCallback) {
-      console.warn("X-Verify header mismatch. Callback authenticity check failed.");
+      console.warn("LOG Error: X-Verify header mismatch. Callback authenticity check failed.");
       return NextResponse.json({ success: false, message: "Callback authenticity check failed." }, { status: 400 });
     }
 
-    const decodedResponse = JSON.parse(Buffer.from(base64Response, 'base64').toString());
-    const { merchantTransactionId, transactionId: phonepeMainTransactionId, code: callbackPaymentStatusCode } = decodedResponse;
-    console.log(`PhonePe Callback received for MTID: ${merchantTransactionId}, PhonePe TID: ${phonepeMainTransactionId}, Callback Status Code: ${callbackPaymentStatusCode}`);
+    console.log('LOG 6: All initial checks passed, attempting to decode base64Response.');
+    const decodedJsonString = Buffer.from(base64Response, 'base64').toString();
+    console.log("LOG 7: Decoded JSON string from callback (snippet):", decodedJsonString.substring(0, 500) + "...");
+
+    const decodedResponse = JSON.parse(decodedJsonString);
+    console.log("LOG 8: Parsed decodedResponse object from PhonePe callback:", JSON.stringify(decodedResponse, null, 2));
+
+    const merchantTransactionId = decodedResponse.data?.merchantTransactionId || decodedResponse.merchantTransactionId || decodedResponse.MerchantTransactionId || decodedResponse.merchant_transaction_id || decodedResponse.data?.MerchantTransactionId || decodedResponse.data?.merchant_transaction_id;
+    const phonepeMainTransactionId = decodedResponse.data?.transactionId || decodedResponse.transactionId || decodedResponse.TransactionId || decodedResponse.transaction_id || decodedResponse.data?.TransactionId || decodedResponse.data?.transaction_id || decodedResponse.data?.providerReferenceId;
+    const callbackPaymentStatusCode = decodedResponse.code || decodedResponse.data?.code || decodedResponse.Code || decodedResponse.data?.Code || decodedResponse.status || decodedResponse.data?.status || decodedResponse.Status || decodedResponse.data?.State;
+
+    console.log(`LOG 9: Values after resilient access - MTID: ${merchantTransactionId}, PhonePeTID: ${phonepeMainTransactionId}, CallbackStatusCode: ${callbackPaymentStatusCode}`);
+
+    if (!merchantTransactionId) {
+        console.warn("LOG Error: merchantTransactionId is undefined after attempting all access patterns from decodedResponse. Critical: Check LOG 8 output.");
+        return NextResponse.json({ success: false, message: "Could not extract merchantTransactionId from callback. Check server logs for LOG 8." }, { status: 400 });
+    }
 
     const bookingId = parseInt(merchantTransactionId, 10);
     if (isNaN(bookingId)) {
-        console.warn(`Invalid merchantTransactionId received in callback: ${merchantTransactionId}`);
-        return NextResponse.json({ success: false, message: "Invalid transaction ID format." }, { status: 400 });
+      console.warn(`LOG Error: Invalid merchantTransactionId after parsing: '${merchantTransactionId}' resulted in NaN.`);
+      return NextResponse.json({ success: false, message: "Invalid transaction ID format after parsing." }, { status: 400 });
     }
 
-    // 3. Idempotency Check: Fetch current booking status using D1 Service
-    const booking = await dbService.getBookingById(bookingId); // Using D1 service
+    console.log(`LOG 10: Parsed bookingId: ${bookingId}. Proceeding with idempotency check.`);
+    const booking = await dbService.getBookingById(bookingId);
     if (!booking) {
-      console.error(`Booking not found for merchantTransactionId (bookingId ${bookingId}) from PhonePe callback.`);
+      console.error(`LOG Error: Booking not found for bookingId ${bookingId} (from MTID ${merchantTransactionId}).`);
       return NextResponse.json({ success: true, message: "Callback acknowledged, but booking not found locally." });
     }
     if (booking.status === 'CONFIRMED' || booking.status === 'FAILED') {
-      console.log(`Booking ${bookingId} already in a terminal state: ${booking.status}. Acknowledging callback.`);
+      console.log(`LOG Info: Booking ${bookingId} already in a terminal state: ${booking.status}. Acknowledging callback.`);
       return NextResponse.json({ success: true, message: "Callback acknowledged for already processed transaction." });
     }
 
-    // 4. Call PhonePe Check Status API
+    console.log(`LOG 11: Booking ${bookingId} found, not in terminal state. Proceeding to call PhonePe Check Status API.`);
     const merchantId = process.env.PHONEPE_MERCHANT_ID;
     if (!merchantId) {
-        console.error("PhonePe Merchant ID is not configured.");
-        return NextResponse.json({ success: false, message: "Server configuration error for status check." }, { status: 500 });
+      console.error("LOG Error: PhonePe Merchant ID is not configured in environment.");
+      return NextResponse.json({ success: false, message: "Server configuration error (merchant_id)." }, { status: 500 });
     }
-    const statusApiEndpointPath = `/pg/v1/status/${merchantId}/${merchantTransactionId}`; // Use original string merchantTransactionId here
-    const stringToHashForStatusCheck = statusApiEndpointPath + saltKey;
+
+    // Path for constructing the full fetch URL (appended to prefix)
+    const fetchUrlPathSegment = `/${merchantId}/${merchantTransactionId}`;
+    // Path used specifically for generating the X-VERIFY hash for the Status API
+    const pathForHashing = `/pg/v1/status/${merchantId}/${merchantTransactionId}`;
+
+    const stringToHashForStatusCheck = pathForHashing + saltKey;
     const sha256Status = crypto.createHash('sha256').update(stringToHashForStatusCheck).digest('hex');
     const xVerifyStatusCheck = `${sha256Status}###${saltIndex}`;
 
-    let statusResponse;
+    let statusResponse: PhonePeCheckStatusApiResponse;
     try {
-        const statusResponseRaw = await fetch(process.env.PHONEPE_STATUS_API_URL_PREFIX! + statusApiEndpointPath, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'X-MERCHANT-ID': merchantId, 'X-VERIFY': xVerifyStatusCheck, 'Accept': 'application/json' },
-        });
-        statusResponse = await statusResponseRaw.json() as PhonePeCheckStatusApiResponse; // Type assertion
+      const fullStatusApiUrl = process.env.PHONEPE_STATUS_API_URL_PREFIX! + fetchUrlPathSegment;
+      console.log(`LOG 12: Calling PhonePe Check Status API for MTID ${merchantTransactionId}. URL: ${fullStatusApiUrl}`);
+      const statusResponseRaw = await fetch(fullStatusApiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', 'X-MERCHANT-ID': merchantId, 'X-VERIFY': xVerifyStatusCheck, 'Accept': 'application/json' },
+      });
+      statusResponse = await statusResponseRaw.json() as PhonePeCheckStatusApiResponse;
+      console.log(`LOG 13: PhonePe Check Status API response for MTID ${merchantTransactionId}:`, JSON.stringify(statusResponse, null, 2));
     } catch (statusApiError) {
-        console.error(`PhonePe Check Status API call failed for MTID ${merchantTransactionId}:`, statusApiError);
-        return NextResponse.json({ success: true, message: "Callback processed, but status check API failed. Manual reconciliation may be needed." });
+      console.error(`LOG Error: PhonePe Check Status API call failed for MTID ${merchantTransactionId}:`, statusApiError);
+      return NextResponse.json({ success: true, message: "Callback processed, but status check API failed. Manual reconciliation may be needed." });
     }
-    
-    // 5. Process Confirmed Payment Status from Check Status API
+
     if (statusResponse && statusResponse.success) {
       const confirmedPaymentCode = statusResponse.code;
-      const phonepeInternalTxId = statusResponse.data?.transactionId || phonepeMainTransactionId; 
-      console.log(`Status API for MTID ${merchantTransactionId} successful. Code: ${confirmedPaymentCode}, PhonePeInternalTID: ${phonepeInternalTxId}`);
+      const phonepeInternalTxId = statusResponse.data?.transactionId || phonepeMainTransactionId;
+      console.log(`LOG 14: Status API for MTID ${merchantTransactionId} successful. Code: ${confirmedPaymentCode}, PhonePeInternalTID: ${phonepeInternalTxId}`);
 
       if (confirmedPaymentCode === 'PAYMENT_SUCCESS') {
-        await dbService.updateBookingStatusAndPaymentStatus(String(bookingId), 'CONFIRMED', 'PAID', phonepeInternalTxId); // Use String(bookingId) as method expects string
-        console.log(`Booking ${bookingId} CONFIRMED and payment PAID via D1.`);
+        await dbService.updateBookingStatusAndPaymentStatus(bookingId.toString(), 'CONFIRMED', 'PAID', phonepeInternalTxId);
+        console.log(`LOG Info: Booking ${bookingId} CONFIRMED and payment PAID via D1.`);
       } else if (['PAYMENT_ERROR', 'TRANSACTION_NOT_FOUND', 'PAYMENT_FAILURE', 'TIMED_OUT', 'CARD_NOT_SUPPORTED', 'BANK_OFFLINE', 'PAYMENT_DECLINED'].includes(confirmedPaymentCode)) {
-        await dbService.updateBookingStatusAndPaymentStatus(String(bookingId), 'FAILED', 'FAILED', phonepeInternalTxId); // Use String(bookingId)
-        console.log(`Booking ${bookingId} FAILED via D1. Status from API: ${confirmedPaymentCode}`);
+        await dbService.updateBookingStatusAndPaymentStatus(bookingId.toString(), 'FAILED', 'FAILED', phonepeInternalTxId);
+        console.log(`LOG Info: Booking ${bookingId} FAILED via D1. Status from API: ${confirmedPaymentCode}`);
       } else if (confirmedPaymentCode === 'PAYMENT_PENDING') {
-        console.log(`Booking ${bookingId} is PENDING according to status check. No DB update to terminal state from callback.`);
+        console.log(`LOG Info: Booking ${bookingId} is PENDING according to status check. No DB update to terminal state from callback.`);
       } else {
-        console.log(`Booking ${bookingId} has unhandled status via check API: ${confirmedPaymentCode}.`);
+        console.log(`LOG Info: Booking ${bookingId} has unhandled status via check API: ${confirmedPaymentCode}.`);
       }
     } else {
-      console.error(`PhonePe Check Status API call for ${merchantTransactionId} was not successful or malformed:`, statusResponse?.message || "No message in status response");
+      console.error(`LOG Error: PhonePe Check Status API call for ${merchantTransactionId} was not successful or malformed:`, statusResponse?.message || "No message in status response", "Full statusResponse:", JSON.stringify(statusResponse, null, 2));
       return NextResponse.json({ success: true, message: "Callback processed, but status check was not successful. Manual reconciliation may be needed." });
     }
 
+    console.log(`LOG 15: Callback for MTID ${merchantTransactionId} processed successfully.`);
     return NextResponse.json({ success: true, message: "Callback processed successfully." });
 
   } catch (error) {
-    console.error("Error in phonepe-callback general processing:", error);
+    console.error("--- LOG CATCH_ALL: ERROR IN CALLBACK HANDLER (outer try-catch) ---", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error processing callback.";
     return NextResponse.json({ success: true, message: `Callback acknowledged with internal error: ${errorMessage}` });
   }

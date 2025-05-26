@@ -44,8 +44,8 @@ const nextConfig = {
         'process.env.NEXT_PUBLIC_API_URL': JSON.stringify(
           process.env.NEXT_PUBLIC_API_URL || ''
         ),
-        'process.env.NEXT_PUBLIC_SITE_URL': JSON.stringify(
-          process.env.NEXT_PUBLIC_SITE_URL || ''
+        'process.env.SITE_URL': JSON.stringify(
+          process.env.SITE_URL || ''
         ),
       })
     )
@@ -55,7 +55,7 @@ const nextConfig = {
   // Environment variables that should be available to the browser
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    SITE_URL: process.env.SITE_URL,
   },
 }
 

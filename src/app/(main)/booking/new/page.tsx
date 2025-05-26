@@ -117,13 +117,11 @@ function NewBookingPageContent() {
     <div className="bg-gray-100 min-h-screen py-8 md:py-12 font-sans">
       <div className="container mx-auto px-4">
         <div className="mb-6">
-          <button 
-            onClick={() => router.back()} 
-            className="text-blue-600 hover:text-blue-700 inline-flex items-center transition-colors group"
-          >
+          {/* Removed back link for navigation */}
+          {/* <Link href="/user/bookings" className="text-blue-600 hover:text-blue-700 inline-flex items-center transition-colors group">
             <ArrowLeft size={18} className="mr-2 transition-transform group-hover:-translate-x-1" />
-            Back
-          </button>
+            Back to My Bookings
+          </Link> */}
         </div>
 
         <div className="bg-white rounded-xl shadow-xl overflow-hidden p-6 md:p-8">
@@ -180,7 +178,7 @@ function NewBookingPageContent() {
             {isAuthenticated && user?.email ? (
               <p>Logged in as: <span className="font-medium text-gray-700">{user.email}</span>. Not you? <Link href="/auth/signout" className="text-blue-600 hover:underline">Sign out</Link></p>
             ) : !authIsLoading && !isAuthenticated ? (
-              <p>Please <Link href={`/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`} className="text-blue-600 hover:underline">sign in</Link> to complete your booking.</p>
+              <p>Please <Link href={`/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`} className="text-blue-600 hover:underline">sign in</Link> to have a comprehensive booking experience.</p>
             ) : null} 
             {/* Removed "Checking authentication status..." as loading spinner covers this */}
           </section>

@@ -137,32 +137,12 @@ function BookingConfirmationContent() {
   let messagePreamble = "";
   let icon = <InfoIcon size={30} className="mr-3 text-blue-600" />;
   let cardClass = "bg-white rounded-xl shadow-xl overflow-hidden"; // Default card
-  let actions = (
-    <>
-      <Link href="/user/bookings" className="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors inline-flex items-center mr-2">
-        <ListOrdered size={20} className="mr-2" /> My Bookings
-      </Link>
-      <Link href="/" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center">
-        <HomeIcon size={20} className="mr-2" /> Homepage
-      </Link>
-    </>
-  );
 
   if (booking.status === 'CONFIRMED' && booking.paymentStatus === 'PAID') {
     title = "Booking Confirmed!";
     messagePreamble = "Thank you! Your payment was successful and your booking is confirmed.";
     icon = <CheckCircle size={30} className="mr-3 text-green-600" />;
     cardClass = "bg-green-50 rounded-xl shadow-xl overflow-hidden border border-green-200";
-    actions = (
-      <>
-        <Link href="/user/bookings" className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors inline-flex items-center mr-2">
-          <ListOrdered size={20} className="mr-2" /> View My Bookings
-        </Link>
-        <Link href="/" className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center">
-         <HomeIcon size={20} className="mr-2" /> Go to Homepage
-        </Link>
-      </>
-    );
   } else if (booking.status === 'FAILED' || booking.paymentStatus === 'FAILED') {
     title = booking.paymentStatus === 'FAILED' ? "Payment Failed" : "Booking Failed";
     messagePreamble = `Unfortunately, we could not complete your booking (ID: ${booking.id}). `;
@@ -170,31 +150,11 @@ function BookingConfirmationContent() {
     messagePreamble += "Please try booking again or contact our support team if the issue persists.";
     icon = <XCircle size={30} className="mr-3 text-red-600" />;
     cardClass = "bg-red-50 rounded-xl shadow-xl overflow-hidden border border-red-200";
-    actions = (
-      <>
-        <Link href="/packages" className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors inline-flex items-center mr-2">
-          Try Booking Again
-        </Link>
-        <Link href="/contact" className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center">
-          Contact Support
-        </Link>
-      </>
-    );
   } else if (booking.status === 'PENDING_PAYMENT' || booking.paymentStatus === 'INITIATED' || booking.paymentStatus === 'PENDING') {
     title = "Booking Payment Pending";
     messagePreamble = `Your payment for booking ID ${booking.id} is still being processed or is pending confirmation. Please check back shortly. We will also notify you once the status is updated. If you have already completed the payment and this status persists, please contact support.`;
     icon = <AlertTriangle size={30} className="mr-3 text-yellow-600" />;
     cardClass = "bg-yellow-50 rounded-xl shadow-xl overflow-hidden border border-yellow-200";
-     actions = (
-      <>
-        <Link href="/user/bookings" className="bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition-colors inline-flex items-center mr-2">
-          <ListOrdered size={20} className="mr-2" /> Check My Bookings
-        </Link>
-        <Link href="/contact" className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center">
-          Contact Support
-        </Link>
-      </>
-    );
   } else { // Other statuses
      messagePreamble = `Current status for booking ID ${booking.id}: Booking Status - ${booking.status}, Payment Status - ${booking.paymentStatus}. If you have any questions, please contact support.`;
   }
@@ -204,10 +164,11 @@ function BookingConfirmationContent() {
     <div className="bg-gray-100 min-h-screen py-8 md:py-12 font-sans">
       <div className="container mx-auto px-4 max-w-3xl">
         <div className="mb-6">
-          <Link href="/user/bookings" className="text-blue-600 hover:text-blue-700 inline-flex items-center transition-colors group">
+          {/* Removed back link for navigation */}
+          {/* <Link href="/user/bookings" className="text-blue-600 hover:text-blue-700 inline-flex items-center transition-colors group">
             <ArrowLeft size={18} className="mr-2 transition-transform group-hover:-translate-x-1" />
             Back to My Bookings
-          </Link>
+          </Link> */}
         </div>
 
         {/* Using Card-like structure with Tailwind classes */}
@@ -266,7 +227,7 @@ function BookingConfirmationContent() {
             
             {/* CardFooter equivalent */}
             <div className="mt-8 pt-6 border-t text-center">
-                {actions}
+                {/* Removed actions for navigation */}
             </div>
 
             <div className="mt-6 text-xs text-gray-500 text-center border-t pt-3">

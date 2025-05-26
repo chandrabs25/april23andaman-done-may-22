@@ -49,7 +49,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
       // Nested related data based on aliased names from the SQL query
       package: bookingFromDb.packageName ? { name: bookingFromDb.packageName } : undefined,
-      packageCategory: bookingFromDb.packageCategoryName ? { category_name: bookingFromDb.packageCategoryName } : undefined,
+      packageCategory: bookingFromDb.packageCategoryName ? { name: bookingFromDb.packageCategoryName } : undefined,
       user: (bookingFromDb.userEmail || bookingFromDb.userFirstName || bookingFromDb.userLastName) // Check if any user detail is present
         ? { 
             name: [bookingFromDb.userFirstName, bookingFromDb.userLastName].filter(Boolean).join(' ').trim() || undefined, 

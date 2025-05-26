@@ -28,7 +28,7 @@ interface BookingData {
   totalPeople?: number;
   guestName?: string | null;
   guestEmail?: string | null;
-  guestMobile?: string | null;
+  guestPhone?: string | null;
   specialRequests?: string | null;
 
   // Assuming relational data is included by the API:
@@ -76,6 +76,8 @@ function BookingConfirmationContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // TODO: Implement booking download as PDF functionality
+  // TODO: Implement sending booking details mail to the user functionality
   useEffect(() => {
     if (!bookingId) {
       setError("Booking ID is missing from the URL.");
@@ -101,6 +103,7 @@ function BookingConfirmationContent() {
           throw new Error(errorMessage);
         }
         const data: BookingData = await response.json();
+        console.log('Fetched booking data:', data);
         setBooking(data);
       } catch (err: any) {
         console.error("Fetch booking error:", err);
@@ -248,7 +251,7 @@ function BookingConfirmationContent() {
                   <div className="space-y-1 text-sm">
                     <p><strong>Name:</strong> {booking.user?.name || booking.guestName || 'N/A'}</p>
                     <p><strong>Email:</strong> {booking.user?.email || booking.guestEmail || 'N/A'}</p>
-                    <p><strong>Phone:</strong> {booking.guestMobile || 'N/A'}</p>
+                    <p><strong>Phone:</strong> {booking.guestPhone || 'N/A'}</p>
                   </div>
                 </section>
 

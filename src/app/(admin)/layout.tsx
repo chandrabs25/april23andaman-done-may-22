@@ -2,8 +2,6 @@
 
 import { ReactNode, useState } from 'react';
 import Link from 'next/link';
-import { AdminAuthProvider } from '@/hooks/useAdminAuth'; // Corrected: Single import
-import '@/styles/admin_globals.css'; // Import admin global styles
 import { useRouter } from 'next/navigation';
 import { HomeIcon, PackageIcon, CheckCircleIcon, UsersIcon, LogOutIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -47,7 +45,7 @@ function SignOutButton() {
       if (response.ok && data.success) {
         toast.success(data.message || 'Signed out successfully!');
         // For JWT, client-side redirection is enough after cookie is cleared by API
-        window.location.assign('/admin_login_page'); // Updated redirect for admin
+        window.location.assign('/auth/signin'); // Or your desired login page
       } else {
         toast.error(data.message || 'Sign out failed. Please try again.');
       }
@@ -138,7 +136,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </header>
         <main className="p-6">
-          <AdminAuthProvider>{children}</AdminAuthProvider> {/* Wrapped children */}
+          {children}
         </main>
       </div>
     </div>

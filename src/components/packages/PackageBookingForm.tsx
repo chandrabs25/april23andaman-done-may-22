@@ -3,11 +3,30 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // Import useRouter
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { UserIcon, MailIcon, PhoneIcon, UsersIcon, CalendarIcon, DollarSignIcon, InfoIcon } from 'lucide-react';
+import { Input } from '@/components/ui/input'; // Assuming these are shadcn/ui components
+import { Button } from '@/components/ui/button'; // Assuming these are shadcn/ui components
+import { Label } from '@/components/ui/label';   // Assuming these are shadcn/ui components
+import { Textarea } from '@/components/ui/textarea'; // Assuming these are shadcn/ui components
+import { UserIcon, MailIcon, PhoneIcon, UsersIcon, CalendarIcon, DollarSignIcon, InfoIcon, Loader2 } from 'lucide-react';
+
+// --- Theme Imports ---
+import {
+  neutralText, neutralTextLight, neutralBorder, neutralBg,
+  infoIconColor, // For general icons within the form
+  errorText, errorBg, errorBorder,
+  successText, successIconColor, // For price display
+  buttonPrimaryStyle,
+  // Define inputBaseStyle and labelBaseStyle based on theme if not directly using shadcn's base
+  // For this example, we'll assume shadcn inputs are mostly themed globally,
+  // but we'll apply specific text/icon colors and margins from our theme.
+} from '@/styles/26themeandstyle';
+
+// Define a local label style based on theme for consistency if not using a global one from shadcn setup
+const labelStyle = `flex items-center mb-1.5 text-sm font-medium ${neutralText}`;
+const inputStyle = `w-full mt-1`; // Base style for shadcn inputs, they handle most of their styling
+const errorTextStyle = `text-xs ${errorText} mt-1.5`;
+// --- End Theme Imports ---
+
 
 // --- Interfaces ---
 interface PackageCategory {
@@ -172,13 +191,17 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {errors.general && <p className="text-red-500 text-sm p-3 bg-red-50 border border-red-200 rounded-md">{errors.general}</p>}
+    <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
+      {errors.general && (
+        <div className={`p-4 rounded-md ${errorBg} border ${errorBorder}`}>
+          <p className={`${errorText} text-sm`}>{errors.general}</p>
+        </div>
+      )}
 
       {/* Number of Travelers */}
       <div>
-        <Label htmlFor="total_people" className="flex items-center mb-1 text-sm font-medium text-gray-700">
-          <UsersIcon className="w-4 h-4 mr-2 text-blue-600" /> Number of Travelers
+        <Label htmlFor="total_people" className={labelStyle}>
+          <UsersIcon size={16} className={`mr-2 ${infoIconColor}`} /> Number of Travelers
         </Label>
         <Input
           type="number"
@@ -187,16 +210,16 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
           value={formData.total_people}
           onChange={handleInputChange}
           min="1"
-          className="w-full"
+          className={inputStyle} // Assumes shadcn Input takes className
         />
-        {errors.total_people && <p className="text-red-500 text-xs mt-1">{errors.total_people}</p>}
+        {errors.total_people && <p className={errorTextStyle}>{errors.total_people}</p>}
       </div>
 
       {/* Travel Dates */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         <div>
-          <Label htmlFor="start_date" className="flex items-center mb-1 text-sm font-medium text-gray-700">
-            <CalendarIcon className="w-4 h-4 mr-2 text-blue-600" /> Start Date
+          <Label htmlFor="start_date" className={labelStyle}>
+            <CalendarIcon size={16} className={`mr-2 ${infoIconColor}`} /> Start Date
           </Label>
           <Input
             type="date"
@@ -204,13 +227,13 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
             name="start_date"
             value={formData.start_date}
             onChange={handleInputChange}
-            className="w-full"
+            className={inputStyle}
           />
-          {errors.start_date && <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>}
+          {errors.start_date && <p className={errorTextStyle}>{errors.start_date}</p>}
         </div>
         <div>
-          <Label htmlFor="end_date" className="flex items-center mb-1 text-sm font-medium text-gray-700">
-            <CalendarIcon className="w-4 h-4 mr-2 text-blue-600" /> End Date
+          <Label htmlFor="end_date" className={labelStyle}>
+            <CalendarIcon size={16} className={`mr-2 ${infoIconColor}`} /> End Date
           </Label>
           <Input
             type="date"
@@ -218,18 +241,20 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
             name="end_date"
             value={formData.end_date}
             onChange={handleInputChange}
-            className="w-full"
+            className={inputStyle}
           />
-          {errors.end_date && <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>}
+          {errors.end_date && <p className={errorTextStyle}>{errors.end_date}</p>}
         </div>
       </div>
 
       {/* Primary Guest Information */}
-      <div className="space-y-4 pt-4 border-t">
-         <h3 className="text-lg font-semibold text-gray-800">Guest Information</h3>
+      <div className={`space-y-4 pt-6 border-t ${neutralBorder}`}>
+         <h3 className={`text-lg font-semibold ${neutralText} flex items-center`}>
+            <UserIcon size={20} className={`mr-2.5 ${infoIconColor}`} /> Guest Information
+        </h3>
         <div>
-          <Label htmlFor="guest_name" className="flex items-center mb-1 text-sm font-medium text-gray-700">
-            <UserIcon className="w-4 h-4 mr-2 text-blue-600" /> Full Name
+          <Label htmlFor="guest_name" className={labelStyle}>
+             Full Name
           </Label>
           <Input
             type="text"
@@ -238,13 +263,13 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
             value={formData.guest_name}
             onChange={handleInputChange}
             placeholder="Enter full name"
-            className="w-full"
+            className={inputStyle}
           />
-          {errors.guest_name && <p className="text-red-500 text-xs mt-1">{errors.guest_name}</p>}
+          {errors.guest_name && <p className={errorTextStyle}>{errors.guest_name}</p>}
         </div>
         <div>
-          <Label htmlFor="guest_email" className="flex items-center mb-1 text-sm font-medium text-gray-700">
-            <MailIcon className="w-4 h-4 mr-2 text-blue-600" /> Email Address
+          <Label htmlFor="guest_email" className={labelStyle}>
+             Email Address
           </Label>
           <Input
             type="email"
@@ -253,13 +278,13 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
             value={formData.guest_email}
             onChange={handleInputChange}
             placeholder="Enter email address"
-            className="w-full"
+            className={inputStyle}
           />
-          {errors.guest_email && <p className="text-red-500 text-xs mt-1">{errors.guest_email}</p>}
+          {errors.guest_email && <p className={errorTextStyle}>{errors.guest_email}</p>}
         </div>
         <div>
-          <Label htmlFor="guest_phone" className="flex items-center mb-1 text-sm font-medium text-gray-700">
-            <PhoneIcon className="w-4 h-4 mr-2 text-blue-600" /> Phone Number
+          <Label htmlFor="guest_phone" className={labelStyle}>
+             Phone Number
           </Label>
           <Input
             type="tel"
@@ -268,39 +293,39 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
             value={formData.guest_phone}
             onChange={handleInputChange}
             placeholder="Enter phone number"
-            className="w-full"
+            className={inputStyle}
           />
-          {errors.guest_phone && <p className="text-red-500 text-xs mt-1">{errors.guest_phone}</p>}
+          {errors.guest_phone && <p className={errorTextStyle}>{errors.guest_phone}</p>}
         </div>
       </div>
 
       {/* Special Requests */}
-      <div className="pt-4 border-t">
-        <Label htmlFor="special_requests" className="flex items-center mb-1 text-sm font-medium text-gray-700">
-          <InfoIcon className="w-4 h-4 mr-2 text-blue-600" /> Special Requests (Optional)
+      <div className={`pt-6 border-t ${neutralBorder}`}>
+        <Label htmlFor="special_requests" className={labelStyle}>
+          <InfoIcon size={16} className={`mr-2 ${infoIconColor}`} /> Special Requests (Optional)
         </Label>
         <Textarea
           id="special_requests"
           name="special_requests"
           value={formData.special_requests}
           onChange={handleInputChange}
-          placeholder="Any special requirements or preferences?"
+          placeholder="Any special requirements or preferences? (e.g., dietary needs, accessibility requests)"
           rows={4}
-          className="w-full"
+          className={inputStyle} // Assumes shadcn Textarea takes className
         />
       </div>
 
       {/* Total Price Display */}
-      <div className="pt-6 border-t">
-        <div className="flex justify-between items-center bg-gray-100 p-4 rounded-lg">
-            <p className="text-lg font-semibold text-gray-800 flex items-center">
-                <DollarSignIcon className="w-5 h-5 mr-2 text-green-600"/> Total Booking Amount:
+      <div className={`pt-6 border-t ${neutralBorder}`}>
+        <div className={`flex justify-between items-center ${neutralBg} p-4 md:p-5 rounded-lg border ${neutralBorder}`}>
+            <p className={`text-lg font-semibold ${neutralText} flex items-center`}>
+                <DollarSignIcon size={20} className={`mr-2 ${successIconColor}`}/> Total Booking Amount:
             </p>
-            <p className="text-2xl font-bold text-green-600">
+            <p className={`text-2xl font-bold ${successText}`}>
                 ₹{totalPrice.toLocaleString('en-IN')}
             </p>
         </div>
-         <p className="text-xs text-gray-500 mt-1 text-right">
+         <p className={`text-xs ${neutralTextLight} mt-2 text-right`}>
             Based on {formData.total_people} traveler(s) at ₹{categoryDetails.price.toLocaleString('en-IN')} per person.
         </p>
       </div>
@@ -309,10 +334,16 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
       <div className="pt-6">
         <Button 
           type="submit" 
-          className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg disabled:opacity-75"
+          className={`${buttonPrimaryStyle} w-full text-lg py-3 h-auto disabled:opacity-60`} // Ensure buttonPrimaryStyle is applied correctly
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Submitting...' : 'Confirm & Proceed'}
+          {isSubmitting ? (
+            <>
+              <Loader2 size={20} className="animate-spin mr-2.5" /> Submitting...
+            </>
+          ) : (
+            'Confirm & Proceed to Payment'
+          )}
         </Button>
       </div>
     </form>

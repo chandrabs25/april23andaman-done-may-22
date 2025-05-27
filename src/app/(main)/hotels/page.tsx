@@ -12,46 +12,37 @@ import {
 
 // --- Import Common Styles from theme.ts ---
 import {
-  primaryButtonBg,
-  // primaryButtonHoverBg, // Assuming this might be part of buttonPrimaryStyle or handled by hover: in it
-  // primaryButtonText, // Assuming this is part of buttonPrimaryStyle
-  // secondaryButtonBg, // Assuming this is part of buttonSecondaryStyle
-  // secondaryButtonHoverBg, // Assuming this is part of buttonSecondaryStyle
-  // secondaryButtonText, // Assuming this is part of buttonSecondaryStyle
-  // secondaryButtonBorder, // Assuming this is part of buttonSecondaryStyle
-  // infoBg, // Will be used if needed for specific alert/info boxes
-  // infoBorder,
-  // infoText,
-  // infoIconColor,
-  // successBg,
-  // successBorder,
-  // successText,
-  // successIconColor,
-  // warningBg,
-  // warningBorder,
-  // warningText,
-  // warningIconColor,
-  // tipBg,
-  // tipBorder,
-  // tipText,
-  // tipIconColor,
+  primaryButtonBg, // Keep for focus ring logic if not directly provided by theme button styles
   errorBg,
   errorBorder,
   errorText,
   errorIconColor,
   neutralBgLight,
   neutralBorderLight,
-  neutralBg, // Used for placeholders if needed
+  neutralBg,
   neutralBorder,
   neutralText,
   neutralTextLight,
   neutralIconColor,
   sectionPadding,
   cardBaseStyle,
-  sectionHeadingStyle, // This should be a string of Tailwind classes
-  buttonPrimaryStyle,   // This should be a string of Tailwind classes
-  buttonSecondaryStyle, // This should be a string of Tailwind classes
-} from "@/styles/theme";
+  sectionHeadingStyle,
+  buttonPrimaryStyle,
+  buttonSecondaryStyleHero,
+  infoBg,
+  infoBorder,
+  infoText,
+  infoIconColor,
+  successBg, // Added for potential use, e.g. price display
+  successBorder, // Added
+  successText, // Added
+  successIconColor, // Added
+  warningBg, // Added for potential warnings or alerts
+  warningBorder, // Added
+  warningText, // Added
+  warningIconColor, // Added
+  listIconWrapperStyle, // For icons in lists
+} from "@/styles/26themeandstyle";
 // --- End Common Styles Import ---
 
 
@@ -64,22 +55,23 @@ const ITEMS_PER_PAGE = 9;
 
 // --- Helper Components ---
 const LoadingState = ({ message = "Loading..." }: { message?: string }) => (
-  <div className={`container mx-auto px-4 ${sectionPadding} text-center ${neutralBgLight} rounded-2xl border ${neutralBorderLight}`}>
-    <Loader2 className={`h-12 w-12 animate-spin ${neutralIconColor} mx-auto mb-4`} />
-    <p className={`text-xl font-semibold ${neutralText}`}>{message}</p>
+  <div className={`container mx-auto px-4 ${sectionPadding} text-center ${neutralBgLight} rounded-2xl border ${neutralBorderLight} p-8 md:p-12`}>
+    <Loader2 className={`h-12 w-12 animate-spin ${infoIconColor} mx-auto mb-4`} /> {/* Changed to infoIconColor for thematic consistency */}
+    <p className={`text-xl font-semibold ${infoText}`}>{message}</p>
     <p className={`${neutralTextLight}`}>Please wait a moment.</p>
   </div>
 );
 
 const ErrorState = ({ message, onRetry }: { message?: string; onRetry?: () => void }) => (
-  <div className={`container mx-auto px-4 ${sectionPadding} text-center ${errorBg} rounded-2xl border ${errorBorder}`}>
+  <div className={`container mx-auto px-4 ${sectionPadding} text-center ${errorBg} rounded-2xl border ${errorBorder} p-8 md:p-12`}>
     <AlertTriangle className={`h-12 w-12 ${errorIconColor} mx-auto mb-4`} />
     <p className={`text-xl font-semibold ${errorText}`}>Could Not Load Data</p>
     <p className={`${neutralTextLight}`}>{message || "An unexpected error occurred. Please try again."}</p>
     {onRetry && (
-      // Assuming buttonSecondaryStyle includes base button styling.
-      // Additional specific error button styling can be added here or in the theme file.
-      <button onClick={onRetry} className={`mt-6 ${buttonSecondaryStyle} border-red-400 text-red-600 hover:bg-red-100 focus:ring-red-300`}>
+      <button 
+        onClick={onRetry} 
+        className={`mt-6 ${buttonPrimaryStyle} bg-red-600 hover:bg-red-700 focus:ring-red-500`} // More prominent error retry button
+      >
         Try Again
       </button>
     )}
@@ -87,7 +79,7 @@ const ErrorState = ({ message, onRetry }: { message?: string; onRetry?: () => vo
 );
 
 const NoDataState = ({ itemType, message }: { itemType: string; message?: string }) => (
-  <div className={`container mx-auto px-4 ${sectionPadding} text-center ${neutralBgLight} rounded-2xl border ${neutralBorderLight}`}>
+  <div className={`container mx-auto px-4 ${sectionPadding} text-center ${neutralBgLight} rounded-2xl border ${neutralBorderLight} p-8 md:p-12`}>
     <Building className={`h-12 w-12 ${neutralIconColor} mx-auto mb-4 opacity-70`} />
     <p className={`text-xl font-semibold ${neutralText}`}>No {itemType} Found</p>
     <p className={`${neutralTextLight}`}>{message || 'Please check back soon or try different filters.'}</p>
@@ -101,14 +93,15 @@ interface DetailSectionProps {
   children: React.ReactNode;
   className?: string;
   id?: string;
+  titleClassName?: string; // Added for more control over title styling if needed
 }
-const DetailSection: React.FC<DetailSectionProps> = ({ id, title, icon: Icon, children, className }) => (
-  <div id={id} className={`py-5 border-b ${neutralBorderLight} last:border-b-0 ${className || ""}`}>
-    <h2 className={sectionHeadingStyle}> {/* Using imported sectionHeadingStyle */}
-      {Icon && <Icon size={20} className={`mr-2.5 ${neutralIconColor}`} />}
+const DetailSection: React.FC<DetailSectionProps> = ({ id, title, icon: Icon, children, className, titleClassName }) => (
+  <div id={id} className={`py-6 md:py-8 border-b ${neutralBorderLight} last:border-b-0 ${className || ""}`}>
+    <h2 className={`${sectionHeadingStyle} text-xl md:text-2xl ${titleClassName || ''}`}> {/* Adjusted size for detail sections */}
+      {Icon && <Icon size={22} className={`mr-3 ${neutralIconColor}`} />} {/* Slightly larger icon */}
       {title}
     </h2>
-    <div className={`text-sm ${neutralTextLight} leading-relaxed space-y-2`}>
+    <div className={`text-sm md:text-base ${neutralTextLight} leading-relaxed space-y-3 mt-3 md:mt-4`}> {/* Increased spacing and base size */}
       {children}
     </div>
   </div>
@@ -129,14 +122,16 @@ const HotelsPage = () => {
   // Construct focus ring classes based on the primaryButtonBg variable
   // This assumes primaryButtonBg is a string like "bg-blue-600" or "bg-gray-800"
   // And your buttonPrimaryStyle and buttonSecondaryStyle already include focus:ring-opacity-50 etc.
-  const focusRingColorName = primaryButtonBg?.split('-')[1] || 'gray'; // Default to gray
-  const focusRingColorShade = primaryButtonBg?.split('-')[2] || '500'; // Default to 500
+  const focusRingColorName = primaryButtonBg?.split('-')[1] || 'gray'; 
+  const focusRingColorShade = primaryButtonBg?.split('-')[2] || '500'; 
+  
+  // The theme file should ideally provide these, or input styles directly
   const focusRingClass = `focus:ring-${focusRingColorName}-${focusRingColorShade}`;
   const focusBorderClass = `focus:border-${focusRingColorName}-${focusRingColorShade}`;
 
-
-  const inputBaseStyle = `w-full p-2.5 text-sm ${neutralText} bg-white border ${neutralBorder} rounded-md focus:outline-none focus:ring-2 ${focusRingClass} ${focusBorderClass} transition-shadow`;
-  const labelBaseStyle = `block text-xs font-medium ${neutralTextLight} mb-1.5`;
+  // Define input styles using theme variables where possible - ideally these would be in the theme file
+  const inputBaseStyle = `w-full p-3 text-base ${neutralText} bg-white border ${neutralBorder} rounded-lg focus:outline-none focus:ring-2 ${focusRingClass} ${focusBorderClass} transition-shadow shadow-sm hover:border-gray-400`; // Enhanced input style
+  const labelBaseStyle = `block text-sm font-medium ${neutralText} mb-2`; // Bolder label
 
 
   useEffect(() => {
@@ -234,95 +229,105 @@ const HotelsPage = () => {
     if (isLoadingSelectedHotel) return <LoadingState message="Loading Hotel Details..." />;
     if (selectedHotelError || !selectedHotel) return <ErrorState message={selectedHotelError?.message || "Hotel details could not be found."} onRetry={() => setRetrySelectedHotelToken(c => c + 1)} />;
 
-    // Calculate the actual minimum room price for the selected hotel
     let calculatedMinPrice: number | null = null;
     if (selectedHotel.rooms && selectedHotel.rooms.length > 0) {
       calculatedMinPrice = selectedHotel.rooms.reduce((min, room) => {
         const price = Number(room.base_price);
-        if (!isNaN(price) && (min === null || price < min)) {
-          return price;
-        }
-        return min;
+        return !isNaN(price) && (min === null || price < min) ? price : min;
       }, null as number | null);
     }
 
-    const mainPrice = calculatedMinPrice !== null
-      ? calculatedMinPrice.toLocaleString("en-IN")
-      : 'N/A';
-
+    const mainPrice = calculatedMinPrice !== null ? calculatedMinPrice.toLocaleString("en-IN") : 'N/A';
     const mainImageUrl = normalizeImageUrl(selectedHotel.images?.[0]);
     const galleryImages = (selectedHotel.images ?? []).slice(1, 5).map(normalizeImageUrl);
 
+    // Matches structure from Diglipur hero section
     return (
       <div className={`${neutralBgLight} min-h-screen`}>
-        <div className={`bg-white shadow-sm py-3 sticky top-0 z-40 border-b ${neutralBorderLight}`}>
+        {/* Sticky Header for Back Button - Themed */}
+        <div className={`bg-white shadow-md py-3 sticky top-0 z-40 border-b ${neutralBorderLight}`}>
           <div className="container mx-auto px-4 flex justify-between items-center">
-            <button onClick={handleBackToList} className={buttonSecondaryStyle}>
+            <button onClick={handleBackToList} className={`${buttonSecondaryStyleHero} px-4 py-2 text-sm`}> {/* Using Hero style for visibility */}
               <ChevronLeft size={18} className="mr-1.5" /> Back to Results
             </button>
+            {/* Potentially add hotel name or share button here later if needed */}
           </div>
         </div>
+        
+        {/* Adapted Hero-like section for Hotel Name and Main Image */}
+        <div className="relative h-[50vh] md:h-[60vh] w-full">
+            <Image
+                src={mainImageUrl}
+                alt={`Main image for ${selectedHotel.name}`}
+                fill
+                priority
+                style={{ objectFit: 'cover' }}
+                className={`${neutralBg}`}
+                onError={(e) => { e.currentTarget.src = normalizeImageUrl(null); e.currentTarget.onerror = null; }}
+                unoptimized={process.env.NODE_ENV === 'development'}
+                sizes="100vw"
+            />
+            {mainImageUrl.includes('placehold.co') && (
+              <div className={`absolute inset-0 flex items-center justify-center ${neutralBg}/80 pointer-events-none`}>
+                <ImageOff size={64} className={`${neutralIconColor} opacity-50`} />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white">
+                <div className="container mx-auto">
+                    <h1 className="text-3xl md:text-5xl font-bold mb-2 drop-shadow-lg">{selectedHotel.name}</h1>
+                    <div className={`flex flex-wrap items-center text-sm md:text-base ${neutralTextLight} text-white/90 gap-x-4 gap-y-1 drop-shadow-sm`}>
+                        <span className="flex items-center"><MapPin size={16} className="mr-1.5" /> {selectedHotel.address}</span>
+                        {/* Add other quick info like star rating if available */}
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
         <div className={`container mx-auto px-4 ${sectionPadding}`}>
-          <div className="mb-6 md:mb-8">
-            <h1 className={`text-3xl md:text-4xl font-bold ${neutralText} mb-2`}>{selectedHotel.name}</h1>
-            <div className={`flex flex-wrap items-center text-sm ${neutralTextLight} gap-x-4 gap-y-1.5`}>
-              <span className="flex items-center"><MapPin size={15} className={`mr-1.5 ${neutralIconColor}`} /> {selectedHotel.address}</span>
-            </div>
-          </div>
-
-          <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+          <div className="lg:grid lg:grid-cols-3 lg:gap-8 xl:gap-10">
             <div className="lg:col-span-2">
-              <div className={`mb-6 rounded-2xl overflow-hidden shadow-lg relative aspect-[16/10] border ${neutralBorderLight}`}>
-                <Image
-                  src={mainImageUrl}
-                  alt={`Main image for ${selectedHotel.name}`}
-                  fill style={{ objectFit: 'cover' }}
-                  className="bg-gray-100" // Use neutralBg or similar if defined for placeholders
-                  onError={(e) => { e.currentTarget.src = normalizeImageUrl(null); e.currentTarget.onerror = null; }}
-                  priority unoptimized={process.env.NODE_ENV === 'development'}
-                  sizes="(max-width: 1024px) 100vw, 66vw"
-                />
-                {mainImageUrl.includes('placehold.co') && (
-                  <div className={`absolute inset-0 flex items-center justify-center ${neutralBg || 'bg-gray-100'}/50 pointer-events-none`}>
-                    <ImageOff size={48} className={`${neutralIconColor} opacity-50`} />
-                  </div>
-                )}
-              </div>
-
+              {/* Gallery moved up, styled similar to Diglipur gallery thumbs */}
               {galleryImages.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-8">
-                  {galleryImages.map((img, index) => (
-                    <div key={index} className={`rounded-xl overflow-hidden shadow-md aspect-square relative border ${neutralBorderLight}`}>
-                      <Image
-                        src={img} alt={`${selectedHotel.name} gallery image ${index + 1}`}
-                        fill style={{ objectFit: 'cover' }} className="bg-gray-100" // Use neutralBg or similar
-                        onError={(e) => { e.currentTarget.src = normalizeImageUrl(null); e.currentTarget.onerror = null; }}
-                        unoptimized={process.env.NODE_ENV === 'development'}
-                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-                        loading="lazy"
-                      />
-                      {img.includes('placehold.co') && (
-                        <div className={`absolute inset-0 flex items-center justify-center ${neutralBg || 'bg-gray-100'}/50 pointer-events-none`}>
-                          <ImageOff size={32} className={`${neutralIconColor} opacity-50`} />
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                <div className={`mb-8 p-4 ${neutralBg} rounded-xl border ${neutralBorderLight}`}>
+                  <h3 className={`text-lg font-semibold ${neutralText} mb-3`}>Photo Gallery</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {galleryImages.map((img, index) => (
+                      <div key={index} className={`rounded-lg overflow-hidden shadow-sm aspect-square relative border ${neutralBorder} group cursor-pointer`}>
+                        <Image
+                          src={img} alt={`${selectedHotel.name} gallery image ${index + 1}`}
+                          fill style={{ objectFit: 'cover' }} className={`${neutralBgLight} group-hover:scale-105 transition-transform duration-300`}
+                          onError={(e) => { e.currentTarget.src = normalizeImageUrl(null); e.currentTarget.onerror = null; }}
+                          unoptimized={process.env.NODE_ENV === 'development'}
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          loading="lazy"
+                        />
+                        {img.includes('placehold.co') && (
+                          <div className={`absolute inset-0 flex items-center justify-center ${neutralBgLight}/80 pointer-events-none`}>
+                            <ImageOff size={32} className={`${neutralIconColor} opacity-50`} />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-
-              <div className={`bg-white p-2 rounded-lg shadow-md mb-6 sticky top-[70px] z-30 border ${neutralBorderLight} overflow-x-auto whitespace-nowrap`}>
+              
+              {/* Tab Navigation - Themed */}
+              <div className={`bg-white p-2 rounded-xl shadow-md mb-8 sticky top-[70px] z-30 border ${neutralBorderLight} overflow-x-auto whitespace-nowrap`}>
                 <nav className="flex space-x-1 sm:space-x-2">
                   {['Overview', 'Rooms', 'Amenities', 'Location', 'Policies', 'Reviews'].map(tab => (
-                    <a key={tab} href={`#hotel-${tab.toLowerCase()}`} className={`px-3 py-2 ${neutralTextLight} font-medium hover:bg-gray-100 hover:text-${focusRingColorName}-${focusRingColorShade} rounded-md transition-colors text-sm`}>
+                    <a key={tab} href={`#hotel-${tab.toLowerCase()}`} 
+                       className={`px-3.5 py-2.5 ${neutralTextLight} font-medium hover:${neutralBg} hover:${neutralText} rounded-lg transition-colors text-sm md:text-base focus:outline-none focus:ring-2 ${focusRingClass}`}>
                       {tab}
                     </a>
                   ))}
                 </nav>
               </div>
 
-              <div className={cardBaseStyle}>
+              {/* Main content sections wrapper with cardBaseStyle */}
+              <div className={`${cardBaseStyle} divide-y ${neutralBorderLight}`}> {/* Added divide for consistent section separation */}
                 <DetailSection id="hotel-overview" title="Overview" icon={Info}>
                   <p className="whitespace-pre-line">{selectedHotel.description || "Detailed description not available."}</p>
                   {selectedHotel.total_rooms && (
@@ -332,56 +337,58 @@ const HotelsPage = () => {
 
                 <DetailSection id="hotel-rooms" title="Available Rooms" icon={BedDouble}>
                   {selectedHotel.rooms && selectedHotel.rooms.length > 0 ? (
-                    <div className="space-y-6 -mx-5 md:-mx-6 px-5 md:px-6">
+                    <div className="space-y-6"> {/* Removed negative margins, padding handled by cardBaseStyle */}
                       {selectedHotel.rooms.map((room: Room) => {
                         const roomPrice = typeof room.base_price === 'number' ? room.base_price.toLocaleString("en-IN") : 'N/A';
                         const roomMainImage = normalizeImageUrl(room.images?.[0]);
                         return (
-                          <div key={room.id} className={`border ${neutralBorder} rounded-lg overflow-hidden md:flex hover:shadow-md transition-shadow`}>
+                          // Room Card - using elements of cardBaseStyle but nested
+                          <div key={room.id} className={`border ${neutralBorder} rounded-xl overflow-hidden md:flex shadow-sm hover:shadow-lg transition-all duration-300 bg-white`}>
                             {room.images && room.images.length > 0 && (
-                              <div className={`md:w-1/3 lg:w-1/4 relative h-48 md:h-auto flex-shrink-0 ${neutralBg || 'bg-gray-100'}`}>
+                              <div className={`md:w-2/5 lg:w-1/3 relative h-52 md:h-auto flex-shrink-0 ${neutralBgLight}`}>
                                 <Image
                                   src={roomMainImage}
                                   alt={room.room_type_name} layout="fill" objectFit="cover"
+                                  className="group-hover:scale-105 transition-transform duration-300" // Added hover effect
                                   onError={(e: any) => { if (e.target.src !== normalizeImageUrl(null)) e.target.src = normalizeImageUrl(null); }}
                                 />
                                 {roomMainImage.includes('placehold.co') && (
-                                  <div className={`absolute inset-0 flex items-center justify-center ${neutralBg || 'bg-gray-100'}/80 pointer-events-none`}>
-                                    <ImageOff size={32} className={`${neutralIconColor} opacity-60`} />
+                                  <div className={`absolute inset-0 flex items-center justify-center ${neutralBgLight}/80 pointer-events-none`}>
+                                    <ImageOff size={36} className={`${neutralIconColor} opacity-60`} />
                                   </div>
                                 )}
                               </div>
                             )}
                             <div className="p-4 md:p-5 flex-grow flex flex-col">
-                              <h3 className={`text-lg font-semibold ${neutralText} mb-1.5`}>{room.room_type_name}</h3>
-                              <div className={`grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs ${neutralTextLight} mb-3`}>
-                                <div className="flex items-center"><Users className={`h-3.5 w-3.5 mr-1.5 ${neutralIconColor}`} /> {room.capacity_adults} Adults{room.capacity_children ? `, ${room.capacity_children} Ch.` : ""}</div>
+                              <h3 className={`text-lg md:text-xl font-semibold ${neutralText} mb-2`}>{room.room_type_name}</h3>
+                              <div className={`grid grid-cols-2 gap-x-4 gap-y-2 text-sm ${neutralTextLight} mb-3`}>
+                                <div className="flex items-center"><Users className={`h-4 w-4 mr-2 ${neutralIconColor}`} /> {room.capacity_adults} Adults{room.capacity_children ? `, ${room.capacity_children} Ch.` : ""}</div>
                                 {typeof room.quantity_available === 'number' && (
-                                  <div className="flex items-center"><BedDouble className={`h-3.5 w-3.5 mr-1.5 ${neutralIconColor}`} /> {room.quantity_available} left</div>
+                                  <div className="flex items-center"><BedDouble className={`h-4 w-4 mr-2 ${neutralIconColor}`} /> {room.quantity_available} left</div>
                                 )}
                               </div>
                               {room.amenities && room.amenities.length > 0 && (
-                                <div className="mb-3">
-                                  <h4 className={`text-xs font-semibold ${neutralText} mb-1`}>Room Amenities:</h4>
-                                  <ul className="flex flex-wrap gap-x-3 gap-y-1">
+                                <div className="mb-4">
+                                  <h4 className={`text-sm font-semibold ${neutralText} mb-1.5`}>Room Amenities:</h4>
+                                  <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
                                     {room.amenities.slice(0, 4).map(amenity => (
-                                      <li key={amenity} className={`flex items-center text-xs ${neutralTextLight}`}>
-                                        {getAmenityIcon(amenity, "h-3 w-3")}
+                                      <li key={amenity} className={`flex items-center text-xs md:text-sm ${neutralTextLight}`}>
+                                        {getAmenityIcon(amenity, "h-3.5 w-3.5")}
                                         <span className="truncate" title={amenity}>{amenity}</span>
                                       </li>
                                     ))}
-                                    {room.amenities.length > 4 && <li className={`text-xs ${neutralTextLight}`}>+ more</li>}
+                                    {room.amenities.length > 4 && <li className={`text-xs md:text-sm ${neutralTextLight}`}>+ more</li>}
                                   </ul>
                                 </div>
                               )}
-                              <div className="mt-auto flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                              <div className="mt-auto flex flex-col sm:flex-row sm:items-end sm:justify-between">
                                 <div className="mb-3 sm:mb-0">
-                                  <p className={`text-xl font-bold ${neutralText}`}><IndianRupee className="inline h-4.5 w-4.5" />{roomPrice}</p>
+                                  <p className={`text-xl md:text-2xl font-bold ${successText}`}><IndianRupee className={`inline h-5 w-5 ${successIconColor}`} />{roomPrice}</p> {/* Price with success color */}
                                   <p className={`text-xs ${neutralTextLight}`}>per night + taxes</p>
                                 </div>
                                 <button
                                   onClick={() => handleBookRoom(room.id, selectedHotel.name, room.room_type_name)}
-                                  className={`${buttonPrimaryStyle} py-2 px-4 w-full sm:w-auto`}
+                                  className={`${buttonPrimaryStyle} py-2.5 px-5 w-full sm:w-auto text-sm md:text-base`}
                                 >
                                   Book Room
                                 </button>
@@ -396,10 +403,12 @@ const HotelsPage = () => {
 
                 {selectedHotel.facilities && selectedHotel.facilities.length > 0 && (
                   <DetailSection id="hotel-amenities" title="Hotel Amenities" icon={ListChecks}>
-                    <ul className={`list-none grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2`}>
+                    <ul className={`list-none grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-2.5`}> {/* Adjusted gap */}
                       {selectedHotel.facilities.map((item, i) =>
                         <li key={i} className={`flex items-center ${neutralTextLight}`}>
-                          {getAmenityIcon(item, "h-4 w-4")}
+                          <div className={`${listIconWrapperStyle} mr-2.5 p-1.5 border-0 ${neutralBgLight}`}> {/* Themed icon wrapper */}
+                            {getAmenityIcon(item, "h-4 w-4")}
+                          </div>
                           <span>{item}</span>
                         </li>)}
                     </ul>
@@ -409,31 +418,32 @@ const HotelsPage = () => {
                 <DetailSection id="hotel-location" title="Location" icon={MapPin}>
                   <p className={`mb-3 ${neutralTextLight}`}>{selectedHotel.address}</p>
                   {selectedHotel.latitude && selectedHotel.longitude ? (
-                    <div className={`h-64 md:h-80 rounded-lg overflow-hidden border ${neutralBorderLight} shadow-sm`}>
+                    <div className={`h-72 md:h-80 rounded-xl overflow-hidden border ${neutralBorder} shadow-sm`}> {/* Themed border */}
                       <HotelDetailMap
                         latitude={selectedHotel.latitude}
                         longitude={selectedHotel.longitude}
                         name={selectedHotel.name}
-                        themeNeutralBorderLight={neutralBorderLight}
+                        themeNeutralBorderLight={neutralBorderLight} // Pass theme variable
                       />
                     </div>
                   ) : (
-                    <div className={`h-64 ${neutralBgLight} rounded-lg flex items-center justify-center ${neutralTextLight} border ${neutralBorderLight}`}>
+                    <div className={`h-72 md:h-80 ${neutralBgLight} rounded-xl flex flex-col items-center justify-center ${neutralTextLight} border ${neutralBorder} p-6 text-center`}>
+                       <MapPin size={40} className={`${neutralIconColor} opacity-50 mb-3`} />
                       Map data not available.
                     </div>
                   )}
-                  <p className={`mt-2 text-xs ${neutralTextLight}`}>Exact location may be provided after booking based on hotel policy.</p>
+                  <p className={`mt-3 text-xs ${neutralTextLight}`}>Exact location may be provided after booking based on hotel policy.</p>
                 </DetailSection>
 
-                <DetailSection id="hotel-policies" title="Hotel Policies" icon={ShieldCheck} className="border-b-0 pb-0">
-                  <div className={`space-y-1.5 ${neutralTextLight}`}>
-                    <p><strong>Check-in:</strong> {selectedHotel.check_in_time || 'From 2:00 PM (14:00)'}</p>
-                    <p><strong>Check-out:</strong> {selectedHotel.check_out_time || 'Until 12:00 PM (12:00)'}</p>
-                    <p><strong>Cancellation:</strong> {typeof selectedHotel.cancellation_policy === 'string' ? selectedHotel.cancellation_policy : 'Policies vary. Please check during booking.'}</p>
-                    <p><strong>Children:</strong> {selectedHotel.children_allowed ? 'Children are welcome.' : 'Policy not specified.'}</p>
-                    <p><strong>Pets:</strong> {selectedHotel.pets_allowed ? 'Pets may be allowed on request. Charges may apply.' : 'Pets are generally not allowed.'}</p>
+                <DetailSection id="hotel-policies" title="Hotel Policies" icon={ShieldCheck} className="border-b-0 pb-0"> {/* Removed bottom border for last section */}
+                  <div className={`space-y-2 ${neutralTextLight}`}> {/* Adjusted spacing */}
+                    <p><strong className={neutralText}>Check-in:</strong> {selectedHotel.check_in_time || 'From 2:00 PM (14:00)'}</p>
+                    <p><strong className={neutralText}>Check-out:</strong> {selectedHotel.check_out_time || 'Until 12:00 PM (12:00)'}</p>
+                    <p><strong className={neutralText}>Cancellation:</strong> {typeof selectedHotel.cancellation_policy === 'string' ? selectedHotel.cancellation_policy : 'Policies vary. Please check during booking.'}</p>
+                    <p><strong className={neutralText}>Children:</strong> {selectedHotel.children_allowed ? 'Children are welcome.' : 'Policy not specified.'}</p>
+                    <p><strong className={neutralText}>Pets:</strong> {selectedHotel.pets_allowed ? 'Pets may be allowed on request. Charges may apply.' : 'Pets are generally not allowed.'}</p>
                     {selectedHotel.accessibility && (
-                      <p><strong>Accessibility:</strong> {selectedHotel.accessibility}</p>
+                      <p><strong className={neutralText}>Accessibility:</strong> {selectedHotel.accessibility}</p>
                     )}
                   </div>
                   {selectedHotel.meal_plans && selectedHotel.meal_plans.length > 0 && (
@@ -446,32 +456,40 @@ const HotelsPage = () => {
                   )}
                 </DetailSection>
 
+                 {/* Guest Reviews Section - Themed as a contextual card (info) */}
                 <DetailSection id="hotel-reviews" title="Guest Reviews" icon={MessageSquare}>
-                  <p className={`${neutralTextLight}`}>Guest reviews are not yet available for this hotel. Be the first to review!</p>
+                    <div className={`${infoBg} p-5 rounded-xl border ${infoBorder}`}>
+                        <div className="flex items-center mb-2">
+                            <Info size={20} className={`${infoIconColor} mr-2`} />
+                            <h4 className={`text-md font-semibold ${infoText}`}>Review Information</h4>
+                        </div>
+                        <p className={`${neutralTextLight} text-sm`}>Guest reviews are not yet available for this hotel. Be the first to share your experience!</p>
+                        {/* Future: Add a "Write a Review" button here if functionality exists */}
+                        {/* <button className={`mt-3 ${buttonSecondaryStyleHero} text-sm py-2 px-4`}>Write a review</button> */}
+                    </div>
                 </DetailSection>
-
               </div>
             </div>
 
-            <div className="lg:col-span-1 mt-8 lg:mt-0">
-              <div className={`${cardBaseStyle} sticky top-24 shadow-xl`}>
-                <h3 className={`text-lg font-semibold ${neutralText} mb-1`}>Price Starts From</h3>
-                <p className={`text-3xl font-bold ${neutralText} mb-0.5`}>
-                  <IndianRupee className="inline h-6 w-6 mr-0.5" />
+            {/* Sticky Price Callout - Themed */}
+            <div className="lg:col-span-1 mt-10 lg:mt-0"> {/* Increased top margin for non-lg screens */}
+              <div className={`${cardBaseStyle} sticky top-24 shadow-xl p-5 md:p-6`}>
+                <h3 className={`text-lg font-semibold ${neutralText} mb-1.5`}>Price Starts From</h3>
+                <p className={`text-3xl md:text-4xl font-bold ${successText} mb-1`}> {/* Price with success color */}
+                  <IndianRupee className={`inline h-6 w-6 md:h-7 md:w-7 mr-0.5 ${successIconColor}`} />
                   {mainPrice}
                 </p>
-                <p className={`text-xs ${neutralTextLight} mb-4`}>
+                <p className={`text-xs ${neutralTextLight} mb-5`}>
                   per night (approx, excl. taxes & fees)
                 </p>
-
                 <button
                   type="button"
                   className={`${buttonPrimaryStyle} w-full text-base py-3`}
                   onClick={() => document.getElementById('hotel-rooms')?.scrollIntoView({ behavior: 'smooth' })}
                 >
-                  <Eye size={18} className="mr-2" /> View Available Rooms
+                  <Eye size={20} className="mr-2" /> View Available Rooms
                 </button>
-                <p className={`text-xs ${neutralTextLight} mt-2.5 text-center`}>Check room options for best deals!</p>
+                <p className={`text-xs ${neutralTextLight} mt-3 text-center`}>Check room options for best deals!</p>
               </div>
             </div>
           </div>
@@ -482,29 +500,35 @@ const HotelsPage = () => {
 
   // --- Main Page View (List of Hotels) ---
   return (
-    <div className={`container mx-auto px-4 ${sectionPadding}`}>
-      <div className="text-center mb-8 md:mb-10">
-        <h1 className={`text-3xl md:text-4xl font-bold ${neutralText}`}>Explore Our Hotels</h1>
+    <div className={`container mx-auto px-4 ${sectionPadding}`}> {/* Uses sectionPadding */}
+      {/* Page Header - Themed */}
+      <div className="text-center mb-10 md:mb-12">
+        <h1 className={`text-3xl md:text-5xl font-bold ${neutralText} mb-3`}>Explore Our Hotels</h1>
         <p className={`mt-2 text-base md:text-lg ${neutralTextLight} max-w-2xl mx-auto`}>
           Find the perfect stay for your next adventure from our curated selection of hotels.
         </p>
       </div>
 
-      <div className={`${cardBaseStyle} mb-8 md:mb-10 p-4 sm:p-6`}>
-        <h2 className={`${sectionHeadingStyle} text-xl mb-4 justify-center sm:justify-start`}>
-          <FilterIcon size={20} className={`mr-2.5 ${neutralIconColor}`} />
+      {/* Filter Section - Themed with cardBaseStyle */}
+      <div className={`${cardBaseStyle} mb-10 md:mb-12 p-5 md:p-6`}> {/* Uses cardBaseStyle */}
+        <h2 className={`${sectionHeadingStyle} text-xl md:text-2xl mb-5 justify-center sm:justify-start`}>
+          <FilterIcon size={22} className={`mr-3 ${neutralIconColor}`} />
           Filter Options
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 items-end">
           <div className="relative">
-            <label htmlFor="searchTerm" className={labelBaseStyle}>Search by Name</label>
-            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 mt-3 sm:mt-2.5 ${neutralIconColor} pointer-events-none`} size={18} />
-            <input type="text" id="searchTerm" placeholder="e.g., Sunset Paradise" className={`${inputBaseStyle} pl-10`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <label htmlFor="searchTerm" className={labelBaseStyle}>Search by Hotel Name</label>
+            <div className="relative mt-1">
+              <Search className={`absolute left-3.5 top-1/2 transform -translate-y-1/2 ${neutralIconColor} pointer-events-none`} size={20} />
+              <input type="text" id="searchTerm" placeholder="e.g., Sunset Paradise" className={`${inputBaseStyle} pl-12`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            </div>
           </div>
           <div className="relative">
             <label htmlFor="locationFilter" className={labelBaseStyle}>Filter by Location</label>
-            <MapPin className={`absolute left-3 top-1/2 transform -translate-y-1/2 mt-3 sm:mt-2.5 ${neutralIconColor} pointer-events-none`} size={18} />
-            <input type="text" id="locationFilter" placeholder="e.g., Port Blair" className={`${inputBaseStyle} pl-10`} value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)} />
+            <div className="relative mt-1">
+              <MapPin className={`absolute left-3.5 top-1/2 transform -translate-y-1/2 ${neutralIconColor} pointer-events-none`} size={20} />
+              <input type="text" id="locationFilter" placeholder="e.g., Port Blair" className={`${inputBaseStyle} pl-12`} value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)} />
+            </div>
           </div>
         </div>
       </div>
@@ -517,7 +541,8 @@ const HotelsPage = () => {
 
       {!isLoadingHotels && !hotelsError && hotelsList && hotelsList.length > 0 && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Hotel List Grid - Using cardBaseStyle for each hotel card */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {hotelsList.map((hotel, index) => {
               const cardPrice = hotel.rooms && hotel.rooms.length > 0 && typeof hotel.rooms[0].base_price === 'number'
                 ? hotel.rooms[0].base_price.toLocaleString("en-IN")
@@ -525,39 +550,40 @@ const HotelsPage = () => {
               const hotelMainImage = normalizeImageUrl(hotel.images?.[0]);
 
               return (
-                <div key={hotel.id} className={`${cardBaseStyle} flex flex-col group cursor-pointer hover:shadow-xl transition-shadow duration-300`} onClick={() => handleSelectHotel(hotel.id)}>
-                  <div className="h-48 sm:h-56 w-full relative rounded-lg overflow-hidden mb-4 flex-shrink-0">
+                // Hotel Card - Applying cardBaseStyle and thematic structure
+                <div key={hotel.id} className={`${cardBaseStyle} flex flex-col group cursor-pointer p-0 overflow-hidden`} onClick={() => handleSelectHotel(hotel.id)}> {/* cardBaseStyle modified for no internal padding */}
+                  <div className={`h-56 sm:h-60 w-full relative rounded-t-2xl overflow-hidden flex-shrink-0 ${neutralBgLight}`}> {/* neutralBgLight for placeholder */}
                     <Image
                       src={hotelMainImage}
                       alt={hotel.name} layout="fill" objectFit="cover"
-                      className={`transition-transform duration-300 group-hover:scale-105 ${neutralBg || 'bg-gray-100'}`}
+                      className="transition-transform duration-300 group-hover:scale-105"
                       onError={(e: any) => { if (e.target.src !== normalizeImageUrl(null)) e.target.src = normalizeImageUrl(null); }}
-                      priority={index < 3}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      priority={index < 3} // Prioritize loading images for first few cards
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
                     {hotelMainImage.includes('placehold.co') && (
-                      <div className={`absolute inset-0 flex items-center justify-center ${neutralBg || 'bg-gray-100'}/80 pointer-events-none`}>
-                        <ImageOff size={32} className={`${neutralIconColor} opacity-60`} />
+                      <div className={`absolute inset-0 flex items-center justify-center ${neutralBgLight}/80 pointer-events-none`}>
+                        <ImageOff size={40} className={`${neutralIconColor} opacity-60`} />
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col flex-grow">
-                    <h2 className={`text-lg font-semibold mb-1 ${neutralText} line-clamp-2 group-hover:text-${focusRingColorName}-${focusRingColorShade}`}>{hotel.name}</h2>
-                    <div className={`flex items-center text-xs ${neutralTextLight} mb-1.5`}>
-                      <MapPin className={`h-3.5 w-3.5 mr-1 ${neutralIconColor}`} /> <span className="truncate">{hotel.address}</span>
+                  <div className="p-5 md:p-6 flex flex-col flex-grow"> {/* Padding applied here */}
+                    <h2 className={`text-lg md:text-xl font-semibold mb-1.5 ${neutralText} line-clamp-2 group-hover:${infoText}`}>{hotel.name}</h2> {/* infoText on hover */}
+                    <div className={`flex items-center text-xs md:text-sm ${neutralTextLight} mb-2`}>
+                      <MapPin className={`h-4 w-4 mr-1.5 ${neutralIconColor}`} /> <span className="truncate">{hotel.address}</span>
                     </div>
-                    {hotel.description && <p className={`text-xs ${neutralTextLight} mt-1 mb-3 line-clamp-2`}>{hotel.description}</p>}
+                    {hotel.description && <p className={`text-sm ${neutralTextLight} mt-1 mb-3 line-clamp-3`}>{hotel.description}</p>}
 
                     {cardPrice ? (
-                      <div className={`text-lg font-semibold text-green-600 mb-3`}>
-                        <IndianRupee className={`inline h-4.5 w-4.5 mr-0.5 text-green-500`} />
+                      <div className={`text-xl font-semibold ${successText} mb-4`}> {/* successText for price */}
+                        <IndianRupee className={`inline h-5 w-5 mr-0.5 ${successIconColor}`} />
                         {cardPrice} <span className={`text-xs ${neutralTextLight} font-normal`}>/ night (from)</span>
                       </div>
-                    ) : (<p className={`text-xs ${neutralTextLight} mb-3`}>Check availability for prices</p>)}
+                    ) : (<p className={`text-sm ${neutralTextLight} mb-4 italic`}>Check availability for prices</p>)}
 
                     <button
                       onClick={(e) => { e.stopPropagation(); handleSelectHotel(hotel.id); }}
-                      className={`${buttonPrimaryStyle} w-full text-sm py-2.5 mt-auto`}
+                      className={`${buttonPrimaryStyle} w-full text-sm py-2.5 mt-auto`} // Already uses buttonPrimaryStyle
                     >
                       View Details <ChevronRight className="ml-1.5 h-4 w-4" />
                     </button>
@@ -567,23 +593,24 @@ const HotelsPage = () => {
             })}
           </div>
 
+          {/* Pagination - Themed buttons */}
           {totalPages > 1 && (
-            <div className="mt-8 md:mt-12 flex justify-center items-center space-x-2">
+            <div className="mt-10 md:mt-16 flex justify-center items-center space-x-2 sm:space-x-3">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1 || isLoadingHotels}
-                className={`${buttonSecondaryStyle} px-3 py-2 sm:px-4 disabled:opacity-60 disabled:cursor-not-allowed`}
+                className={`${buttonSecondaryStyleHero} px-3 py-2 sm:px-4 text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="hidden sm:inline ml-1">Previous</span>
+                <span className="hidden sm:inline ml-1.5">Previous</span>
               </button>
-              <span className={`px-3 py-2 text-sm ${neutralTextLight}`}>Page {currentPage} of {totalPages}</span>
+              <span className={`px-3 py-2 text-sm font-medium ${neutralText} bg-white border ${neutralBorder} rounded-md shadow-sm`}>Page {currentPage} of {totalPages}</span>
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages || isLoadingHotels || hotelsList.length < ITEMS_PER_PAGE}
-                className={`${buttonSecondaryStyle} px-3 py-2 sm:px-4 disabled:opacity-60 disabled:cursor-not-allowed`}
+                className={`${buttonSecondaryStyleHero} px-3 py-2 sm:px-4 text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                <span className="hidden sm:inline mr-1">Next</span>
+                <span className="hidden sm:inline mr-1.5">Next</span>
                 <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </div>

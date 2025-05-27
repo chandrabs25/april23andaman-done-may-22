@@ -1,5 +1,17 @@
-const { initOpenNextCloudflareForDev } = require('@opennextjs/cloudflare')
-initOpenNextCloudflareForDev()
+// const { initOpenNextCloudflareForDev } = require('@opennextjs/cloudflare')
+// initOpenNextCloudflareForDev()
+
+if (process.env.NODE_ENV === 'development') {
+  import('@opennextjs/cloudflare').then(module => {
+    if (module && typeof module.initOpenNextCloudflareForDev === 'function') {
+      module.initOpenNextCloudflareForDev();
+    } else {
+      console.warn("initOpenNextCloudflareForDev not found in @opennextjs/cloudflare or is not a function.");
+    }
+  }).catch(err => {
+    console.error("Failed to load @opennextjs/cloudflare for development:", err);
+  });
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

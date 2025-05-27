@@ -28,21 +28,35 @@ interface PackageData {
   // Add other relevant fields like base_price, description, etc. if needed for display
 }
 
-// --- Reusable Components (Simplified for brevity, consider placing in a components folder) ---
+// --- Theme Imports ---
+import {
+  neutralBgLight, neutralText, neutralTextLight, neutralBorder, neutralBorderLight, neutralBg,
+  infoText, infoIconColor, infoBg, infoBorder,
+  successText, successIconColor, successBg, successBorder, // For potential success messages
+  errorText, errorIconColor, errorBg, errorBorder,
+  buttonPrimaryStyle, buttonSecondaryStyleHero, // Using Hero for secondary for now
+  cardBaseStyle, sectionPadding, sectionHeadingStyle,
+  // inputBaseStyle and labelBaseStyle will be applied directly or via the form component
+} from '@/styles/26themeandstyle'; 
+// --- End Theme Imports ---
+
+
+// --- Reusable Components (Themed) ---
 const LoadingSpinner = ({ message = "Loading booking details..." }: { message?: string }) => (
-  <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-    <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-    <span className="text-lg text-gray-700">{message}</span>
+  <div className={`min-h-screen flex flex-col items-center justify-center ${neutralBgLight} ${sectionPadding}`}>
+    <Loader2 className={`h-16 w-16 animate-spin ${infoIconColor} mb-5`} />
+    <span className={`text-xl ${infoText} font-semibold`}>{message}</span>
+    <p className={`${neutralTextLight} mt-1`}>Please wait a moment.</p>
   </div>
 );
 
 const ErrorDisplay = ({ title = "Error", message, showBackButton = true }: { title?: string, message: string, showBackButton?: boolean }) => (
-  <div className="min-h-screen flex flex-col items-center justify-center text-center px-4 py-10 bg-gray-50">
-    <AlertTriangle className="h-16 w-16 text-red-500 mb-6" />
-    <h2 className="text-3xl font-semibold text-gray-800 mb-4">{title}</h2>
-    <p className="text-gray-600 mb-8 max-w-md">{message}</p>
+  <div className={`min-h-screen flex flex-col items-center justify-center text-center px-4 ${sectionPadding} ${errorBg} border ${errorBorder} rounded-2xl m-4 md:m-8`}>
+    <AlertTriangle className={`h-20 w-20 ${errorIconColor} mb-6`} />
+    <h2 className={`text-3xl font-semibold ${errorText} mb-4`}>{title}</h2>
+    <p className={`${neutralTextLight} mb-8 max-w-md`}>{message}</p>
     {showBackButton && (
-      <Link href="/packages" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors text-lg font-medium inline-flex items-center">
+      <Link href="/packages" className={`${buttonPrimaryStyle} bg-red-600 hover:bg-red-700 focus:ring-red-500`}> {/* Error-specific button */}
         <ArrowLeft size={20} className="mr-2" /> Back to Packages
       </Link>
     )}
@@ -114,75 +128,84 @@ function NewBookingPageContent() {
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen py-8 md:py-12 font-sans">
+    <div className={`${neutralBgLight} min-h-screen ${sectionPadding} font-sans`}>
       <div className="container mx-auto px-4">
-        <div className="mb-6">
-          {/* Removed back link for navigation */}
-          {/* <Link href="/user/bookings" className="text-blue-600 hover:text-blue-700 inline-flex items-center transition-colors group">
-            <ArrowLeft size={18} className="mr-2 transition-transform group-hover:-translate-x-1" />
-            Back to My Bookings
-          </Link> */}
+        {/* Back to package link - could be themed as a secondary button */}
+        <div className="mb-6 md:mb-8">
+          <Link 
+            href={packageId ? `/packages/${packageId}` : '/packages'} 
+            className={`${buttonSecondaryStyleHero} px-4 py-2 text-sm bg-white hover:bg-gray-50 text-gray-700 border-gray-300 shadow-sm`} // Adjusted secondary button
+          >
+            <ArrowLeft size={18} className="mr-2" /> Back to Package Details
+          </Link>
         </div>
 
-        <div className="bg-white rounded-xl shadow-xl overflow-hidden p-6 md:p-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6">Confirm Your Booking</h1>
+        {/* Main content card */}
+        <div className={`${cardBaseStyle} p-6 md:p-8 lg:p-10 shadow-xl`}>
+          <h1 className={`${sectionHeadingStyle} text-3xl md:text-4xl mb-8 justify-center md:justify-start`}>
+            <InfoIcon size={28} className={`mr-3 ${infoIconColor}`} /> Confirm Your Booking
+          </h1>
           
-          <section className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
-            <h2 className="text-2xl font-semibold text-blue-700 mb-4 flex items-center">
+          {/* Package Summary Section - Themed as a contextual card */}
+          <section className={`mb-8 md:mb-10 p-6 rounded-xl ${infoBg} border ${infoBorder} shadow-md`}>
+            <h2 className={`text-2xl font-semibold ${infoText} mb-4 flex items-center`}>
               <PackageIcon size={24} className="mr-3" /> Your Selection
             </h2>
             <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
               <div>
-                <h3 className="text-lg font-medium text-gray-700">{selectedPackage.name}</h3>
-                <p className="text-sm text-gray-500">Package</p>
+                <h3 className={`text-lg font-medium ${neutralText}`}>{selectedPackage.name}</h3>
+                <p className={`text-sm ${neutralTextLight}`}>Package</p>
               </div>
-              <div className="bg-white p-4 rounded-md shadow-sm border">
-                <h4 className="text-md font-semibold text-gray-800 flex items-center mb-1">
-                  <TagIcon size={18} className="mr-2 text-blue-600" /> {selectedCategory.category_name}
+              {/* Category details card - nested card style */}
+              <div className={`${cardBaseStyle} p-4 md:p-5 bg-white`}> {/* Override cardBaseStyle padding and bg */}
+                <h4 className={`text-md font-semibold ${neutralText} flex items-center mb-1.5`}>
+                  <TagIcon size={18} className={`mr-2 ${infoIconColor}`} /> {selectedCategory.category_name}
                 </h4>
-                <p className="text-2xl font-bold text-blue-600 mb-2">
-                  ₹{selectedCategory.price.toLocaleString('en-IN')}
-                  <span className="text-sm font-normal text-gray-500"> / person</span>
+                <p className={`text-2xl font-bold ${successText} mb-2`}>
+                  <span className="indian-rupee">₹</span>{selectedCategory.price.toLocaleString('en-IN')}
+                  <span className={`text-sm font-normal ${neutralTextLight}`}> / person</span>
                 </p>
                 {selectedCategory.category_description && (
-                  <p className="text-xs text-gray-600 mb-1">{selectedCategory.category_description}</p>
+                  <p className={`text-xs ${neutralTextLight} mb-1.5`}>{selectedCategory.category_description}</p>
                 )}
-                <p className="text-xs text-gray-600 flex items-center">
-                  <UsersIcon size={14} className="mr-1.5 text-green-500" /> 
+                <p className={`text-xs ${neutralTextLight} flex items-center`}>
+                  <UsersIcon size={14} className={`mr-1.5 ${successIconColor}`} /> 
                   Covers up to {selectedCategory.max_pax_included_in_price} person(s) at this price.
                 </p>
                  {selectedCategory.hotel_details && (
-                    <p className="text-xs text-gray-500 mt-1 border-t pt-1">Hotel: {selectedCategory.hotel_details}</p>
+                    <p className={`text-xs ${neutralTextLight} mt-2 border-t ${neutralBorderLight} pt-2`}>Hotel: {selectedCategory.hotel_details}</p>
                 )}
               </div>
             </div>
           </section>
 
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
-              <CreditCardIcon size={24} className="mr-3 text-green-600" /> Booking Details
+          {/* Booking Form Section */}
+          <section className="mb-8 md:mb-10">
+            <h2 className={`${sectionHeadingStyle} text-2xl mb-6`}>
+              <CreditCardIcon size={24} className={`mr-3 ${successIconColor}`} /> Guest & Payment Details
             </h2>
+            {/* PackageBookingForm will need internal theming for labels, inputs, buttons */}
             <PackageBookingForm
               packageDetails={selectedPackage}
               categoryDetails={selectedCategory}
               user={user ? {
-                id: user.id.toString(), // Ensure id is a string
+                id: user.id.toString(),
                 name: user.first_name || undefined,
                 email: user.email || undefined,
-                phone: undefined // Phone is not available in the User type from useAuth
+                phone: undefined 
               } : null}
+              // Theme prop removed, styling will be handled within PackageBookingForm
             />
           </section>
           
-          <section className="text-sm text-gray-500 border-t pt-4">
+          {/* Authentication Status Section */}
+          <section className={`text-sm ${neutralTextLight} border-t ${neutralBorder} pt-6 mt-8 text-center md:text-left`}>
             {isAuthenticated && user?.email ? (
-              <p>Logged in as: <span className="font-medium text-gray-700">{user.email}</span>. Not you? <Link href="/auth/signout" className="text-blue-600 hover:underline">Sign out</Link></p>
+              <p>Logged in as: <span className={`font-medium ${neutralText}`}>{user.email}</span>. Not you? <Link href="/auth/signout" className={`${infoText} hover:underline`}>Sign out</Link></p>
             ) : !authIsLoading && !isAuthenticated ? (
-              <p>Please <Link href={`/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`} className="text-blue-600 hover:underline">sign in</Link> to have a comprehensive booking experience.</p>
-            ) : null} 
-            {/* Removed "Checking authentication status..." as loading spinner covers this */}
+              <p>Please <Link href={`/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`} className={`${infoText} hover:underline font-medium`}>sign in</Link> to complete your booking or continue as guest.</p>
+            ) : null}
           </section>
-
         </div>
       </div>
     </div>

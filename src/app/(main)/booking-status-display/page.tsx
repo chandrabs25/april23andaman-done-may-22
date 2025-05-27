@@ -4,9 +4,19 @@ import { useEffect, useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 // Assuming you might want to use some UI components from shadcn/ui if available in project
-// For example: import { Button } from '@/components/ui/button';
-// import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-// import { Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, AlertTriangle, ExternalLinkIcon, HomeIcon } from 'lucide-react';
+
+// --- Theme Imports ---
+import {
+  neutralBgLight, neutralText, neutralTextLight, neutralBorder,
+  infoText, infoIconColor, infoBg, infoBorder,
+  successText, successIconColor, successBg, successBorder,
+  errorText, errorIconColor, errorBg, errorBorder,
+  warningText, warningIconColor, warningBg, warningBorder, // For pending/attention states
+  buttonPrimaryStyle, buttonSecondaryStyleHero,
+  cardBaseStyle, sectionPadding, sectionHeadingStyle,
+} from '@/styles/26themeandstyle';
+// --- End Theme Imports ---
 
 // --- Interface Definition ---
 interface CheckStatusResponse {
@@ -118,66 +128,97 @@ function PaymentStatusContent() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mtid, router]); // currentPollAttempt is managed internally by checkStatus calls
 
-    // Basic UI, can be enhanced with Card, Icons etc.
+    let statusCardBg = infoBg;
+    let statusCardBorder = infoBorder;
+    let statusIconColor = infoIconColor;
+    let statusTitleColor = infoText;
+    let StatusIcon = Loader2; // Default to loading/info
+
+    if (!isLoading) {
+        if (statusMessage.includes("successful")) {
+            statusCardBg = successBg;
+            statusCardBorder = successBorder;
+            statusIconColor = successIconColor;
+            statusTitleColor = successText;
+            StatusIcon = CheckCircle;
+        } else if (errorDetails || statusMessage.includes("failed")) {
+            statusCardBg = errorBg;
+            statusCardBorder = errorBorder;
+            statusIconColor = errorIconColor;
+            statusTitleColor = errorText;
+            StatusIcon = XCircle;
+        } else if (statusMessage.includes("still pending")) {
+            statusCardBg = warningBg;
+            statusCardBorder = warningBorder;
+            statusIconColor = warningIconColor;
+            statusTitleColor = warningText;
+            StatusIcon = AlertTriangle;
+        }
+    }
+    
+    const showButtons = !isLoading && (errorDetails || statusMessage.includes("still pending") || statusMessage.includes("failed") || statusMessage.includes("successful"));
+
     return (
-        <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Arial, sans-serif', minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-            <h1 style={{ fontSize: '2em', marginBottom: '20px', color: '#333' }}>Payment Status</h1>
+        <div className={`min-h-[70vh] ${sectionPadding} flex flex-col justify-center items-center text-center`}>
+            <h1 className={`${sectionHeadingStyle} text-3xl md:text-4xl mb-8`}>Payment Status</h1>
 
-            {/* Can use lucide-react icons here if project has them */}
-            {/* {isLoading && <Loader2 className="animate-spin h-10 w-10 text-blue-500 mb-4" />}
-      {!isLoading && statusMessage.includes("successful") && <CheckCircle className="h-10 w-10 text-green-500 mb-4" />}
-      {!isLoading && (errorDetails || statusMessage.includes("failed")) && <XCircle className="h-10 w-10 text-red-500 mb-4" />}
-      {!isLoading && statusMessage.includes("still pending") && <AlertTriangle className="h-10 w-10 text-yellow-500 mb-4" />} */}
+            <div className={`${cardBaseStyle} w-full max-w-lg p-6 md:p-8 text-center ${statusCardBg} border-2 ${statusCardBorder}`}>
+                <StatusIcon size={64} className={`mb-5 mx-auto ${statusIconColor} ${isLoading ? 'animate-spin' : ''}`} />
+                
+                <p className={`text-xl md:text-2xl font-semibold mb-3 min-h-[60px] ${statusTitleColor}`}>
+                    {statusMessage}
+                </p>
 
-            <p style={{ fontSize: '1.2em', color: '#555', marginBottom: '15px', minHeight: '50px' }}>{statusMessage}</p>
+                {isLoading && <p className={`${neutralTextLight} text-sm`}>Verifying details, please hold on...</p>}
 
-            {isLoading && <p style={{ color: '#777', fontStyle: 'italic' }}>Loading details...</p>}
+                {errorDetails && (
+                    <div className={`mt-4 p-3 rounded-md text-sm ${errorBg} border ${errorBorder} ${errorText} text-left whitespace-pre-wrap`}>
+                        <strong>Details:</strong> {errorDetails}
+                    </div>
+                )}
+            </div>
 
-            {errorDetails && (
-                <div style={{ marginTop: '20px', padding: '10px', border: '1px solid #ffcccc', backgroundColor: '#fff0f0', borderRadius: '5px', color: '#cc0000' }}>
-                    <strong>Error Details:</strong> {errorDetails}
+            {showButtons && (
+                <div className="mt-8 flex flex-col sm:flex-row gap-4 w-full max-w-lg">
+                    {statusMessage.includes("successful") ? (
+                        <Link href="/user/bookings" className={`${buttonPrimaryStyle} w-full`}>
+                           <ExternalLinkIcon size={18} className="mr-2" /> View My Bookings
+                        </Link>
+                    ) : (
+                        <>
+                            <Link href="/packages" className={`${buttonSecondaryStyleHero} w-full bg-white hover:bg-gray-100 text-gray-700 border-gray-300`}>
+                               <HomeIcon size={18} className="mr-2" /> Back to Packages
+                            </Link>
+                             <Link href="/contact-us" className={`${buttonPrimaryStyle} w-full`}>
+                                Contact Support
+                            </Link>
+                        </>
+                    )}
                 </div>
             )}
-
-            {/* Removed buttons for navigation */}
-            {/* {!isLoading && (errorDetails || statusMessage.includes("still pending") || statusMessage.includes("failed")) && (
-                <div style={{ marginTop: '30px' }}>
-                    <Link href="/packages" style={{ padding: '10px 15px', backgroundColor: '#007bff', color: 'white', textDecoration: 'none', borderRadius: '5px', marginRight: '10px' }}>
-                        Go back to Packages
-                    </Link>
-                    <Link href="/user/bookings" style={{ padding: '10px 15px', backgroundColor: '#6c757d', color: 'white', textDecoration: 'none', borderRadius: '5px' }}>
-                        View My Bookings
-                    </Link>
-                </div>
-            )} */}
-            {/* Removed button for successful payment */}
-            {/* {!isLoading && statusMessage.includes("successful!") && (
-                <div style={{ marginTop: '30px' }}>
-                    <Link href="/user/bookings" style={{ padding: '10px 15px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '5px' }}>
-                        View My Bookings
-                    </Link>
-                </div>
-            )} */}
         </div>
     );
 }
 
 export default function PaymentStatusPage() {
     return (
-        <Suspense
-            fallback={
-                <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Arial, sans-serif', minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                    <h1 style={{ fontSize: '2em', marginBottom: '20px' }}>
-                        Loading Payment Details...
-                    </h1>
-                    <p style={{ fontStyle: 'italic', color: '#777' }}>
-                        Please wait...
-                    </p>
-                </div>
-            }
-        >
-            <PaymentStatusContent />
-        </Suspense>
+        <div className={`${neutralBgLight} min-h-screen`}>
+            <Suspense
+                fallback={
+                    <div className={`min-h-screen ${sectionPadding} flex flex-col justify-center items-center text-center ${neutralBgLight}`}>
+                        <Loader2 size={48} className={`animate-spin ${infoIconColor} mb-4`} />
+                        <h1 className={`${sectionHeadingStyle} text-2xl ${infoText}`}>
+                            Loading Payment Details...
+                        </h1>
+                        <p className={`${neutralTextLight}`}>
+                            Please wait a moment.
+                        </p>
+                    </div>
+                }
+            >
+                <PaymentStatusContent />
+            </Suspense>
+        </div>
     );
 }
 

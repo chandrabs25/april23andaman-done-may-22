@@ -41,24 +41,28 @@ import {
   // secondaryButtonBg, // Included in buttonSecondaryStyle
   // secondaryButtonHoverBg, // Included in buttonSecondaryStyle
   // secondaryButtonText, // Included in buttonSecondaryStyle
-  // secondaryButtonBorder, // Included in buttonSecondaryStyle
+  // primaryButtonBg, // Keep for focus ring logic if not directly provided by theme button styles // This line was the duplicate, removing it. The first primaryButtonBg import is kept.
   errorBg,
   errorBorder,
   errorText,
   errorIconColor,
   neutralBgLight,
   neutralBorderLight,
-  neutralBg, // For image placeholders etc.
+  neutralBg,
   neutralBorder,
   neutralText,
   neutralTextLight,
   neutralIconColor,
-  sectionPadding, // For consistency if needed, though this page has its own structure
-  cardBaseStyle, // For filter section and potentially individual cards
-  sectionHeadingStyle, // For section titles
-  buttonPrimaryStyle, // For main call-to-action buttons
-  buttonSecondaryStyle, // For secondary actions like "Clear Filters"
-} from "@/styles/theme";
+  sectionPadding,
+  cardBaseStyle,
+  sectionHeadingStyle,
+  buttonPrimaryStyle,
+  buttonSecondaryStyleHero, // Using Hero for secondary actions like "Clear Filters"
+  infoIconColor, // For section heading icons if desired
+  infoText,      // For general info text
+  successText, // For prices if they should be highlighted
+  successIconColor,
+} from "@/styles/26themeandstyle";
 // --- End Common Styles Import ---
 
 // --- Page-specific Category Colors (Retained for visual distinction) ---
@@ -69,21 +73,21 @@ const activityCategoryColor = "#EC4899";  // Pink-500
 
 // --- Helper Components (Styled with Imported Theme) ---
 const LoadingSpinner = ({ text }: { text: string }) => (
-  <div className="flex flex-col justify-center items-center py-16">
-    <Loader2 className={`h-10 w-10 animate-spin ${neutralIconColor} mb-4`} />
-    <span className={`text-lg font-medium ${neutralText}`}>{text}</span>
+  <div className={`flex flex-col justify-center items-center py-16 ${sectionPadding}`}>
+    <Loader2 className={`h-12 w-12 animate-spin ${infoIconColor} mb-4`} />
+    <span className={`text-lg font-medium ${infoText}`}>{text}</span>
   </div>
 );
 
 const ErrorDisplay = ({ message, onRetry }: { message?: string, onRetry?: () => void }) => (
-  <div className={`flex flex-col justify-center items-center py-16 text-center p-6 rounded-2xl ${errorBg} border ${errorBorder}`}>
-    <AlertTriangle className={`h-10 w-10 ${errorIconColor} mb-4`} />
+  <div className={`flex flex-col justify-center items-center py-16 text-center p-6 rounded-2xl ${errorBg} border ${errorBorder} ${sectionPadding}`}>
+    <AlertTriangle className={`h-12 w-12 ${errorIconColor} mb-4`} />
     <span className={`text-lg font-medium ${errorText}`}>Oops! Something went wrong.</span>
     <p className={`text-sm ${neutralTextLight} mt-2`}>{message || "Failed to load services."}</p>
     {onRetry && (
       <button
         onClick={onRetry}
-        className={`mt-4 ${buttonSecondaryStyle}`} // Using shared button style
+        className={`mt-6 ${buttonSecondaryStyleHero} text-sm py-2 px-4 border-red-300 text-red-600 hover:bg-red-100`} // Error specific secondary button
       >
         Try Again
       </button>
@@ -93,162 +97,131 @@ const ErrorDisplay = ({ message, onRetry }: { message?: string, onRetry?: () => 
 
 interface ServiceCardProps {
   service: CategorizedService;
-  categoryColor: string; // Keep for tag and potentially icon accents
+  categoryColor: string; // Retained for the small tag, but card itself is themed
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ service, categoryColor }) => {
   const [imgError, setImgError] = useState(false);
 
-  // Normalize image URL and provide a fallback
   const normalizeImageUrl = (url: string | null | undefined): string => {
-    const placeholder = "/images/placeholder_service.jpg";
+    const placeholder = "/images/placeholder_service.jpg"; // Generic placeholder
     if (imgError || !url || typeof url !== 'string' || url.trim() === "" || ["null", "undefined"].includes(url.toLowerCase())) {
       return placeholder;
     }
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    }
-    if (!url.startsWith("/")) {
-      return `/images/${url}`;
-    }
-    return url;
+    // Assuming images are in public/images or served from an external URL
+    return url.startsWith("http") || url.startsWith("/") ? url : `/images/${url}`;
   };
 
   const imageUrl = normalizeImageUrl(service.images?.[0]);
   const rating = service.rating || null;
 
-  const getSpecificsData = (service: CategorizedService) => {
-    if (service.amenities && typeof service.amenities === 'string') {
-      try {
-        const amenitiesData = JSON.parse(service.amenities);
-        return amenitiesData?.specifics || null;
-      } catch (e) {
-        console.error("Failed to parse amenities JSON for specifics:", e);
-      }
-    } else if (typeof service.amenities === 'object' && service.amenities !== null) {
-      return (service.amenities as any).specifics || null;
+  const getSpecificsData = (svc: CategorizedService) => {
+    if (svc.amenities && typeof svc.amenities === 'string') {
+      try { return JSON.parse(svc.amenities)?.specifics || null; } 
+      catch (e) { console.error("Failed to parse amenities JSON for specifics:", e); }
+    } else if (typeof svc.amenities === 'object' && svc.amenities !== null) {
+      return (svc.amenities as any).specifics || null;
     }
     return null;
   };
 
-  const getPriceDisplay = (service: CategorizedService) => {
-    if (service.price_details) return service.price_details;
-    const specifics = getSpecificsData(service);
-
-    if (service.service_category === "transport") {
+  const getPriceDisplay = (svc: CategorizedService) => {
+    if (svc.price_details) return svc.price_details;
+    const specifics = getSpecificsData(svc);
+    if (svc.service_category === "transport") {
       const ts = specifics?.transport;
       if (ts?.price_per_trip) return `₹${Number(ts.price_per_trip).toLocaleString("en-IN")} per trip`;
       if (ts?.price_per_km) return `₹${Number(ts.price_per_km).toLocaleString("en-IN")} per km`;
-    } else if (service.service_category === "rental") {
+    } else if (svc.service_category === "rental") {
       const rs = specifics?.rental;
-      if (rs?.unit && service.price_numeric) return `₹${service.price_numeric.toLocaleString("en-IN")} ${rs.unit}`;
+      if (rs?.unit && svc.price_numeric) return `₹${svc.price_numeric.toLocaleString("en-IN")} ${rs.unit}`;
     }
-    return service.price_numeric ? `₹${service.price_numeric.toLocaleString("en-IN")} (approx)` : "Price on request";
+    return svc.price_numeric ? `₹${svc.price_numeric.toLocaleString("en-IN")} (approx)` : "Price on request";
   };
 
   const priceDisplay = getPriceDisplay(service);
 
   const handleImageError = () => {
-    if (!imgError) { // Prevent infinite loops if placeholder also fails, though unlikely
-      console.log("Image failed to load, attempting placeholder:", service.images?.[0]);
-      setImgError(true);
-    }
+    if (!imgError) setImgError(true);
   };
 
   let detailPath = "";
   if (service.service_category === "transport") detailPath = `/services/transport/${service.id}`;
   else if (service.service_category === "rental") detailPath = `/services/rental/${service.id}`;
-  else if (service.service_category === "activity") detailPath = `/activities/${service.id}`; // Assuming this path
+  else if (service.service_category === "activity") detailPath = `/activities/${service.id}`;
 
   const getAdditionalDetails = () => {
     const specifics = getSpecificsData(service);
-    const iconClass = `mr-1 flex-shrink-0 ${neutralIconColor}`; // Using neutralIconColor
+    const iconClass = `mr-1.5 flex-shrink-0 ${neutralIconColor}`;
+    const textClass = `text-xs ${neutralTextLight}`;
 
     if (service.service_category === "transport") {
       const ts = specifics?.transport;
       return (
-        <div className={`flex items-center text-xs ${neutralTextLight} mb-2 gap-x-3`}>
-          {ts?.vehicle_type && (
-            <div className="flex items-center">
-              <Car size={12} className={iconClass} /> <span>{ts.vehicle_type}</span>
-            </div>
-          )}
-          {ts?.capacity_passengers && (
-            <div className="flex items-center">
-              <Users size={12} className={iconClass} /> <span>{ts.capacity_passengers} passengers</span>
-            </div>
-          )}
+        <div className={`flex flex-wrap items-center ${textClass} mb-2 gap-x-3 gap-y-1`}>
+          {ts?.vehicle_type && <div className="flex items-center"><Car size={14} className={iconClass} /><span>{ts.vehicle_type}</span></div>}
+          {ts?.capacity_passengers && <div className="flex items-center"><Users size={14} className={iconClass} /><span>{ts.capacity_passengers} passengers</span></div>}
         </div>
       );
     } else if (service.service_category === "rental") {
       const rs = specifics?.rental;
       return (
-        <div className={`flex items-center text-xs ${neutralTextLight} mb-2 gap-x-3`}>
-          {service.item_type && ( // item_type is often directly on service for rentals
-            <div className="flex items-center">
-              <ShoppingBag size={12} className={iconClass} /> <span>{service.item_type}</span>
-            </div>
-          )}
-          {rs?.unit && (
-            <div className="flex items-center">
-              <Clock size={12} className={iconClass} /> <span>{rs.unit}</span>
-            </div>
-          )}
+        <div className={`flex flex-wrap items-center ${textClass} mb-2 gap-x-3 gap-y-1`}>
+          {service.item_type && <div className="flex items-center"><ShoppingBag size={14} className={iconClass} /><span>{service.item_type}</span></div>}
+          {rs?.unit && <div className="flex items-center"><Clock size={14} className={iconClass} /><span>{rs.unit}</span></div>}
         </div>
       );
     }
     return null;
   };
 
-  // Using cardBaseStyle for the card itself for consistency
   return (
-    <div className={`${cardBaseStyle} flex flex-col overflow-hidden p-0`}> {/* Remove padding from base style for custom internal padding */}
-      <div className="h-48 w-full relative flex-shrink-0">
+    <div className={`${cardBaseStyle} flex flex-col overflow-hidden group p-0 hover:shadow-xl transition-shadow duration-300`}> {/* p-0 from cardBaseStyle, apply padding internally */}
+      <div className={`h-52 w-full relative flex-shrink-0 ${neutralBgLight}`}>
         <Image
           src={imageUrl}
           alt={service.name || "Service Image"}
           fill
-          className="object-cover"
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           onError={handleImageError}
-          priority={false} // Non-priority for cards
         />
         {imageUrl === "/images/placeholder_service.jpg" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 pointer-events-none">
-            <ImageOff size={32} className={`${neutralIconColor} opacity-60`} />
+          <div className={`absolute inset-0 flex items-center justify-center ${neutralBgLight}/80 pointer-events-none`}>
+            <ImageOff size={36} className={`${neutralIconColor} opacity-50`} />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent"></div> {/* Subtle gradient for text readability */}
-        <div style={{ backgroundColor: categoryColor }} className={`absolute top-3 right-3 text-white text-xs font-semibold py-1 px-2.5 rounded-full shadow-md flex items-center`}>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+        <div style={{ backgroundColor: categoryColor }} className={`absolute top-3 right-3 text-white text-xs font-semibold py-1 px-2.5 rounded-md shadow-lg flex items-center`}>
           {service.service_category === "transport" ? <Car size={12} className="mr-1" /> : service.service_category === "rental" ? <ShoppingBag size={12} className="mr-1" /> : <Tag size={12} className="mr-1" />}
-          {(service.type || "").replace(/^(transport_|rental_|activity_)/, '').replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
+          {(service.type || service.service_category || "").replace(/^(transport_|rental_|activity_)/, '').replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
         </div>
       </div>
 
-      <div className="p-4 flex flex-col flex-grow"> {/* Re-apply padding here */}
-        <h3 className={`text-md font-semibold leading-tight ${neutralText} line-clamp-2 mb-1`}>{service.name}</h3>
+      <div className="p-4 md:p-5 flex flex-col flex-grow">
+        <h3 className={`text-lg font-semibold leading-tight ${neutralText} line-clamp-2 mb-1.5 group-hover:${infoText} transition-colors`}>{service.name}</h3>
 
         <div className={`flex items-center text-xs ${neutralTextLight} mb-2`}>
-          <MapPin size={12} className={`mr-1 flex-shrink-0 ${neutralIconColor}`} />
-          <span>{service.island_name}</span>
-          {service.provider?.business_name && <span className="mx-1.5 text-gray-300">|</span>}
-          {service.provider?.business_name && <span className={`line-clamp-1 ${neutralTextLight}`}>By: {service.provider.business_name}</span>}
+          <MapPin size={14} className={`mr-1.5 flex-shrink-0 ${neutralIconColor}`} />
+          <span className="truncate">{service.island_name}</span>
+          {service.provider?.business_name && <span className={`mx-1.5 ${neutralBorderLight}`}>|</span>}
+          {service.provider?.business_name && <span className={`truncate ${neutralTextLight}`}>By: {service.provider.business_name}</span>}
         </div>
 
         {getAdditionalDetails()}
 
-        <p className={`${neutralTextLight} text-xs mb-3 line-clamp-2 flex-grow`}>
+        <p className={`${neutralTextLight} text-sm mb-3 line-clamp-3 flex-grow`}>
           {service.description || "Reliable service for your travel needs."}
         </p>
 
-        <div className="flex justify-between items-center mb-3 text-xs">
-          <div className={`flex items-center font-semibold ${neutralText}`}> {/* Price color changed to neutralText */}
-            <IndianRupee size={14} className="mr-0.5" /> {priceDisplay}
+        <div className="flex justify-between items-center mb-4">
+          <div className={`text-lg font-semibold ${successText}`}>
+            <IndianRupee size={16} className={`mr-0.5 inline-block ${successIconColor}`} /> {priceDisplay}
           </div>
           {rating !== null && (
-            <div className="flex items-center text-yellow-500"> {/* Standard yellow for ratings */}
-              <Star size={14} fill="currentColor" className="text-yellow-400" />
-              <span className={`ml-1 font-medium ${neutralText}`}>{rating.toFixed(1)}</span>
+            <div className="flex items-center">
+              <Star size={16} fill="currentColor" className="text-yellow-400" />
+              <span className={`ml-1.5 font-medium ${neutralText}`}>{rating.toFixed(1)}</span>
             </div>
           )}
         </div>
@@ -256,9 +229,9 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, categoryColor }) => 
         {detailPath && (
           <Link
             href={detailPath}
-            className={`mt-auto block w-full text-center ${buttonPrimaryStyle} text-sm py-2.5`} // Using shared primary button style
+            className={`mt-auto block w-full text-center ${buttonPrimaryStyle} text-sm py-2.5`}
           >
-            View Details <ArrowRight size={14} className="ml-1 inline-block" />
+            View Details <ArrowRight size={16} className="ml-1.5 inline-block" />
           </Link>
         )}
       </div>
@@ -271,8 +244,15 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, categoryColor }) => 
 // --- Main Component Logic ---
 function ServicesMainPageContent() {
   const [filters, setFilters] = useState({ search: "", islandId: "" });
+  // Define input styles using theme variables
+  const focusRingClass = `focus:ring-${primaryButtonBg.split('-')[1] || 'gray'}-${primaryButtonBg.split('-')[2] || '500'}`;
+  const focusBorderClass = `focus:border-${primaryButtonBg.split('-')[1] || 'gray'}-${primaryButtonBg.split('-')[2] || '500'}`;
+  const inputBaseStyle = `w-full p-3 text-base ${neutralText} bg-white border ${neutralBorder} rounded-lg focus:outline-none focus:ring-2 ${focusRingClass} ${focusBorderClass} transition-shadow shadow-sm hover:border-gray-400`;
+  const labelBaseStyle = `block text-sm font-medium ${neutralText} mb-1.5`;
+
+
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
-  const [forceRefetch, setForceRefetch] = useState(0); // For manual refetch
+  const [forceRefetch, setForceRefetch] = useState(0);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedFilters(filters), 500);
@@ -281,25 +261,20 @@ function ServicesMainPageContent() {
 
   const apiUrl = useCallback(() => {
     const params = new URLSearchParams();
-    params.append("category", "transport,rental,activity");
+    params.append("category", "transport,rental,activity"); // Fetch all categories
     if (debouncedFilters.search) params.append("search", debouncedFilters.search);
     if (debouncedFilters.islandId) params.append("islandId", debouncedFilters.islandId);
-    // Add forceRefetch to cache-bust if needed
     return `/api/services-main?${params.toString()}${forceRefetch ? `&_cacheBust=${forceRefetch}` : ''}`;
   }, [debouncedFilters, forceRefetch]);
 
   const { data: apiResponse, error, status } = useFetch<PaginatedServicesResponse | CategorizedService[]>(apiUrl());
 
-  console.log("🔍 ServicesMainPage: Raw API response:", apiResponse);
-
-  const refetchData = useCallback(() => {
-    setForceRefetch(prev => prev + 1);
-  }, []);
+  const refetchData = useCallback(() => setForceRefetch(prev => prev + 1), []);
 
   let allServices: CategorizedService[] = [];
   if (apiResponse) {
     allServices = (Array.isArray(apiResponse) ? apiResponse : apiResponse.data || [])
-      .map(service => {
+      .map(service => { // Ensure service_category is present
         const svc = service as any;
         if (!svc.service_category) {
           if (svc.type?.startsWith('transport')) return { ...svc, service_category: 'transport' };
@@ -310,11 +285,10 @@ function ServicesMainPageContent() {
       }) as CategorizedService[];
   }
 
-  console.log(`🔍 ServicesMainPage: Processed ${allServices.length} services.`);
-
   const isLoading = status === "loading";
   const fetchError = status === "error" ? error : null;
 
+  // Filter after ensuring all services are categorized
   const transportServices = allServices.filter(s => s?.service_category === "transport") as TransportService[];
   const rentalServices = allServices.filter(s => s?.service_category === "rental") as RentalService[];
   const activityServices = allServices.filter(s => s?.service_category === "activity") as ActivityService[];
@@ -328,28 +302,26 @@ function ServicesMainPageContent() {
     { value: "1", label: "Havelock Island (Swaraj Dweep)" },
     { value: "2", label: "Neil Island (Shaheed Dweep)" },
     { value: "3", label: "Port Blair" },
+    // Potentially fetch these from an API in the future
   ];
 
-  const renderServiceSection = (title: string, services: CategorizedService[], icon: React.ElementType, color: string) => (
-    <section className="mb-12">
-      <div className="flex items-center mb-6">
-        {React.createElement(icon, { size: 28, className: `mr-3 ${neutralIconColor}` })} {/* Icon color to neutral */}
-        <h2 className={`text-2xl font-bold ${neutralText}`}>{title}</h2> {/* Title text to neutral */}
-      </div>
-      {isLoading && services.length === 0 && <LoadingSpinner text={`Loading ${title.toLowerCase()}...`} />} {/* Show spinner only if this section has no data yet and still loading */}
+  const renderServiceSection = (title: string, services: CategorizedService[], icon: React.ElementType, color: string, sectionId: string) => (
+    <section id={sectionId} className="mb-12 md:mb-16 scroll-mt-20"> {/* Added scroll-mt for sticky header */}
+      <h2 className={`${sectionHeadingStyle} text-2xl md:text-3xl`}>
+        {React.createElement(icon, { size: 26, className: `mr-3 ${infoIconColor}` })} {/* Using infoIconColor for section icons */}
+        {title}
+      </h2>
+      {isLoading && services.length === 0 && <LoadingSpinner text={`Loading ${title.toLowerCase()}...`} />}
       {fetchError && !isLoading && services.length === 0 && (
-        <ErrorDisplay
-          message={`Could not load ${title.toLowerCase()}. ${fetchError.message}`}
-          onRetry={refetchData}
-        />
+        <ErrorDisplay message={`Could not load ${title.toLowerCase()}. ${fetchError.message}`} onRetry={refetchData} />
       )}
       {!isLoading && !fetchError && services.length === 0 && (
-        <div className={`bg-white rounded-lg p-8 text-center shadow-sm border ${neutralBorderLight}`}>
-          <p className={`${neutralTextLight}`}>No {title.toLowerCase()} found matching your criteria.</p>
+        <div className={`${neutralBg} rounded-xl p-8 text-center border ${neutralBorder}`}>
+          <p className={`${neutralTextLight} text-lg`}>No {title.toLowerCase()} found matching your current filters.</p>
         </div>
       )}
       {!isLoading && !fetchError && services.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
           {services.map(service => (
             <ServiceCard key={`${service.service_category}-${service.id}`} service={service} categoryColor={color} />
           ))}
@@ -360,67 +332,54 @@ function ServicesMainPageContent() {
 
   return (
     <>
-      {/* Hero Section - Using neutral theme */}
+      {/* Hero Section - Themed */}
       <div className={`${neutralBgLight} border-b ${neutralBorderLight}`}>
-        <div className={`container mx-auto px-4 py-16 md:py-24 text-center`}>
-          <h1 className={`text-3xl sm:text-4xl md:text-5xl font-bold ${neutralText} mb-4`}>
+        <div className={`container mx-auto px-4 ${sectionPadding} text-center`}>
+          <h1 className={`text-4xl sm:text-5xl md:text-6xl font-bold ${neutralText} mb-4`}>
             Services & Activities
           </h1>
-          <p className={`text-lg sm:text-xl ${neutralTextLight} max-w-2xl mx-auto`}>
-            Discover reliable transport, convenient rentals, and exciting activities for your perfect Andaman adventure.
+          <p className={`text-lg sm:text-xl ${neutralTextLight} max-w-3xl mx-auto`}>
+            Discover reliable transport, convenient rentals, and exciting activities for your perfect Andaman adventure. Your seamless journey starts here.
           </p>
         </div>
       </div>
 
-      {/* Main Content Area - Using white background */}
-      <div className={`bg-white py-10 md:py-12`}>
+      {/* Main Content Area - Using neutralBgLight for the page, cards will be white */}
+      <div className={`${neutralBgLight} ${sectionPadding}`}>
         <div className="container mx-auto px-4">
-          {/* Overall status indicator for initial load */}
           {isLoading && allServices.length === 0 && (
-            <div className="text-center mb-8">
-              <LoadingSpinner text="Loading all services..." />
-            </div>
+            <div className="text-center mb-10"><LoadingSpinner text="Loading all services..." /></div>
           )}
-
           {fetchError && !isLoading && allServices.length === 0 && (
-            <div className="mb-8">
-              <ErrorDisplay
-                message={`Failed to load services. ${fetchError.message}`}
-                onRetry={refetchData}
-              />
-            </div>
+            <div className="mb-10"><ErrorDisplay message={`Failed to load services. ${fetchError.message}`} onRetry={refetchData}/></div>
           )}
 
-          {/* Filters Section - Styled as a card */}
-          <div className={`${cardBaseStyle} p-5 md:p-6 mb-10`}>
-            <div className="flex items-center mb-4">
-              <ListFilter size={20} className={`mr-2 ${neutralIconColor}`} />
-              <h3 className={`text-lg font-semibold ${neutralText}`}>Filter Services</h3>
+          {/* Filters Section - Themed as a card */}
+          <div className={`${cardBaseStyle} p-5 md:p-6 mb-10 md:mb-12 shadow-lg`}>
+            <div className="flex items-center mb-5">
+              <ListFilter size={22} className={`mr-2.5 ${infoIconColor}`} />
+              <h3 className={`text-xl font-semibold ${neutralText}`}>Filter Services</h3>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6 items-end">
               <div>
-                <label htmlFor="search" className={`block text-xs font-medium ${neutralTextLight} mb-1`}>Search by Name</label>
-                <div className="relative">
-                  <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 ${neutralIconColor} opacity-70`} />
+                <label htmlFor="search" className={labelBaseStyle}>Search by Name or Type</label>
+                <div className="relative mt-1">
+                  <Search className={`absolute left-3.5 top-1/2 transform -translate-y-1/2 ${neutralIconColor} pointer-events-none`} size={18} />
                   <input
-                    type="text"
-                    id="search"
-                    name="search"
-                    value={filters.search}
-                    onChange={handleFilterChange}
-                    placeholder="e.g., Airport Cab, Scooter Rental"
-                    className={`w-full pl-8 pr-3 py-2 border ${neutralBorder} rounded-md shadow-sm focus:ring-2 focus:ring-[${primaryButtonBg}] focus:border-[${primaryButtonBg}] text-sm ${neutralText} placeholder-${neutralTextLight}`}
+                    type="text" id="search" name="search"
+                    value={filters.search} onChange={handleFilterChange}
+                    placeholder="e.g., Airport Cab, Scooter"
+                    className={`${inputBaseStyle} pl-11`}
                   />
                 </div>
               </div>
               <div>
-                <label htmlFor="islandId" className={`block text-xs font-medium ${neutralTextLight} mb-1`}>Island</label>
+                <label htmlFor="islandId" className={labelBaseStyle}>Filter by Island</label>
                 <select
-                  id="islandId"
-                  name="islandId"
-                  value={filters.islandId}
-                  onChange={handleFilterChange}
-                  className={`w-full py-2 px-3 border ${neutralBorder} bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[${primaryButtonBg}] focus:border-[${primaryButtonBg}] text-sm ${neutralText}`}
+                  id="islandId" name="islandId"
+                  value={filters.islandId} onChange={handleFilterChange}
+                  className={`${inputBaseStyle} appearance-none bg-no-repeat`} // Basic select styling, can be enhanced
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundSize: '1.5em 1.5em' }}
                 >
                   {islandOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
@@ -428,24 +387,24 @@ function ServicesMainPageContent() {
             </div>
           </div>
 
-          {!isLoading && !fetchError && allServices.length === 0 && filtersApplied() && (
-            <div className={`text-center py-10 bg-white rounded-xl shadow-md border ${neutralBorderLight} mb-8`}>
-              <p className={`text-lg ${neutralText}`}>No services found matching your search criteria.</p>
+          {!isLoading && !fetchError && allServices.length === 0 && filtersApplied(debouncedFilters) && (
+            <div className={`${neutralBg} rounded-xl p-8 text-center border ${neutralBorder} shadow-md mb-10`}>
+              <p className={`text-xl ${neutralText} mb-3`}>No Services Found</p>
+              <p className={`${neutralTextLight} mb-5`}>No services matched your current filter criteria. Please try adjusting your search.</p>
               <button
                 onClick={() => setFilters({ search: "", islandId: "" })}
-                className={`mt-4 ${buttonSecondaryStyle}`}
+                className={`${buttonSecondaryStyleHero} bg-white hover:bg-gray-100 text-gray-700 border-gray-300`}
               >
-                Clear Filters
+                Clear All Filters
               </button>
             </div>
           )}
-
-          {/* Conditional rendering to prevent sections from showing "no services" if global loading is active and no services are yet fetched */}
+          
           {(!isLoading || allServices.length > 0) && (
             <>
-              {renderServiceSection("Transport Services", transportServices, Car, transportCategoryColor)}
-              {renderServiceSection("Rental Services", rentalServices, ShoppingBag, rentalCategoryColor)}
-              {renderServiceSection("Activity Services", activityServices, Tag, activityCategoryColor)}
+              {renderServiceSection("Transport Services", transportServices, Car, transportCategoryColor, "transport")}
+              {renderServiceSection("Rental Services", rentalServices, ShoppingBag, rentalCategoryColor, "rental")}
+              {renderServiceSection("Activity Services", activityServices, Tag, activityCategoryColor, "activity")}
             </>
           )}
         </div>
@@ -453,9 +412,9 @@ function ServicesMainPageContent() {
     </>
   );
 }
-// Helper to check if any filters are active
+
 const filtersApplied = (filters?: { search: string, islandId: string }) => {
-  if (!filters) return false;
+  if (!filters) return false; // Should not happen if debouncedFilters is initialized
   return filters.search !== "" || filters.islandId !== "";
 };
 

@@ -210,30 +210,56 @@ export default function Home() {
   }
 
   // Placeholder data for scrolling ad banner
-  const adPlaceholders = Array(8).fill('/images/placeholder.jpg');
+  const adCards = [
+    {
+      image: '/images/activities/scroll.webp',
+      link: '/activities',
+      alt: 'Activities in Andaman Islands'
+    },
+    {
+      image: '/images/packages/scroll.webp',
+      link: '/packages',
+      alt: 'Reach Andaman Packages'
+    },
+    {
+      image: '/images/hotels/scroll.webp',
+      link: '/hotels',
+      alt: 'Hotels in Andaman Islands'
+    },
+    {
+      image: '/images/services/scroll.webp',
+      link: '/services',
+      alt: 'Romantic Sunset Cruise'
+    },
+    {
+      image: '/images/destinations/scroll.webp',
+      link: '/destinations',
+      alt: 'Explore Andaman Islands'
+    },
+  ];
 
   // Testimonials data
   const testimonials = [
     {
-      name: "John D.",
+      name: "Sharath Prabhu",
       location: "Mumbai, India",
-      image: "/images/testimonials/john.jpg",
+      image: "/images/testimonials/sharath.webp",
       quote: "The snorkeling experience at Havelock Island was incredible! Flawless organization and friendly guides. Highly recommend Reach Andaman!",
       rating: 5,
       trip: "Havelock Island Adventure"
     },
     {
-      name: "Jane S.",
+      name: "Sindhuja Ramaswamy",
       location: "Delhi, India",
-      image: "/images/testimonials/jane.jpg",
+      image: "/images/testimonials/sindhuja.webp",
       quote: "From booking to return, everything was perfectly organized. The team went above and beyond to make our family trip memorable.",
       rating: 5,
       trip: "Family Island Hopping"
     },
     {
-      name: "Robert J.",
+      name: "Sushanth Shetty",
       location: "Bangalore, India",
-      image: "/images/testimonials/robert.jpg",
+      image: "/images/testimonials/sushanth.webp",
       quote: "The sunset cruise around Neil Island was the highlight. Stunning views and excellent service. Thank you for an unforgettable holiday!",
       rating: 5,
       trip: "Neil Island Explorer"
@@ -413,31 +439,36 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- Auto-Scrolling Advertisement Cards --- */}
-      <section className={`py-6 ${neutralBg}`}> {/* Reduced padding */}
+      {/* --- Auto-Scrolling cards --- */}
+      <section className={sectionPadding}> {/* Changed from py-6 ${neutralBg} to match featured destinations */}
         <div className="container mx-auto px-4">
-          <h2 className={`text-lg font-semibold ${neutralText} mb-3`}>Sponsored Listings</h2> {/* Reduced heading size and margin */}
+          
+          
           {/* Outer container to hide overflow */}
           <div className="overflow-hidden relative group"> {/* Added group for hover pause */}
             {/* Inner container that scrolls */}
             <div className="flex animate-infinite-scroll group-hover:pause-animation">
               {/* Render cards twice for seamless loop */}
-              {[...adPlaceholders, ...adPlaceholders].map((src, index) => (
-                <div key={`ad-${index}`} className={`flex-shrink-0 w-56 h-28 ${neutralBgLight} rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 mx-2`}> {/* Reduced size and added margin */}
+              {[...adCards, ...adCards].map((card, index) => (
+                <Link 
+                  key={`ad-${index}`} 
+                  href={card.link}
+                  className={`flex-shrink-0 w-56 h-28 ${neutralBgLight} rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 mx-2 hover:scale-105 cursor-pointer`}
+                >
                   <Image
-                    src={src}
-                    alt={`Advertisement ${index + 1}`}
+                    src={card.image}
+                    alt={card.alt}
                     width={224} // w-56 = 14rem = 224px
                     height={112} // h-28 = 7rem = 112px
-                    className="object-cover w-full h-full"
+                    className="object-cover w-full h-full hover:opacity-90 transition-opacity"
                     style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                   />
-                </div>
+                </Link>
               ))}
             </div>
             {/* Optional: Add fade effect at edges */}
-            <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-gray-100 to-transparent pointer-events-none"></div>
-            <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-gray-100 to-transparent pointer-events-none"></div>
+            <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent pointer-events-none"></div>
+            <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
           </div>
         </div>
       </section>

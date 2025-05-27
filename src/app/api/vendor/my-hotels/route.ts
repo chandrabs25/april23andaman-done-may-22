@@ -305,10 +305,11 @@ export async function POST(request: NextRequest) {
 
     const hotelData = {
       // service_id will be set after service creation
-      star_rating: starRating, // Use validated starRating
+      star_rating: starRating,
+      room_types: null,                    // Add this line
       check_in_time: body.check_in_time,
       check_out_time: body.check_out_time,
-      total_rooms: totalRooms, // Use validated totalRooms
+      total_rooms: totalRooms,
       facilities: body.facilities ?? null, // Use directly as it's already a stringified JSON
       meal_plans: body.meal_plans ?? null,   // Use directly as it's already a stringified JSON
       pets_allowed: body.pets_allowed === undefined ? false : body.pets_allowed,

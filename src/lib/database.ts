@@ -574,15 +574,15 @@ export class DatabaseService {
   * @returns Promise<D1Result>
   */
   async createPackage(packageData: CreatePackageDbPayload): Promise<
-    (D1Result & { meta: { last_row_id: number } }) | 
-    (D1ResultWithError & { meta: { last_row_id: number } }) | 
+    (D1Result & { meta: { last_row_id: number } }) |
+    (D1ResultWithError & { meta: { last_row_id: number } }) |
     { success: false; error: string; meta: D1Meta | {} }
   > {
     const db = await getDatabase();
     // Define emptyMeta with only known D1Meta properties
-    const emptyMeta: D1Meta = { 
-      duration: 0, 
-      last_row_id: 0, 
+    const emptyMeta: D1Meta = {
+      duration: 0,
+      last_row_id: 0,
       changes: 0,
       rows_read: 0,
       rows_written: 0,
@@ -594,9 +594,9 @@ export class DatabaseService {
       if (data === null || data === undefined) return null;
       if (typeof data === 'string') return data.trim() || null;
       if (typeof data === 'object') {
-          try {
-              return JSON.stringify(data);
-          } catch (e) {
+        try {
+          return JSON.stringify(data);
+        } catch (e) {
           console.warn(`Could not stringify ${fieldName}:`, e);
           return null;
         }
@@ -702,9 +702,9 @@ export class DatabaseService {
   ): Promise<D1Result | D1ResultWithError | { success: false; error: string; meta: D1Meta | {} }> {
     const db = await getDatabase();
     const statements: D1PreparedStatement[] = [];
-    const emptyMeta: D1Meta = { 
-      duration: 0, 
-      last_row_id: 0, 
+    const emptyMeta: D1Meta = {
+      duration: 0,
+      last_row_id: 0,
       changes: 0,
       rows_read: 0,
       rows_written: 0,
@@ -713,13 +713,13 @@ export class DatabaseService {
     };
 
     const stringifyIfNeeded = (data: any, fieldName: string): string | null => {
-        if (data === null || data === undefined) return null;
-        if (typeof data === 'string') return data.trim() || null;
-        if (typeof data === 'object') {
-            try { return JSON.stringify(data); }
-            catch (e) { console.warn(`Could not stringify ${fieldName}:`, e); return null; }
-        }
-        return String(data).trim() || null;
+      if (data === null || data === undefined) return null;
+      if (typeof data === 'string') return data.trim() || null;
+      if (typeof data === 'object') {
+        try { return JSON.stringify(data); }
+        catch (e) { console.warn(`Could not stringify ${fieldName}:`, e); return null; }
+      }
+      return String(data).trim() || null;
     };
 
     const itineraryStr = stringifyIfNeeded(packageData.itinerary, 'itinerary');
@@ -733,16 +733,16 @@ export class DatabaseService {
         is_active = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).bind(
-        packageData.name,
-        packageData.description ?? null,
-        packageData.duration,
-        packageData.base_price,
-        packageData.max_people ?? null,
+      packageData.name,
+      packageData.description ?? null,
+      packageData.duration,
+      packageData.base_price,
+      packageData.max_people ?? null,
       itineraryStr,
       includedServicesStr,
       imagesStr,
       packageData.cancellation_policy ?? null,
-      packageData.is_active === undefined ? 1 : packageData.is_active, 
+      packageData.is_active === undefined ? 1 : packageData.is_active,
       packageId
     );
     statements.push(packageUpdateStmt);
@@ -840,7 +840,7 @@ export class DatabaseService {
           return { success: false, error: 'Package not found or already deleted.' };
         }
         // If meta is undefined for some reason but allSuccessful was true
-        return { success: true }; 
+        return { success: true };
       } else {
         // Find the first error
         const firstErrorResult = results.find((res: { success: any; }) => !res.success);
@@ -1366,76 +1366,78 @@ export class DatabaseService {
   async createHotel(serviceData: any, hotelData: any) {
     const db = await getDatabase();
     try {
-      // 1. Create the service entry
+      // First, create the service entry
       const serviceResult = await db
         .prepare(`
           INSERT INTO services (
             name, description, type, provider_id, island_id, price,
             availability, images, amenities, cancellation_policy, is_active,
             created_at, updated_at
-          ) VALUES (?, ?, 'hotel', ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         `)
         .bind(
           serviceData.name,
           serviceData.description,
+          serviceData.type,
           serviceData.provider_id,
           serviceData.island_id,
           serviceData.price,
-          serviceData.availability, // Should be null for hotels?
+          serviceData.availability,
           serviceData.images,
-          serviceData.amenities, // Should be null for hotels?
+          serviceData.amenities,
           serviceData.cancellation_policy,
           serviceData.is_active === undefined ? 1 : (serviceData.is_active ? 1 : 0)
         )
         .run();
 
       if (!serviceResult.success || !serviceResult.meta?.last_row_id) {
-        throw new Error('Failed to create service entry for hotel: ' + (serviceResult.error || 'Unknown error'));
+        throw new Error("Failed to create service entry for hotel");
       }
+
       const serviceId = serviceResult.meta.last_row_id;
 
-      // 2. Create the hotel entry
+      // Now create the hotel entry with ALL required columns
       const hotelResult = await db
         .prepare(`
           INSERT INTO hotels (
-            service_id, star_rating, check_in_time, check_out_time, facilities, policies,
-            extra_images, total_rooms, street_address, geo_lat, geo_lng, meal_plans,
-            pets_allowed, children_allowed, accessibility, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            service_id, star_rating, room_types, check_in_time, check_out_time,
+            facilities, policies, extra_images, total_rooms, street_address,
+            geo_lat, geo_lng, meal_plans, pets_allowed, children_allowed,
+            accessibility, is_admin_approved, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         `)
         .bind(
           serviceId,
           hotelData.star_rating,
+          hotelData.room_types || null,        // Add missing room_types column
           hotelData.check_in_time,
           hotelData.check_out_time,
-          hotelData.facilities, // Expects stringified JSON
-          hotelData.policies, // Provide null or default if not used
-          hotelData.extra_images, // Provide null or default if not used
+          hotelData.facilities,
+          hotelData.policies,
+          hotelData.extra_images,
           hotelData.total_rooms,
           hotelData.street_address,
           hotelData.geo_lat,
           hotelData.geo_lng,
-          hotelData.meal_plans, // Expects stringified JSON
+          hotelData.meal_plans,
           hotelData.pets_allowed ? 1 : 0,
           hotelData.children_allowed ? 1 : 0,
-          hotelData.accessibility, // Corrected field name
-          serviceId
+          hotelData.accessibility,
+          0,                                   // Add missing is_admin_approved (default to 0)
         )
         .run();
 
       if (!hotelResult.success) {
-        // Attempt to rollback service creation? Difficult without transactions.
-        console.error('Failed to create hotel entry after creating service. Service ID: ', serviceId);
-        // Consider deleting the service entry here if possible
-        // await db.prepare('DELETE FROM services WHERE id = ?').bind(serviceId).run();
-        throw new Error('Failed to create hotel entry: ' + (hotelResult.error || 'Unknown error'));
+        throw new Error("Failed to create hotel entry");
       }
 
-      return { success: true, serviceId: serviceId };
-
+      return { success: true, serviceId };
     } catch (error) {
-      console.error('Error in createHotel transaction simulation:', error);
-      return { success: false, error: error instanceof Error ? error.message : String(error) };
+      console.error("Error in createHotel:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error in hotel creation"
+      };
     }
   }
 
@@ -1646,8 +1648,8 @@ export class DatabaseService {
         return { success: false, error: result.error || "Database operation failed at run()" };
       }
       if (result.meta?.last_row_id === undefined || result.meta?.last_row_id === null) {
-          console.warn("No last_row_id returned from D1 after room type insert. Result meta:", result.meta);
-          return { success: true, meta: result.meta, error: "No last_row_id returned but insert may have succeeded." };
+        console.warn("No last_row_id returned from D1 after room type insert. Result meta:", result.meta);
+        return { success: true, meta: result.meta, error: "No last_row_id returned but insert may have succeeded." };
       }
 
       return { success: true, meta: result.meta };

@@ -1,6 +1,3 @@
-// Path: ./src/app/page.tsx
-// Theme: Neutral with Contextual Background Colors
-
 'use client';
 
 import React, { useState } from 'react';
@@ -310,11 +307,19 @@ export default function Home() {
           from { transform: translateX(0); }
           to { transform: translateX(-100%); }
         }
-        .animate-infinite-scroll {
-          animation: infinite-scroll 120s linear infinite;
+        /* Default animation speed for mobile */
+        .animate-infinite-scroll-mobile {
+          animation: infinite-scroll 30s linear infinite; /* Faster for mobile */
         }
-        .group:hover .animate-infinite-scroll {
-           animation-play-state: paused;
+        /* Slower animation speed for desktop (medium screens and up) */
+        @media (min-width: 768px) {
+          .md\\:animate-infinite-scroll-desktop {
+            animation-duration: 120s; /* Slower for desktop */
+          }
+        }
+        .group:hover .animate-infinite-scroll-mobile,
+        .group:hover .md\\:animate-infinite-scroll-desktop {
+            animation-play-state: paused;
         }
 
         @keyframes float {
@@ -442,16 +447,17 @@ export default function Home() {
       {/* --- Auto-Scrolling cards --- */}
       <section className={sectionPadding}> {/* Changed from py-6 ${neutralBg} to match featured destinations */}
         <div className="container mx-auto px-4">
-          
-          
+
+
           {/* Outer container to hide overflow */}
           <div className="overflow-hidden relative group"> {/* Added group for hover pause */}
             {/* Inner container that scrolls */}
-            <div className="flex animate-infinite-scroll group-hover:pause-animation">
+            {/* Apply responsive animation classes */}
+            <div className="flex animate-infinite-scroll-mobile md:animate-infinite-scroll-desktop group-hover:pause-animation">
               {/* Render cards twice for seamless loop */}
               {[...adCards, ...adCards].map((card, index) => (
-                <Link 
-                  key={`ad-${index}`} 
+                <Link
+                  key={`ad-${index}`}
                   href={card.link}
                   className={`flex-shrink-0 w-56 h-28 ${neutralBgLight} rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 mx-2 hover:scale-105 cursor-pointer`}
                 >
@@ -715,4 +721,3 @@ export default function Home() {
     </div>
   );
 }
-

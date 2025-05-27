@@ -330,7 +330,7 @@ export default function AboutPage() {
                   <Link href="/contact" className={ctaPrimaryOnDarkStyle}>
                     Contact Us
                   </Link>
-                  <Link href="/packages" className={ctaSecondaryOnDarkStyle}>
+                  <Link href="/packages" className={ctaPrimaryOnDarkStyle}>
                     View Packages <ArrowRight className="ml-1.5 h-4 w-4" />
                   </Link>
                 </div>

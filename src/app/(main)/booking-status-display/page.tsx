@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
 // Assuming you might want to use some UI components from shadcn/ui if available in project
 import { Loader2, CheckCircle, XCircle, AlertTriangle, ExternalLinkIcon, HomeIcon } from 'lucide-react';
 
@@ -38,6 +39,7 @@ interface CheckStatusResponse {
 function PaymentStatusContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { isAuthenticated } = useAuth();
     const mtid = searchParams.get('mtid');
 
     const [statusMessage, setStatusMessage] = useState('Verifying payment status, please wait...');
@@ -180,16 +182,20 @@ function PaymentStatusContent() {
 
             {showButtons && (
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 w-full max-w-lg">
-                    {statusMessage.includes("successful") ? (
+                    {statusMessage.includes("successful") && isAuthenticated ? (
                         <Link href="/user/bookings" className={`${buttonPrimaryStyle} w-full`}>
                            <ExternalLinkIcon size={18} className="mr-2" /> View My Bookings
                         </Link>
+                    ) : statusMessage.includes("successful") && !isAuthenticated ? (
+                        <Link href="/" className={`${buttonPrimaryStyle} w-full`}>
+                           <HomeIcon size={18} className="mr-2" /> Go to Homepage
+                        </Link>
                     ) : (
                         <>
-                            <Link href="/packages" className={`${buttonSecondaryStyleHero} w-full bg-white hover:bg-gray-100 text-gray-700 border-gray-300`}>
+                            <Link href="/packages" className={`${buttonPrimaryStyle} w-full bg-white hover:bg-gray-100 text-gray-700 border-gray-300`}>
                                <HomeIcon size={18} className="mr-2" /> Back to Packages
                             </Link>
-                             <Link href="/contact-us" className={`${buttonPrimaryStyle} w-full`}>
+                             <Link href="/contact" className={`${buttonPrimaryStyle} w-full`}>
                                 Contact Support
                             </Link>
                         </>

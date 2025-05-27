@@ -96,9 +96,9 @@ export async function POST(request: NextRequest) {
       console.error("Database error creating booking with D1:", dbError);
       return NextResponse.json({ success: false, message: "Failed to save booking details." }, { status: 500 });
     }
-    console.log('hardcoded site url: http://127.0.0.1:8787 because env variables are not working for site url but ngrok url is working for callback url')
     
-    const clientRedirectUrl = `http://127.0.0.1:8787/api/bookings/booking-payment-status?mtid=${newBookingIdAsString}`;
+    
+    const clientRedirectUrl = `${process.env.NGROK_PUBLIC_URL}/api/bookings/booking-payment-status?mtid=${newBookingIdAsString}`;
     // THIS IS THE CRUCIAL LOG:
     console.log("DEBUG: Sending this redirectUrl to PhonePe (clientRedirectUrl):", clientRedirectUrl);
 

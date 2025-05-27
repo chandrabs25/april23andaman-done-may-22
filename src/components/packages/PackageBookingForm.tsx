@@ -2,30 +2,46 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter
-import { Input } from '@/components/ui/input'; // Assuming these are shadcn/ui components
-import { Button } from '@/components/ui/button'; // Assuming these are shadcn/ui components
-import { Label } from '@/components/ui/label';   // Assuming these are shadcn/ui components
-import { Textarea } from '@/components/ui/textarea'; // Assuming these are shadcn/ui components
-import { UserIcon, MailIcon, PhoneIcon, UsersIcon, CalendarIcon, DollarSignIcon, InfoIcon, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { UserIcon, MailIcon, PhoneIcon, UsersIcon, CalendarIcon, InfoIcon, Loader2, BadgeIndianRupee } from 'lucide-react';
 
-// --- Theme Imports ---
-import {
-  neutralText, neutralTextLight, neutralBorder, neutralBg,
-  infoIconColor, // For general icons within the form
-  errorText, errorBg, errorBorder,
-  successText, successIconColor, // For price display
-  buttonPrimaryStyle,
-  // Define inputBaseStyle and labelBaseStyle based on theme if not directly using shadcn's base
-  // For this example, we'll assume shadcn inputs are mostly themed globally,
-  // but we'll apply specific text/icon colors and margins from our theme.
-} from '@/styles/26themeandstyle';
+// --- Theme Styles (Derived from destinations/page.tsx theme) ---
+const primaryButtonBg = 'bg-gray-800';
+const primaryButtonHoverBg = 'hover:bg-gray-900';
+const primaryButtonText = 'text-white';
 
-// Define a local label style based on theme for consistency if not using a global one from shadcn setup
-const labelStyle = `flex items-center mb-1.5 text-sm font-medium ${neutralText}`;
-const inputStyle = `w-full mt-1`; // Base style for shadcn inputs, they handle most of their styling
-const errorTextStyle = `text-xs ${errorText} mt-1.5`;
-// --- End Theme Imports ---
+const infoIconColor = 'text-blue-600'; // For icons in labels and section headings
+
+const successText = 'text-green-800';     // For price text
+const successIconColor = 'text-green-600'; // For price icon
+
+const errorBg = 'bg-red-50';
+const errorBorder = 'border-red-200';
+const errorText = 'text-red-700';
+
+const neutralBg = 'bg-gray-100';          // For Price Display background
+const neutralBorder = 'border-gray-200';  // For dividers, input borders
+const neutralText = 'text-gray-800';      // Primary text, labels
+const neutralTextLight = 'text-gray-600'; // Helper text, placeholders
+
+const buttonPrimaryStyle = `inline-flex items-center justify-center ${primaryButtonBg} ${primaryButtonHoverBg} ${primaryButtonText} font-semibold py-3 px-6 sm:px-8 rounded-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1 text-base sm:text-lg`; // Adjusted padding & text size for responsiveness
+
+// Form Element Styles
+const labelStyle = `flex items-center mb-1.5 text-xs sm:text-sm font-medium ${neutralText}`;
+const inputSharedStyle = `w-full mt-1 px-3 py-2 text-sm sm:text-base rounded-md border ${neutralBorder} file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:${neutralTextLight} focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed`;
+const errorTextStyle = `text-xs ${errorText} mt-1`;
+const generalErrorContainerStyle = `p-3 sm:p-4 rounded-lg ${errorBg} border ${errorBorder} text-xs sm:text-sm ${errorText}`;
+const formSectionDividerStyle = `pt-4 sm:pt-5 border-t ${neutralBorder}`;
+const formSubHeadingStyle = `text-base sm:text-md font-semibold ${neutralText} flex items-center`;
+const priceDisplayBoxStyle = `flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center ${neutralBg} p-3 sm:p-4 rounded-lg border ${neutralBorder}`;
+const totalPriceLabelStyle = `text-sm sm:text-base font-semibold ${neutralText} flex items-center`;
+const totalPriceAmountStyle = `text-lg sm:text-xl font-bold ${successText} text-left sm:text-right`;
+const priceDetailsTextStyle = `text-xs ${neutralTextLight} mt-1.5 sm:mt-2 text-left sm:text-right`;
+// --- End Theme Styles ---
 
 
 // --- Interfaces ---
@@ -33,20 +49,18 @@ interface PackageCategory {
   id: number;
   category_name: string;
   price: number;
-  // Add other relevant fields from your actual data structure
 }
 
 interface PackageDetails {
   id: number;
   name: string;
-  // Add other relevant fields
 }
 
 interface User {
-  id?: string; // Added id to User interface
+  id?: string;
   name?: string | null;
   email?: string | null;
-  phone?: string | null; // Assuming phone might be available
+  phone?: string | null;
 }
 
 interface PackageBookingFormProps {
@@ -84,14 +98,13 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
 
   const [totalPrice, setTotalPrice] = useState(categoryDetails.price * formData.total_people);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false); // Add loading state
-  const router = useRouter(); // Initialize useRouter
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    setTotalPrice(categoryDetails.price * formData.total_people);
+    setTotalPrice(categoryDetails.price * Math.max(1, formData.total_people));
   }, [formData.total_people, categoryDetails.price]);
 
-  // Pre-fill form when user prop changes (e.g., after session load)
   useEffect(() => {
     if (user) {
       setFormData(prev => ({
@@ -109,45 +122,50 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
     if (name === 'total_people') {
       processedValue = parseInt(value, 10);
       if (isNaN(processedValue) || processedValue < 1) {
-        processedValue = 1;
+        processedValue = 1; // Or keep the input as is and show error, depends on UX choice
       }
     }
     setFormData(prev => ({ ...prev, [name]: processedValue }));
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
   };
-  
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    if (formData.total_people < 1) newErrors.total_people = "Number of travelers must be at least 1.";
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of today for date comparison
+
+    if (formData.total_people < 1) newErrors.total_people = "At least 1 traveler is required.";
     if (!formData.start_date) newErrors.start_date = "Start date is required.";
+    else if (new Date(formData.start_date) < today) newErrors.start_date = "Start date cannot be in the past.";
     if (!formData.end_date) newErrors.end_date = "End date is required.";
     if (formData.start_date && formData.end_date && new Date(formData.start_date) >= new Date(formData.end_date)) {
       newErrors.end_date = "End date must be after the start date.";
     }
     if (!formData.guest_name.trim()) newErrors.guest_name = "Guest name is required.";
     if (!formData.guest_email.trim()) newErrors.guest_email = "Guest email is required.";
-    else if (!/\S+@\S+\.\S+/.test(formData.guest_email)) newErrors.guest_email = "Email is invalid.";
+    else if (!/\S+@\S+\.\S+/.test(formData.guest_email)) newErrors.guest_email = "Email address is invalid.";
     if (!formData.guest_phone.trim()) newErrors.guest_phone = "Guest phone number is required.";
-    
+    // Basic phone validation (example: at least 10 digits)
+    else if (!/^\d{10,}$/.test(formData.guest_phone.replace(/\s+/g, ''))) newErrors.guest_phone = "Phone number seems invalid.";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrors(prev => ({ ...prev, general: undefined })); // Clear previous general errors
+    setErrors(prev => ({ ...prev, general: undefined }));
 
-    if (!validateForm()) {
-      // console.log("Client-side validation failed:", errors);
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
 
-    // Prepare payload for /api/bookings/initiate-payment
     const paymentPayload = {
-      packageId: packageDetails.id.toString(), // Ensure string
-      categoryId: categoryDetails.id.toString(), // Ensure string
-      userId: user?.id || null, // Send null if user or user.id is not available
+      packageId: packageDetails.id.toString(),
+      categoryId: categoryDetails.id.toString(),
+      userId: user?.id || null,
       guestDetails: {
         name: formData.guest_name,
         email: formData.guest_email,
@@ -158,50 +176,43 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
         endDate: formData.end_date,
       },
       totalPeople: formData.total_people,
-      // special_requests from formData.special_requests is not part of BookingDetails for payment
     };
 
     try {
       const response = await fetch('/api/bookings/initiate-payment', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(paymentPayload),
       });
 
       const responseData = await response.json() as PaymentResponse;
 
       if (response.ok && responseData.success && responseData.redirectUrl) {
-        // Successfully initiated payment, redirect to PhonePe
         window.location.href = responseData.redirectUrl;
-        // No need to setIsSubmitting(false) here as page will change
-        return; 
+        return;
       } else {
-        // Handle API errors
-        setErrors(prev => ({ ...prev, general: responseData.message || `Failed to initiate payment. Please try again. (Status: ${response.status})` }));
-        console.error('Payment initiation failed:', responseData);
+        setErrors(prev => ({ ...prev, general: responseData.message || `Failed to initiate payment. (Status: ${response.status})` }));
       }
     } catch (err) {
       console.error('Error submitting booking form for payment:', err);
-      setErrors(prev => ({ ...prev, general: 'An unexpected error occurred while initiating payment. Please try again later.' }));
+      setErrors(prev => ({ ...prev, general: 'An unexpected error occurred. Please try again.' }));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
+    // The form itself can be styled as a card if needed: className={`bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-6 md:space-y-8`}
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
       {errors.general && (
-        <div className={`p-4 rounded-md ${errorBg} border ${errorBorder}`}>
-          <p className={`${errorText} text-sm`}>{errors.general}</p>
+        <div className={generalErrorContainerStyle}>
+          {errors.general}
         </div>
       )}
 
-      {/* Number of Travelers */}
       <div>
         <Label htmlFor="total_people" className={labelStyle}>
-          <UsersIcon size={16} className={`mr-2 ${infoIconColor}`} /> Number of Travelers
+          <UsersIcon size={14} className={`mr-1.5 sm:mr-2 ${infoIconColor}`} /> Number of Travelers
         </Label>
         <Input
           type="number"
@@ -210,16 +221,16 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
           value={formData.total_people}
           onChange={handleInputChange}
           min="1"
-          className={inputStyle} // Assumes shadcn Input takes className
+          className={inputSharedStyle}
+          aria-describedby={errors.total_people ? "total_people-error" : undefined}
         />
-        {errors.total_people && <p className={errorTextStyle}>{errors.total_people}</p>}
+        {errors.total_people && <p id="total_people-error" className={errorTextStyle}>{errors.total_people}</p>}
       </div>
 
-      {/* Travel Dates */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
         <div>
           <Label htmlFor="start_date" className={labelStyle}>
-            <CalendarIcon size={16} className={`mr-2 ${infoIconColor}`} /> Start Date
+            <CalendarIcon size={14} className={`mr-1.5 sm:mr-2 ${infoIconColor}`} /> Start Date
           </Label>
           <Input
             type="date"
@@ -227,13 +238,15 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
             name="start_date"
             value={formData.start_date}
             onChange={handleInputChange}
-            className={inputStyle}
+            className={inputSharedStyle}
+            min={new Date().toISOString().split("T")[0]} // Prevent past dates
+            aria-describedby={errors.start_date ? "start_date-error" : undefined}
           />
-          {errors.start_date && <p className={errorTextStyle}>{errors.start_date}</p>}
+          {errors.start_date && <p id="start_date-error" className={errorTextStyle}>{errors.start_date}</p>}
         </div>
         <div>
           <Label htmlFor="end_date" className={labelStyle}>
-            <CalendarIcon size={16} className={`mr-2 ${infoIconColor}`} /> End Date
+            <CalendarIcon size={14} className={`mr-1.5 sm:mr-2 ${infoIconColor}`} /> End Date
           </Label>
           <Input
             type="date"
@@ -241,21 +254,20 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
             name="end_date"
             value={formData.end_date}
             onChange={handleInputChange}
-            className={inputStyle}
+            className={inputSharedStyle}
+            min={formData.start_date || new Date().toISOString().split("T")[0]} // Prevent dates before start_date
+            aria-describedby={errors.end_date ? "end_date-error" : undefined}
           />
-          {errors.end_date && <p className={errorTextStyle}>{errors.end_date}</p>}
+          {errors.end_date && <p id="end_date-error" className={errorTextStyle}>{errors.end_date}</p>}
         </div>
       </div>
 
-      {/* Primary Guest Information */}
-      <div className={`space-y-4 pt-6 border-t ${neutralBorder}`}>
-         <h3 className={`text-lg font-semibold ${neutralText} flex items-center`}>
-            <UserIcon size={20} className={`mr-2.5 ${infoIconColor}`} /> Guest Information
+      <div className={`space-y-3 sm:space-y-4 ${formSectionDividerStyle}`}>
+        <h3 className={formSubHeadingStyle}>
+          <UserIcon size={16} className={`mr-2 sm:mr-2.5 ${infoIconColor}`} /> Guest Information
         </h3>
         <div>
-          <Label htmlFor="guest_name" className={labelStyle}>
-             Full Name
-          </Label>
+          <Label htmlFor="guest_name" className={labelStyle}>Full Name</Label>
           <Input
             type="text"
             id="guest_name"
@@ -263,83 +275,79 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
             value={formData.guest_name}
             onChange={handleInputChange}
             placeholder="Enter full name"
-            className={inputStyle}
+            className={inputSharedStyle}
+            aria-describedby={errors.guest_name ? "guest_name-error" : undefined}
           />
-          {errors.guest_name && <p className={errorTextStyle}>{errors.guest_name}</p>}
+          {errors.guest_name && <p id="guest_name-error" className={errorTextStyle}>{errors.guest_name}</p>}
         </div>
         <div>
-          <Label htmlFor="guest_email" className={labelStyle}>
-             Email Address
-          </Label>
+          <Label htmlFor="guest_email" className={labelStyle}>Email Address</Label>
           <Input
             type="email"
             id="guest_email"
             name="guest_email"
             value={formData.guest_email}
             onChange={handleInputChange}
-            placeholder="Enter email address"
-            className={inputStyle}
+            placeholder="name@example.com"
+            className={inputSharedStyle}
+            aria-describedby={errors.guest_email ? "guest_email-error" : undefined}
           />
-          {errors.guest_email && <p className={errorTextStyle}>{errors.guest_email}</p>}
+          {errors.guest_email && <p id="guest_email-error" className={errorTextStyle}>{errors.guest_email}</p>}
         </div>
         <div>
-          <Label htmlFor="guest_phone" className={labelStyle}>
-             Phone Number
-          </Label>
+          <Label htmlFor="guest_phone" className={labelStyle}>Phone Number</Label>
           <Input
             type="tel"
             id="guest_phone"
             name="guest_phone"
             value={formData.guest_phone}
             onChange={handleInputChange}
-            placeholder="Enter phone number"
-            className={inputStyle}
+            placeholder="Enter 10-digit phone number"
+            className={inputSharedStyle}
+            aria-describedby={errors.guest_phone ? "guest_phone-error" : undefined}
           />
-          {errors.guest_phone && <p className={errorTextStyle}>{errors.guest_phone}</p>}
+          {errors.guest_phone && <p id="guest_phone-error" className={errorTextStyle}>{errors.guest_phone}</p>}
         </div>
       </div>
 
-      {/* Special Requests */}
-      <div className={`pt-6 border-t ${neutralBorder}`}>
+      <div className={formSectionDividerStyle}>
         <Label htmlFor="special_requests" className={labelStyle}>
-          <InfoIcon size={16} className={`mr-2 ${infoIconColor}`} /> Special Requests (Optional)
+          <InfoIcon size={14} className={`mr-1.5 sm:mr-2 ${infoIconColor}`} /> Special Requests (Optional)
         </Label>
         <Textarea
           id="special_requests"
           name="special_requests"
           value={formData.special_requests}
           onChange={handleInputChange}
-          placeholder="Any special requirements or preferences? (e.g., dietary needs, accessibility requests)"
-          rows={4}
-          className={inputStyle} // Assumes shadcn Textarea takes className
+          placeholder="e.g., dietary needs, accessibility, preferred room view"
+          rows={3}
+          className={inputSharedStyle}
         />
       </div>
 
-      {/* Total Price Display */}
-      <div className={`pt-6 border-t ${neutralBorder}`}>
-        <div className={`flex justify-between items-center ${neutralBg} p-4 md:p-5 rounded-lg border ${neutralBorder}`}>
-            <p className={`text-lg font-semibold ${neutralText} flex items-center`}>
-                <DollarSignIcon size={20} className={`mr-2 ${successIconColor}`}/> Total Booking Amount:
-            </p>
-            <p className={`text-2xl font-bold ${successText}`}>
-                ₹{totalPrice.toLocaleString('en-IN')}
-            </p>
+      <div className={formSectionDividerStyle}>
+        <div className={priceDisplayBoxStyle}>
+          <p className={totalPriceLabelStyle}>
+            <BadgeIndianRupee size={16} className={`mr-1.5 sm:mr-2 ${successIconColor}`} /> Total Amount
+          </p>
+          <p className={totalPriceAmountStyle}>
+            ₹{totalPrice.toLocaleString('en-IN')}
+          </p>
         </div>
-         <p className={`text-xs ${neutralTextLight} mt-2 text-right`}>
-            Based on {formData.total_people} traveler(s) at ₹{categoryDetails.price.toLocaleString('en-IN')} per person.
+        <p className={priceDetailsTextStyle}>
+          Based on {formData.total_people} traveler(s) at ₹{categoryDetails.price.toLocaleString('en-IN')} per person.
         </p>
       </div>
 
-      {/* Submit Button */}
-      <div className="pt-6">
-        <Button 
-          type="submit" 
-          className={`${buttonPrimaryStyle} w-full text-lg py-3 h-auto disabled:opacity-60`} // Ensure buttonPrimaryStyle is applied correctly
+      <div className="pt-4 sm:pt-5">
+        <Button
+          type="submit"
+          className={`${buttonPrimaryStyle} w-full h-auto text-sm sm:text-base py-2.5 sm:py-3 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:-translate-y-0 disabled:hover:shadow-md`}
           disabled={isSubmitting}
         >
           {isSubmitting ? (
             <>
-              <Loader2 size={20} className="animate-spin mr-2.5" /> Submitting...
+              <Loader2 size={16} className="animate-spin mr-2" /> Submitting...
             </>
           ) : (
             'Confirm & Proceed to Payment'

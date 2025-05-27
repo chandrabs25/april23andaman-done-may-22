@@ -5,8 +5,9 @@ export const dynamic = 'force-dynamic';
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth'; // Import useAuth
-import { Loader2, AlertTriangle, ArrowLeft, PackageIcon, TagIcon, UsersIcon, CreditCardIcon, InfoIcon } from 'lucide-react';
+import { Loader2, AlertTriangle, ArrowLeft, PackageIcon, TagIcon, UsersIcon, CreditCardIcon, InfoIcon, ImageIcon } from 'lucide-react';
 import { useFetch } from '@/hooks/useFetch'; // Assuming useFetch can be reused
 import { PackageBookingForm } from '@/components/packages/PackageBookingForm'; // Import the form component
 
@@ -18,12 +19,15 @@ interface PackageCategory {
   hotel_details: string;
   category_description: string;
   max_pax_included_in_price: number;
+  images: string[] | null; // Added images support
   // Add other relevant fields if necessary
 }
 
 interface PackageData {
   id: number;
   name: string;
+  description?: string | null;
+  images_parsed?: string[]; // Added images support
   categories?: PackageCategory[];
   // Add other relevant fields like base_price, description, etc. if needed for display
 }
@@ -62,6 +66,65 @@ const ErrorDisplay = ({ title = "Error", message, showBackButton = true }: { tit
     )}
   </div>
 );
+// --- Image Display Components ---
+const ImageGallery = ({ images, altText, className = "w-full h-48 object-cover rounded-lg" }: { 
+  images: string[] | null | undefined, 
+  altText: string,
+  className?: string 
+}) => {
+  if (!images || images.length === 0) {
+    return (
+      <div className={`${className} bg-gray-200 flex items-center justify-center rounded-lg`}>
+        <ImageIcon size={32} className="text-gray-400" />
+        <span className="ml-2 text-sm text-gray-500">No image available</span>
+      </div>
+    );
+  }
+
+  const primaryImage = images[0];
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <Image
+          src={primaryImage}
+          alt={altText}
+          width={400}
+          height={300}
+          className={`${className} rounded-lg`}
+          style={{ objectFit: 'cover' }}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/images/placeholder.jpg';
+          }}
+        />
+        {images.length > 1 && (
+          <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+            +{images.length - 1} more
+          </div>
+        )}
+      </div>
+      {images.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto">
+          {images.slice(1, 4).map((img, idx) => (
+            <Image
+              key={idx}
+              src={img}
+              alt={`${altText} ${idx + 2}`}
+              width={80}
+              height={60}
+              className="w-20 h-15 object-cover rounded-md flex-shrink-0"
+              style={{ objectFit: 'cover' }}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/images/placeholder.jpg';
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 // --- End Reusable Components ---
 
 function NewBookingPageContent() {
@@ -134,55 +197,101 @@ function NewBookingPageContent() {
         <div className="mb-6 md:mb-8">
           <Link 
             href={packageId ? `/packages/${packageId}` : '/packages'} 
-            className={`${buttonSecondaryStyleHero} px-4 py-2 text-sm bg-white hover:bg-gray-50 text-gray-700 border-gray-300 shadow-sm`} // Adjusted secondary button
+            className={`${buttonPrimaryStyle} px-3 py-2 text-xs sm:px-4 sm:py-2 sm:text-sm bg-gray-50 hover:bg-gray-200 text-black-700 hover:text-black-900 border-gray-300 shadow-sm`} // Adjusted padding and text size for mobile
           >
-            <ArrowLeft size={18} className="mr-2" /> Back to Package Details
+            <ArrowLeft size={16} className="mr-1 sm:mr-2" /> Back to Package Details
           </Link>
         </div>
 
         {/* Main content card */}
-        <div className={`${cardBaseStyle} p-6 md:p-8 lg:p-10 shadow-xl`}>
-          <h1 className={`${sectionHeadingStyle} text-3xl md:text-4xl mb-8 justify-center md:justify-start`}>
-            <InfoIcon size={28} className={`mr-3 ${infoIconColor}`} /> Confirm Your Booking
+        <div className={`${cardBaseStyle} p-4 sm:p-6 md:p-8 lg:p-10 shadow-xl`}> {/* Adjusted padding for mobile */}
+          <h1 className={`${sectionHeadingStyle} text-2xl sm:text-3xl md:text-4xl mb-6 sm:mb-8 justify-center md:justify-start`}> {/* Adjusted text size and margin for mobile */}
+            <InfoIcon size={24} className={`mr-2 sm:mr-3 ${infoIconColor}`} /> Confirm Your Booking
           </h1>
           
           {/* Package Summary Section - Themed as a contextual card */}
-          <section className={`mb-8 md:mb-10 p-6 rounded-xl ${infoBg} border ${infoBorder} shadow-md`}>
-            <h2 className={`text-2xl font-semibold ${infoText} mb-4 flex items-center`}>
-              <PackageIcon size={24} className="mr-3" /> Your Selection
+          <section className={`mb-6 sm:mb-8 md:mb-10 p-4 sm:p-6 rounded-xl ${infoBg} border ${infoBorder} shadow-md`}> {/* Adjusted padding for mobile */}
+            <h2 className={`text-xl sm:text-2xl font-semibold ${infoText} mb-4 sm:mb-6 flex items-center`}> {/* Adjusted text size and margin */}
+              <PackageIcon size={20} className="mr-2 sm:mr-3" /> Your Selection
             </h2>
-            <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-              <div>
-                <h3 className={`text-lg font-medium ${neutralText}`}>{selectedPackage.name}</h3>
-                <p className={`text-sm ${neutralTextLight}`}>Package</p>
-              </div>
-              {/* Category details card - nested card style */}
-              <div className={`${cardBaseStyle} p-4 md:p-5 bg-white`}> {/* Override cardBaseStyle padding and bg */}
-                <h4 className={`text-md font-semibold ${neutralText} flex items-center mb-1.5`}>
-                  <TagIcon size={18} className={`mr-2 ${infoIconColor}`} /> {selectedCategory.category_name}
-                </h4>
-                <p className={`text-2xl font-bold ${successText} mb-2`}>
-                  <span className="indian-rupee">₹</span>{selectedCategory.price.toLocaleString('en-IN')}
-                  <span className={`text-sm font-normal ${neutralTextLight}`}> / person</span>
-                </p>
-                {selectedCategory.category_description && (
-                  <p className={`text-xs ${neutralTextLight} mb-1.5`}>{selectedCategory.category_description}</p>
-                )}
-                <p className={`text-xs ${neutralTextLight} flex items-center`}>
-                  <UsersIcon size={14} className={`mr-1.5 ${successIconColor}`} /> 
-                  Covers up to {selectedCategory.max_pax_included_in_price} person(s) at this price.
-                </p>
-                 {selectedCategory.hotel_details && (
-                    <p className={`text-xs ${neutralTextLight} mt-2 border-t ${neutralBorderLight} pt-2`}>Hotel: {selectedCategory.hotel_details}</p>
-                )}
+            
+            {/* Package Overview with Images */}
+            <div className="space-y-4 sm:space-y-6">
+              {/* Package Details and Main Image */}
+              <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+                <div className="space-y-3 sm:space-y-4">
+                  <div>
+                    <h3 className={`text-lg sm:text-xl font-medium ${neutralText} mb-1 sm:mb-2`}>{selectedPackage.name}</h3>
+                    <p className={`text-xs sm:text-sm ${neutralTextLight} mb-1 sm:mb-2`}>Package</p>
+                    {selectedPackage.description && (
+                      <p className={`text-xs sm:text-sm ${neutralTextLight}`} style={{ 
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>{selectedPackage.description}</p>
+                    )}
+                  </div>
+                  
+                  {/* Category details card - nested card style */}
+                  <div className={`${cardBaseStyle} p-3 sm:p-4 md:p-5 bg-white`}> {/* Adjusted padding */}
+                    <h4 className={`text-sm sm:text-md font-semibold ${neutralText} flex items-center mb-1.5 sm:mb-2`}>
+                      <TagIcon size={16} className={`mr-1 sm:mr-2 ${infoIconColor}`} /> {selectedCategory.category_name}
+                    </h4>
+                    <p className={`text-xl sm:text-2xl font-bold ${successText} mb-1.5 sm:mb-2`}>
+                      <span className="indian-rupee">₹</span>{selectedCategory.price.toLocaleString('en-IN')}
+                      <span className={`text-xs sm:text-sm font-normal ${neutralTextLight}`}> / person</span>
+                    </p>
+                    {selectedCategory.category_description && (
+                      <p className={`text-tiny sm:text-xs ${neutralTextLight} mb-1.5 sm:mb-2`}>{selectedCategory.category_description}</p>
+                    )}
+                    <p className={`text-tiny sm:text-xs ${neutralTextLight} flex items-center mb-1.5 sm:mb-2`}>
+                      <UsersIcon size={12} className={`mr-1 sm:mr-1.5 ${successIconColor}`} /> 
+                      Covers up to {selectedCategory.max_pax_included_in_price} person(s) at this price.
+                    </p>
+                    {selectedCategory.hotel_details && (
+                      <p className={`text-tiny sm:text-xs ${neutralTextLight} border-t ${neutralBorderLight} pt-1.5 sm:pt-2`}>Hotel: {selectedCategory.hotel_details}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Package Images */}
+                <div className="space-y-3 sm:space-y-4">
+                  <div>
+                    <h4 className={`text-xs sm:text-sm font-medium ${neutralText} mb-1.5 sm:mb-2 flex items-center`}>
+                      <ImageIcon size={14} className={`mr-1 sm:mr-1.5 ${infoIconColor}`} />
+                      Package Gallery
+                    </h4>
+                    <ImageGallery 
+                      images={selectedPackage.images_parsed} 
+                      altText={selectedPackage.name}
+                      className="w-full h-36 sm:h-48 object-cover rounded-lg" // Adjusted height for mobile
+                    />
+                  </div>
+                  
+                  {/* Category Images (if different from package images) */}
+                  {selectedCategory.images && selectedCategory.images.length > 0 && (
+                    <div>
+                      <h4 className={`text-xs sm:text-sm font-medium ${neutralText} mb-1.5 sm:mb-2 flex items-center`}>
+                        <TagIcon size={14} className={`mr-1 sm:mr-1.5 ${infoIconColor}`} />
+                        {selectedCategory.category_name} Images
+                      </h4>
+                      <ImageGallery 
+                        images={selectedCategory.images} 
+                        altText={selectedCategory.category_name}
+                        className="w-full h-28 sm:h-32 object-cover rounded-lg" // Adjusted height for mobile
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </section>
 
           {/* Booking Form Section */}
-          <section className="mb-8 md:mb-10">
-            <h2 className={`${sectionHeadingStyle} text-2xl mb-6`}>
-              <CreditCardIcon size={24} className={`mr-3 ${successIconColor}`} /> Guest & Payment Details
+          <section className="mb-6 sm:mb-8 md:mb-10">
+            <h2 className={`${sectionHeadingStyle} text-xl sm:text-2xl mb-4 sm:mb-6`}> {/* Adjusted text size and margin */}
+              <CreditCardIcon size={20} className={`mr-2 sm:mr-3 ${successIconColor}`} /> Guest & Payment Details
             </h2>
             {/* PackageBookingForm will need internal theming for labels, inputs, buttons */}
             <PackageBookingForm
@@ -199,7 +308,7 @@ function NewBookingPageContent() {
           </section>
           
           {/* Authentication Status Section */}
-          <section className={`text-sm ${neutralTextLight} border-t ${neutralBorder} pt-6 mt-8 text-center md:text-left`}>
+          <section className={`text-xs sm:text-sm ${neutralTextLight} border-t ${neutralBorder} pt-4 sm:pt-6 mt-6 sm:mt-8 text-center md:text-left`}> {/* Adjusted padding and margins */}
             {isAuthenticated && user?.email ? (
               <p>Logged in as: <span className={`font-medium ${neutralText}`}>{user.email}</span>. Not you? <Link href="/auth/signout" className={`${infoText} hover:underline`}>Sign out</Link></p>
             ) : !authIsLoading && !isAuthenticated ? (

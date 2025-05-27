@@ -25,71 +25,49 @@ import {
   Repeat, // Keep for potential future use
   Archive, // For deposit
   Building, // Added for Provider
-  ImageOff // Added for image error placeholder
+  ImageOff, // Added for image error placeholder
+  FileTextIcon
 } from "lucide-react";
 
-// --- Import Common Styles (Assume these are defined in a shared file like src/styles/theme.ts) ---
+// --- Import Common Styles ---
 import {
-  primaryButtonBg,
-  primaryButtonHoverBg,
-  primaryButtonText,
-  secondaryButtonBg,
-  secondaryButtonHoverBg,
-  secondaryButtonText,
-  secondaryButtonBorder,
-  infoBg,
-  infoBorder,
-  infoText,
-  infoIconColor,
-  successBg,
-  successBorder,
-  successText,
-  successIconColor,
-  warningBg,
-  warningBorder,
-  warningText,
-  warningIconColor,
-  tipBg,
-  tipBorder,
-  tipText,
-  tipIconColor,
-  errorBg,
-  errorBorder,
-  errorText,
-  errorIconColor,
-  neutralBgLight,
-  neutralBorderLight,
-  neutralBg,
-  neutralBorder,
-  neutralText,
-  neutralTextLight,
-  neutralIconColor,
-  sectionPadding,
-  cardBaseStyle,
-  sectionHeadingStyle,
-  buttonPrimaryStyle,
-  buttonSecondaryStyle,
-} from "@/styles/theme"; // Adjust path as needed
+  primaryButtonBg, // Kept for focus ring or dynamic highlights if needed elsewhere
+  // primaryButtonHoverBg, (already in buttonPrimaryStyle)
+  // primaryButtonText, (already in buttonPrimaryStyle)
+  // secondaryButtonBg, (already in buttonSecondaryStyleHero)
+  // secondaryButtonHoverBg, (already in buttonSecondaryStyleHero)
+  // secondaryButtonText, (already in buttonSecondaryStyleHero)
+  // secondaryButtonBorder, (already in buttonSecondaryStyleHero)
+  infoBg, infoBorder, infoText, infoIconColor,
+  successBg, successBorder, successText, successIconColor,
+  warningBg, warningBorder, warningText, warningIconColor,
+  // tipBg, tipBorder, tipText, tipIconColor, (not used here but good to list if available)
+  errorBg, errorBorder, errorText, errorIconColor,
+  neutralBgLight, neutralBorderLight, neutralBg, neutralBorder,
+  neutralText, neutralTextLight, neutralIconColor,
+  sectionPadding, cardBaseStyle, sectionHeadingStyle,
+  buttonPrimaryStyle, buttonSecondaryStyleHero, // Use Hero for secondary as it's more prominent
+  breadcrumbItemStyle, breadcrumbLinkStyle, breadcrumbSeparatorStyle, // For Hero breadcrumbs
+  galleryMainImageContainerStyle, galleryCaptionOverlayStyle, // For Hero image
+} from "@/styles/26themeandstyle";
 // --- End Common Styles ---
 
 
 // --- Helper Components (Styled with Imported Theme) ---
 const LoadingState = () => (
-  // Use neutral colors for loading state
-  <div className={`container mx-auto px-4 ${sectionPadding} text-center ${neutralBgLight} rounded-2xl border ${neutralBorderLight}`}>
-    <Loader2 className={`h-12 w-12 animate-spin ${neutralIconColor} mx-auto mb-4`} />
-    <p className={`text-xl font-semibold ${neutralText}`}>Loading Rental Service Details...</p>
-    <p className={`${neutralTextLight}`}>Please wait a moment.</p>
+  <div className={`min-h-screen flex flex-col items-center justify-center ${neutralBgLight} ${sectionPadding}`}>
+    <Loader2 className={`h-16 w-16 animate-spin ${infoIconColor} mb-5`} />
+    <p className={`text-xl font-semibold ${infoText}`}>Loading Rental Service Details...</p>
+    <p className={`${neutralTextLight} mt-1`}>Please wait a moment.</p>
   </div>
 );
 
 const ErrorState = ({ message }: { message?: string }) => (
-  // Use error colors for error state
-  <div className={`container mx-auto px-4 ${sectionPadding} text-center ${errorBg} rounded-2xl border ${errorBorder}`}>
-    <AlertTriangle className={`h-12 w-12 ${errorIconColor} mx-auto mb-4`} />
-    <p className={`text-xl font-semibold ${errorText}`}>Could Not Load Service</p>
-    <p className={`${neutralTextLight}`}>{message || "The service details could not be retrieved."}</p>
-    <Link href="/services" className={`mt-6 ${buttonSecondaryStyle}`}>
+  <div className={`min-h-screen flex flex-col items-center justify-center text-center px-4 ${sectionPadding} ${errorBg} border ${errorBorder} rounded-2xl m-4 md:m-8`}>
+    <AlertTriangle className={`h-20 w-20 ${errorIconColor} mb-6`} />
+    <p className={`text-2xl md:text-3xl font-semibold ${errorText} mb-3`}>Could Not Load Service</p>
+    <p className={`${neutralTextLight} mb-8 max-w-md`}>{message || "The service details could not be retrieved at this time."}</p>
+    <Link href="/services" className={`${buttonPrimaryStyle} bg-red-600 hover:bg-red-700 focus:ring-red-500 text-base py-2.5 px-6`}>
       <ChevronLeft size={18} className="mr-2" /> Back to Services
     </Link>
   </div>
@@ -100,18 +78,16 @@ interface DetailItemProps {
   value?: string | number | null | React.ReactNode;
   icon?: React.ElementType;
   className?: string;
-  highlight?: boolean; // Keep highlight for potential emphasis
+  highlight?: boolean;
+  valueClassName?: string; // Added for specific value styling
 }
-const DetailItem: React.FC<DetailItemProps> = ({ label, value, icon: Icon, className, highlight }) => {
+const DetailItem: React.FC<DetailItemProps> = ({ label, value, icon: Icon, className, highlight, valueClassName }) => {
   if (value === null || value === undefined || value === "") return null;
   return (
-    <div className={`flex items-start py-2 ${className || ""}`}>
-      {/* Use neutralIconColor for icons, potentially primaryButtonBg for highlighted icons */}
-      {Icon && <Icon size={16} className={`mr-3 mt-1 flex-shrink-0 ${highlight ? primaryButtonBg : neutralIconColor}`} />}
-      {/* Use neutralText for labels, potentially bolder if highlighted */}
-      <span className={`text-sm ${highlight ? `font-semibold ${neutralText}` : `font-medium ${neutralTextLight}`} w-36 md:w-40 flex-shrink-0`}>{label}:</span>
-      {/* Use neutralTextLight for values */}
-      <span className={`text-sm ${neutralTextLight} flex-grow break-words`}>{value}</span>
+    <div className={`flex items-start py-2.5 ${className || ""}`}>
+      {Icon && <Icon size={18} className={`mr-3 mt-0.5 flex-shrink-0 ${highlight ? infoIconColor : neutralIconColor}`} />}
+      <span className={`text-sm ${highlight ? `font-semibold ${neutralText}` : `font-medium ${neutralText}`} w-36 md:w-44 flex-shrink-0`}>{label}:</span>
+      <span className={`text-sm ${neutralTextLight} flex-grow break-words ${valueClassName || ''}`}>{value}</span>
     </div>
   );
 };
@@ -120,18 +96,16 @@ interface DetailSectionProps {
   title: string;
   icon?: React.ElementType;
   children: React.ReactNode;
-  className?: string; // Keep className for flexibility
+  className?: string;
+  id?: string; // Added for anchor links
 }
-const DetailSection: React.FC<DetailSectionProps> = ({ title, icon: Icon, children, className }) => (
-  // Add padding and border consistent with card sections
-  <div className={`py-5 border-b ${neutralBorderLight} last:border-b-0 ${className || ""}`}>
-    {/* Use sectionHeadingStyle for consistency */}
-    <h2 className={sectionHeadingStyle}>
-      {/* Icon color matches neutral theme */}
-      {Icon && <Icon size={20} className={`mr-2.5 ${neutralIconColor}`} />}
+const DetailSection: React.FC<DetailSectionProps> = ({ title, icon: Icon, children, className, id }) => (
+  <div id={id} className={`py-6 md:py-8 border-b ${neutralBorderLight} last:border-b-0 ${className || ""} scroll-mt-20`}>
+    <h2 className={`${sectionHeadingStyle} text-xl md:text-2xl`}>
+      {Icon && <Icon size={22} className={`mr-3 ${infoIconColor}`} />} {/* Using infoIconColor for section icons */}
       {title}
     </h2>
-    <div className="space-y-1">
+    <div className="space-y-2 mt-3 md:mt-4">
       {children}
     </div>
   </div>
@@ -342,195 +316,159 @@ const RentalServiceDetailPage = () => {
 
   // --- JSX Structure using the imported theme ---
   return (
-    // Use bg-white as the base page background
-    <div className="bg-white min-h-screen">
-      {/* Sticky Header */}
-      <div className={`bg-white shadow-sm py-3 sticky top-0 z-40 border-b ${neutralBorderLight}`}>
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <Link href="/services" className={buttonSecondaryStyle}>
-            <ChevronLeft size={18} className="mr-1.5" />
-            Back to Services
-          </Link>
-          {/* Optional: Add other header elements here if needed */}
+    <div className={`${neutralBgLight} min-h-screen`}>
+      {/* Hero Section */}
+      <div className={`relative h-[50vh] md:h-[60vh] w-full ${galleryMainImageContainerStyle.replace('rounded-2xl shadow-lg border', 'rounded-none shadow-none border-none')}`}>
+        <Image
+          src={mainImageUrl}
+          alt={`${service.name} main image`}
+          fill
+          priority
+          style={{ objectFit: 'cover' }}
+          className={`${neutralBg}`}
+          onError={(e) => { e.currentTarget.src = "/images/placeholder_service.jpg"; e.currentTarget.onerror = null; }}
+        />
+        {mainImageUrl === "/images/placeholder_service.jpg" && (
+          <div className={`absolute inset-0 flex items-center justify-center ${neutralBg}/80 pointer-events-none`}>
+            <ImageOff size={64} className={`${neutralIconColor} opacity-50`} />
+          </div>
+        )}
+        <div className={`absolute inset-0 ${galleryCaptionOverlayStyle.replace('p-6', 'p-0')} bg-gradient-to-t from-black/70 via-black/30 to-transparent`}></div>
+        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white">
+          <div className="container mx-auto">
+            <nav className={`text-sm text-white/80 mb-2 ${breadcrumbItemStyle}`} aria-label="Breadcrumb">
+              <ol className="list-none p-0 inline-flex flex-wrap">
+                <li className={breadcrumbItemStyle}><Link href="/" className={breadcrumbLinkStyle}>Home</Link><ChevronLeft size={14} className={`${breadcrumbSeparatorStyle} text-white/70 rotate-180`} /></li>
+                <li className={breadcrumbItemStyle}><Link href="/services" className={breadcrumbLinkStyle}>Services</Link><ChevronLeft size={14} className={`${breadcrumbSeparatorStyle} text-white/70 rotate-180`} /></li>
+                <li className={`${breadcrumbItemStyle} ${neutralTextLight.replace('text-gray-600', 'text-white/90')}`}><span className="font-medium line-clamp-1">{service.name}</span></li>
+              </ol>
+            </nav>
+            <h1 className="text-3xl md:text-5xl font-bold mb-3 drop-shadow-lg">{service.name}</h1>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-white/90 text-sm md:text-base">
+              {service.island_name && <span className="flex items-center"><MapPin size={16} className="mr-1.5" /> {service.island_name}</span>}
+              {rentalDetails.item_type && <span className="flex items-center"><ShoppingBag size={16} className="mr-1.5" /> {rentalDetails.item_type}</span>}
+              {service.rating !== null && typeof service.rating === 'number' && (
+                <span className="flex items-center"><Star size={16} className="mr-1 text-yellow-400 fill-current" /> {service.rating.toFixed(1)}/5.0</span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className={`container mx-auto px-4 ${sectionPadding}`}>
-        {/* Service Title and Meta */}
-        <div className="mb-8">
-          <h1 className={`text-3xl md:text-4xl font-bold ${neutralText} mb-2`}>{service.name}</h1>
-          <div className={`flex flex-wrap items-center text-sm ${neutralTextLight} gap-x-4 gap-y-1.5`}>
-            {service.island_name && <span className="flex items-center"><MapPin size={15} className={`mr-1.5 ${neutralIconColor}`} /> {service.island_name}</span>}
-            {rentalDetails.item_type && <span className="flex items-center"><ShoppingBag size={15} className={`mr-1.5 ${neutralIconColor}`} /> {rentalDetails.item_type}</span>}
-            {service.rating !== null && typeof service.rating === 'number' && (
-              <span className="flex items-center">
-                <Star size={15} className="mr-1 text-yellow-400 fill-current" /> {service.rating.toFixed(1)}/5.0
-              </span>
-            )}
-          </div>
-          {/* Provider Info */}
-          {service.provider?.business_name && (
-            <p className={`text-sm ${neutralTextLight} mt-2`}>
-              Provided by: <span className={`font-medium ${neutralText}`}>{service.provider.business_name}</span>
-            </p>
-          )}
-        </div>
-
-        {/* Layout: Main Content & Sidebar */}
-        <div className="lg:grid lg:grid-cols-3 lg:gap-10">
-          {/* --- Left Column (Images & Details) --- */}
+        <div className="lg:grid lg:grid-cols-3 lg:gap-8 xl:gap-10">
+          {/* Left Column (Images & Details) */}
           <div className="lg:col-span-2">
-            {/* Main Image */}
-            <div className={`mb-6 rounded-2xl overflow-hidden shadow-lg relative aspect-[16/10] border ${neutralBorderLight}`}>
-              <Image
-                src={mainImageUrl}
-                alt={`Main image for ${service.name}`}
-                fill // Use fill for responsive aspect ratio
-                style={{ objectFit: 'cover' }} // Ensure image covers the area
-                className="bg-gray-100" // Add a subtle background for loading/error
-                onError={(e) => {
-                  console.log("Main image error, using placeholder");
-                  e.currentTarget.src = "/images/placeholder_service.jpg";
-                  e.currentTarget.onerror = null; // Prevent infinite loop
-                }}
-                priority // Load main image first
-                unoptimized={true} // If images are not optimized via Next.js Image Optimization
-                sizes="(max-width: 1024px) 100vw, 66vw" // Define sizes for optimization
-                loading="eager"
-              />
-              {/* Fallback Icon if image fails catastrophically */}
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100/50 pointer-events-none">
-                <ImageOff size={48} className={`${neutralIconColor} opacity-50`} />
-              </div>
-            </div>
-
-            {/* Gallery Images */}
+            {/* Gallery Images - Themed */}
             {validGalleryImages.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-8">
-                {validGalleryImages.map((img, index) => (
-                  <div key={index} className={`rounded-xl overflow-hidden shadow-md aspect-square relative border ${neutralBorderLight}`}>
-                    <Image
-                      src={img}
-                      alt={`${service.name} gallery image ${index + 1}`}
-                      fill
-                      style={{ objectFit: 'cover' }}
-                      className="bg-gray-100"
-                      onError={(e) => {
-                        console.log("Gallery image error, using placeholder");
-                        e.currentTarget.src = "/images/placeholder_service.jpg";
-                        e.currentTarget.onerror = null;
-                      }}
-                      unoptimized={true}
-                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-                      loading="lazy" // Lazy load gallery images
-                    />
-                    {/* Fallback Icon */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100/50 pointer-events-none">
-                      <ImageOff size={32} className={`${neutralIconColor} opacity-50`} />
+              <div className={`mb-8 p-4 ${neutralBg} rounded-xl border ${neutralBorderLight}`}>
+                <h3 className={`text-xl font-semibold ${neutralText} mb-4`}>Photo Gallery</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {validGalleryImages.map((img, index) => (
+                    <div key={index} className={`rounded-lg overflow-hidden shadow-sm aspect-square relative border ${neutralBorder} group cursor-pointer`}>
+                      <Image
+                        src={img} alt={`${service.name} gallery image ${index + 1}`}
+                        fill style={{ objectFit: 'cover' }} className={`${neutralBgLight} group-hover:scale-105 transition-transform duration-300`}
+                        onError={(e) => { e.currentTarget.src = "/images/placeholder_service.jpg"; e.currentTarget.onerror = null; }}
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" loading="lazy"
+                      />
+                      {img === "/images/placeholder_service.jpg" && (
+                        <div className={`absolute inset-0 flex items-center justify-center ${neutralBgLight}/80 pointer-events-none`}>
+                          <ImageOff size={32} className={`${neutralIconColor} opacity-50`} />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Details Card */}
-            {/* Apply cardBaseStyle here */}
-            <div className={cardBaseStyle}>
-              <DetailSection title="Rental Overview" icon={Info}>
+            {/* Details Card - Themed */}
+            <div className={`${cardBaseStyle} divide-y ${neutralBorderLight}`}>
+              <DetailSection id="overview" title="Rental Overview" icon={Info}>
                 <p className={`text-base leading-relaxed ${neutralTextLight}`}>{service.description || "Detailed description not available."}</p>
               </DetailSection>
 
-              <DetailSection title="Rental Details" icon={ShoppingBag}>
-                <DetailItem label="Item Type" value={rentalDetails.item_type} icon={Tag} highlight />
+              <DetailSection id="details" title="Rental Details" icon={ShoppingBag}>
+                <DetailItem label="Item Type" value={rentalDetails.item_type} icon={Tag} highlight valueClassName={infoText} />
                 {rentalDetails.rental_duration_options && rentalDetails.rental_duration_options.length > 0 && (
                   <DetailItem label="Duration Options" value={rentalDetails.rental_duration_options.join(", ")} icon={Clock} />
                 )}
                 {rentalDetails.pickup_location_options && rentalDetails.pickup_location_options.length > 0 && (
                   <DetailItem label="Pickup Locations" value={rentalDetails.pickup_location_options.join(", ")} icon={MapPin} />
                 )}
-                {rentalDetails.unit && <DetailItem label="Unit" value={rentalDetails.unit} />}
+                {rentalDetails.unit && <DetailItem label="Billing Unit" value={rentalDetails.unit} icon={Repeat} />}
               </DetailSection>
 
-              <DetailSection title="Pricing" icon={IndianRupee}>
-                {/* Display numeric price prominently if available */}
+              <DetailSection id="pricing" title="Pricing Information" icon={IndianRupee}>
                 {service.price_numeric ? (
-                  <DetailItem label="Base Price" value={`₹${service.price_numeric.toLocaleString("en-IN")}`} highlight />
+                  <DetailItem label="Base Price" value={`₹${service.price_numeric.toLocaleString("en-IN")}`} highlight valueClassName={successText} />
                 ) : (
-                  <DetailItem label="Price" value={service.price_details || "Contact provider"} highlight />
+                  <DetailItem label="Price" value={service.price_details || "Contact provider for pricing"} highlight valueClassName={infoText} />
                 )}
-                {/* Show per hour/day only if they exist */}
-                {rentalDetails.price_per_hour && <DetailItem label="Per Hour" value={`₹${rentalDetails.price_per_hour.toLocaleString("en-IN")}`} />}
-                {rentalDetails.price_per_day && <DetailItem label="Per Day" value={`₹${rentalDetails.price_per_day.toLocaleString("en-IN")}`} />}
-                {rentalDetails.deposit_amount && <DetailItem label="Security Deposit" value={`₹${rentalDetails.deposit_amount.toLocaleString("en-IN")}`} icon={Archive} />}
-                {/* Add general price details if it differs from numeric or provides context */}
+                {rentalDetails.price_per_hour && <DetailItem label="Per Hour" value={`₹${rentalDetails.price_per_hour.toLocaleString("en-IN")}`} valueClassName={successText} />}
+                {rentalDetails.price_per_day && <DetailItem label="Per Day" value={`₹${rentalDetails.price_per_day.toLocaleString("en-IN")}`} valueClassName={successText} />}
+                {rentalDetails.deposit_amount && <DetailItem label="Security Deposit" value={`₹${rentalDetails.deposit_amount.toLocaleString("en-IN")}`} icon={Archive} valueClassName={warningText} />}
                 {service.price_details && service.price_details !== String(service.price_numeric) && (
-                  <DetailItem label="Notes" value={service.price_details} />
+                  <DetailItem label="Additional Notes" value={service.price_details} icon={Info} />
                 )}
               </DetailSection>
 
               {generalAmenities.length > 0 && (
-                <DetailSection title="Features / Included" icon={CheckCircle}>
-                  <ul className={`list-disc list-inside text-sm ${neutralTextLight} grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 marker:${neutralIconColor}`}>
+                <DetailSection id="features" title="Features / Included" icon={CheckCircle}>
+                  <ul className={`list-disc list-inside text-sm ${neutralTextLight} grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 marker:${successIconColor}`}>
                     {generalAmenities.map((item: string, i: number) => <li key={i}>{item}</li>)}
                   </ul>
                 </DetailSection>
               )}
 
               {rentalDetails.rental_terms && (
-                <DetailSection title="Rental Terms" icon={ShieldCheck}>
+                <DetailSection id="terms" title="Rental Terms & Conditions" icon={FileTextIcon}>
                   <p className={`text-sm ${neutralTextLight} whitespace-pre-line`}>{rentalDetails.rental_terms}</p>
                 </DetailSection>
               )}
 
-              {/* Remove bottom border from the last section */}
-              <DetailSection title="Availability & Policy" icon={CalendarDays} className="border-b-0 pb-0">
+              <DetailSection id="availability" title="Availability & Policies" icon={CalendarDays} className="border-b-0 pb-0">
                 {availableDays.length > 0 && (
                   <DetailItem label="Available Days" value={availableDays.join(", ")} />
                 )}
                 {availabilityNotes && (
-                  <DetailItem label="Notes" value={availabilityNotes} />
+                  <DetailItem label="Availability Notes" value={availabilityNotes} icon={Info} />
                 )}
-                <DetailItem label="Cancellation" value={service.cancellation_policy || "Not specified"} icon={XCircle} />
+                <DetailItem label="Cancellation Policy" value={service.cancellation_policy || "Not specified"} icon={XCircle} valueClassName={warningText} />
               </DetailSection>
             </div>
           </div>
 
-          {/* --- Right Column (Booking/Provider Sidebar) --- */}
-          <div className="lg:col-span-1 mt-8 lg:mt-0">
-            {/* Use cardBaseStyle for the sticky sidebar card, adjust shadow/border if needed */}
-            <div className={`${cardBaseStyle} sticky top-24 shadow-xl`}> {/* Increased shadow for emphasis */}
-              <h3 className={`text-xl font-semibold ${neutralText} mb-1.5`}>Price</h3>
-              <p className={`text-3xl font-bold ${neutralText} mb-1`}> {/* Use neutral text for price */}
-                {service.price_numeric ? `₹${service.price_numeric.toLocaleString("en-IN")}` : (service.price_details || "Contact")}
+          {/* Right Column (Booking/Provider Sidebar) - Themed */}
+          <div className="lg:col-span-1 mt-10 lg:mt-0">
+            <div className={`${cardBaseStyle} sticky top-24 shadow-xl p-5 md:p-6`}>
+              <h3 className={`text-xl font-semibold ${neutralText} mb-2`}>Rental Price</h3>
+              <p className={`text-3xl md:text-4xl font-bold ${successText} mb-1.5`}>
+                <IndianRupee className={`inline h-6 md:h-7 w-6 md:w-7 mr-0.5 ${successIconColor}`} />
+                {service.price_numeric ? service.price_numeric.toLocaleString("en-IN") : (service.price_details || "Contact")}
               </p>
-              <p className={`text-xs ${neutralTextLight} mb-4`}>
-                {/* Add context based on pricing type */}
+              <p className={`text-xs ${neutralTextLight} mb-5`}>
                 {rentalDetails.price_per_day ? "per day" : (rentalDetails.price_per_hour ? "per hour" : (service.price_numeric ? "(indicative price)" : "(contact for details)"))}
               </p>
 
-              {/* Use buttonPrimaryStyle for the main action */}
-              <button
-                type="button"
-                className={`${buttonPrimaryStyle} w-full`} // Ensure full width
-                // Add onClick handler for booking/enquiry action
-                onClick={() => alert("Booking functionality to be implemented!")}
+              <Link
+                href={`/booking/new?serviceType=rental&serviceId=${service.id}`} // Example booking link
+                className={`${buttonPrimaryStyle} w-full text-base py-3`}
               >
                 Book Now / Enquire
-              </button>
-              <p className={`text-xs ${neutralTextLight} mt-2.5 text-center`}>Check availability and book now!</p>
+              </Link>
+              <p className={`text-xs ${neutralTextLight} mt-3 text-center`}>Secure your rental today!</p>
 
-              {/* Provider Information */}
               {service.provider && (
                 <div className={`mt-6 pt-6 border-t ${neutralBorderLight}`}>
-                  <h4 className={`text-md font-semibold ${neutralText} mb-2 flex items-center`}>
-                    <Building size={18} className={`mr-2 ${neutralIconColor}`} />
+                  <h4 className={`text-md font-semibold ${neutralText} mb-2.5 flex items-center`}>
+                    <Building size={18} className={`mr-2.5 ${neutralIconColor}`} />
                     Service Provider
                   </h4>
                   <p className={`text-sm font-medium ${neutralText}`}>{service.provider.business_name}</p>
-                  {/* Optional: Add provider contact/link if available */}
-                  {/* <p className={`text-sm ${neutralTextLight} mt-1`}>{service.provider.contact_email}</p> */}
-                  {/* <Link href={`/providers/${service.provider.id}`} className={`text-sm ${infoText} hover:underline mt-1 inline-block`}>View Provider Profile</Link> */}
+                  {/* Example: <Link href={`/vendors/${service.provider.id}`} className={`text-sm ${infoText} hover:underline mt-1 inline-block`}>View Profile</Link> */}
                 </div>
               )}
             </div>

@@ -49,9 +49,14 @@ interface Activity {
   id: number;
   name: string;
   description: string | null;
-  images: string | null;
+  images: string | string[] | null; // Keep it flexible for getImageUrl
   island_name?: string;
   slug?: string;
+  price: string; // Ensure this is present
+}
+
+interface ActivityCardProps {
+  activity: Activity;
 }
 
 interface Package {
@@ -70,6 +75,31 @@ interface GetPackagesApiResponse {
   pagination?: any;
   success?: boolean;
   message?: string;
+}
+
+interface HomePageHotel {
+  id: number;
+  name: string;
+  images: string[] | null;
+  address: string;
+  rooms: Array<{ base_price: number }>;
+}
+
+interface GetHotelsApiResponse {
+  success: boolean;
+  data: HomePageHotel[];
+  total: number;
+  page: number;
+  limit: number;
+  message?: string;
+}
+
+interface HotelCardProps {
+  hotel: HomePageHotel;
+}
+
+interface PackageCardProps {
+  pkg: Package;
 }
 // --- End Interfaces ---
 
@@ -184,6 +214,14 @@ export default function Home() {
     status: packagesStatus
   } = useFetch<GetPackagesApiResponse>('/api/packages?limit=10');
   const featuredPackagesData = packagesApiResponse?.packages || [];
+
+  // --- Fetch Hotels ---
+  const {
+    data: hotelsResponse,
+    error: hotelsError,
+    status: hotelsStatus
+  } = useFetch<GetHotelsApiResponse>('/api/hotels?limit=4');
+  const featuredHotelsData = hotelsResponse?.data || [];
   // --- End Data Fetching ---
 
   // Helper to get the first image URL
@@ -297,6 +335,109 @@ export default function Home() {
     const queryString = params.toString();
     const url = `/packages${queryString ? `?${queryString}` : ''}`;
     router.push(url);
+  };
+
+  // --- HotelCard Component ---
+  const HotelCard: React.FC<HotelCardProps> = ({ hotel }) => {
+    const price = hotel.rooms?.[0]?.base_price;
+
+    return (
+      <Link href={`/hotels/${hotel.id}`} className={cardBaseStyle}>
+        <div className={cardImageContainerStyle}>
+          <Image
+            src={getImageUrl(hotel.images)}
+            alt={hotel.name}
+            fill
+            className="object-cover group-hover:scale-110 transition-transform duration-300"
+          />
+        </div>
+        <div className={cardContentStyle}>
+          <h3 className={cardTitleStyle}>{hotel.name}</h3>
+          <p className={`text-sm ${neutralTextLight} mb-3 line-clamp-3 flex-grow`}>{hotel.address}</p>
+          {price !== undefined && (
+            <div className="flex justify-between items-center mt-2">
+              <span className={`text-lg font-bold ${neutralText}`}>
+                <IndianRupee size={16} className="inline -mt-1" />
+                {price.toLocaleString('en-IN')}
+              </span>
+              <span className={`text-xs ${neutralTextLight}`}>per night</span>
+            </div>
+          )}
+          <span className={`${cardLinkStyle} mt-3`}>
+            View Details <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          </span>
+        </div>
+      </Link>
+    );
+  };
+
+  // --- PackageCard Component ---
+  const PackageCard: React.FC<PackageCardProps> = ({ pkg }) => {
+    return (
+      <Link href={`/packages/${pkg.id}`} className={cardBaseStyle}>
+        <div className={cardImageContainerStyle}>
+          <Image
+            src={getImageUrl(pkg.images)}
+            alt={pkg.name}
+            fill
+            className="object-cover group-hover:scale-110 transition-transform duration-300"
+          />
+          <div className={`absolute top-3 left-3 px-2 py-0.5 rounded-full text-xs font-medium ${neutralBg} ${neutralText} border ${neutralBorder}`}>
+            <Clock size={12} className="inline mr-1" /> {pkg.duration}
+          </div>
+        </div>
+        <div className={cardContentStyle}>
+          <h3 className={cardTitleStyle}>{pkg.name}</h3>
+          <p className={`text-sm ${neutralTextLight} mb-3 line-clamp-2 flex-grow`}>{pkg.description || 'An amazing package awaits.'}</p>
+          <div className="flex justify-between items-center mt-2">
+            <span className={`text-lg font-bold ${neutralText}`}>
+              <IndianRupee size={16} className="inline -mt-1" />
+              {pkg.base_price.toLocaleString('en-IN')}
+            </span>
+            <span className={`text-xs ${neutralTextLight}`}>per person</span>
+          </div>
+          <span className={`${cardLinkStyle} mt-3`}>
+            View Details <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          </span>
+        </div>
+      </Link>
+    );
+  };
+
+  // --- ActivityCard Component ---
+  const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => {
+    return (
+      <Link href={`/activities/${activity.id}`} className={cardBaseStyle}>
+        <div className={cardImageContainerStyle}>
+          <Image
+            src={getImageUrl(activity.images)}
+            alt={activity.name}
+            fill
+            className="object-cover group-hover:scale-110 transition-transform duration-300"
+          />
+        </div>
+        <div className={cardContentStyle}>
+          <h3 className={cardTitleStyle}>{activity.name}</h3>
+          {activity.island_name && (
+            <p className={`text-sm ${neutralTextLight} mb-1`}>
+              <MapPin size={14} className="inline mr-1 -mt-1" />
+              {activity.island_name}
+            </p>
+          )}
+          <p className={`text-sm ${neutralTextLight} mb-3 line-clamp-2 flex-grow`}>{activity.description || 'Explore this exciting activity.'}</p>
+          <div className="flex justify-between items-center mt-2">
+            <span className={`text-lg font-bold ${neutralText}`}>
+              <IndianRupee size={16} className="inline -mt-1" />
+              {isNaN(Number(activity.price)) ? activity.price : Number(activity.price).toLocaleString('en-IN')}
+            </span>
+            {/* Optionally add 'per person' or similar text if appropriate */}
+          </div>
+          <span className={`${cardLinkStyle} mt-3`}>
+            View Details <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          </span>
+        </div>
+      </Link>
+    );
   };
 
   return (
@@ -515,40 +656,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- Unforgettable Experiences Section (Neutral Cards) --- */}
-      <section className={`${sectionPadding} ${neutralBgLight}`}> {/* Light neutral background */}
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <h2 className={sectionHeadingStyle}>Unforgettable Experiences</h2>
-            <p className={`mt-3 text-lg ${neutralTextLight} max-w-2xl mx-auto`}>Dive into adventure, relax on pristine beaches, or explore unique island cultures.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featuredExperiences.map((exp, index) => (
-              <div key={index} className={cardBaseStyle}>
-                <div className={cardImageContainerStyle}>
-                  <Image
-                    src={exp.image}
-                    alt={exp.title}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                  <div className={`absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm ${neutralIconColor}`}>
-                    {exp.icon}
-                  </div>
-                </div>
-                <div className={cardContentStyle}>
-                  <h3 className={cardTitleStyle}>{exp.title}</h3>
-                  <p className={`text-sm ${neutralTextLight} mb-3 line-clamp-2 flex-grow`}>{exp.description}</p>
-                  <span className={cardLinkStyle}>
-                    Learn More <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* --- Why Choose Us Section (Contextual Background for Icons) --- */}
       <section className={sectionPadding}>
         <div className="container mx-auto px-4">
@@ -595,36 +702,63 @@ export default function Home() {
           {packagesStatus === 'success' && featuredPackagesData.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredPackagesData.slice(0, 3).map((pkg) => (
-                <Link key={pkg.id} href={`/packages/${pkg.id}`} className={cardBaseStyle}>
-                  <div className={cardImageContainerStyle}>
-                    <Image
-                      src={getImageUrl(pkg.images)}
-                      alt={pkg.name}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className={`absolute top-3 left-3 px-2 py-0.5 rounded-full text-xs font-medium ${neutralBg} ${neutralText} border ${neutralBorder}`}>
-                      <Clock size={12} className="inline mr-1" /> {pkg.duration}
-                    </div>
-                  </div>
-                  <div className={cardContentStyle}>
-                    <h3 className={cardTitleStyle}>{pkg.name}</h3>
-                    <p className={`text-sm ${neutralTextLight} mb-3 line-clamp-2 flex-grow`}>{pkg.description || 'An amazing package awaits.'}</p>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className={`text-lg font-bold ${neutralText}`}><IndianRupee size={16} className="inline -mt-1" />{pkg.base_price.toLocaleString('en-IN')}</span>
-                      <span className={`text-xs ${neutralTextLight}`}>per person</span>
-                    </div>
-                    <span className={`${cardLinkStyle} mt-3`}> {/* Adjusted margin */}
-                      View Details <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  </div>
-                </Link>
+                <PackageCard key={pkg.id} pkg={pkg} />
               ))}
             </div>
           )}
           <div className="text-center mt-10">
             <Link href="/packages" className={buttonPrimaryStyle}>
               View All Packages <ArrowRight className="ml-1.5 h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* --- Popular Hotels Section --- */}
+      <section className={sectionPadding}>
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-10">
+            <h2 className={sectionHeadingStyle}>Popular Hotels</h2>
+            <p className={`mt-3 text-lg ${neutralTextLight} max-w-2xl mx-auto`}>Discover top-rated hotels for your comfortable stay.</p>
+          </div>
+          {hotelsStatus === 'loading' && loadingIndicator}
+          {hotelsStatus === 'error' && errorIndicator(hotelsError?.message)}
+          {hotelsStatus === 'success' && featuredHotelsData.length === 0 && noDataIndicator('hotels')}
+          {hotelsStatus === 'success' && featuredHotelsData.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredHotelsData.slice(0, 3).map((hotel) => (
+                <HotelCard key={hotel.id} hotel={hotel} />
+              ))}
+            </div>
+          )}
+          <div className="text-center mt-10">
+            <Link href="/hotels" className={buttonPrimaryStyle}>
+              View All Hotels <ArrowRight className="ml-1.5 h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* --- Featured Activities Section --- */}
+      <section className={`${sectionPadding} ${neutralBgLight}`}>
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-10">
+            <h2 className={sectionHeadingStyle}>Featured Activities</h2>
+            <p className={`mt-3 text-lg ${neutralTextLight} max-w-2xl mx-auto`}>Engage in thrilling activities and explore the islands.</p>
+          </div>
+          {activitiesStatus === 'loading' && loadingIndicator}
+          {activitiesStatus === 'error' && errorIndicator(activitiesError?.message)}
+          {activitiesStatus === 'success' && popularActivitiesData.length === 0 && noDataIndicator('activities')}
+          {activitiesStatus === 'success' && popularActivitiesData.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {popularActivitiesData.slice(0, 3).map((activity) => (
+                <ActivityCard key={activity.id} activity={activity} />
+              ))}
+            </div>
+          )}
+          <div className="text-center mt-10">
+            <Link href="/activities" className={buttonPrimaryStyle}>
+              View All Activities <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>
           </div>
         </div>

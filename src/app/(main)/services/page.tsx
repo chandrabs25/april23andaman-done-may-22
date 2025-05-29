@@ -1,424 +1,660 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import {
+  MapPin,
   Loader2,
   AlertTriangle,
-  MapPin,
-  Clock,
-  Star,
-  // Filter, // Replaced by ListFilter
-  Search,
-  Car,
-  // Bike, // Not used in this specific version, but kept for lucide-react imports
-  // Ship, // Not used in this specific version, but kept for lucide-react imports
-  ShoppingBag,
+  Check,
   IndianRupee,
+  Clock,
+  Award,
+  PhoneCall,
+  ChevronRight,
+  Star,
   ArrowRight,
-  Users,
-  ListFilter, // Using this for filter icon
-  // ShieldCheck, // Not used in this specific version, but kept for lucide-react imports
-  Tag,
-  ImageOff // For image error placeholder
-} from "lucide-react";
-import { useFetch } from "@/hooks/useFetch";
-import type {
-  CategorizedService,
-  TransportService,
-  RentalService,
-  ActivityService,
-  PaginatedServicesResponse,
-  // SingleServiceResponse // Not used directly here
-} from "@/types/transport_rental";
+  ChevronDown,
+  Search,
+  List,
+  Briefcase,
+  BedDouble,
+  Zap,
+  Globe,
+  Menu,
+  Car, // Added for Transportation
+  ShoppingBag, // Added for Rentals
+  Users, // For passenger capacity
+  Tag, // Fallback icon for services
+  ImageOff, // For image error placeholder
+} from 'lucide-react';
+import { useFetch } from '@/hooks/useFetch'; // Assuming this custom hook exists
+import { useRouter } from 'next/navigation';
 
-// --- Import Common Styles (from the shared theme.ts file) ---
-import {
-  primaryButtonBg, // For focus rings and potentially some highlights
-  // primaryButtonHoverBg, // Included in buttonPrimaryStyle
-  // primaryButtonText, // Included in buttonPrimaryStyle
-  // secondaryButtonBg, // Included in buttonSecondaryStyle
-  // secondaryButtonHoverBg, // Included in buttonSecondaryStyle
-  // secondaryButtonText, // Included in buttonSecondaryStyle
-  // primaryButtonBg, // Keep for focus ring logic if not directly provided by theme button styles // This line was the duplicate, removing it. The first primaryButtonBg import is kept.
-  errorBg,
-  errorBorder,
-  errorText,
-  errorIconColor,
-  neutralBgLight,
-  neutralBorderLight,
-  neutralBg,
-  neutralBorder,
-  neutralText,
-  neutralTextLight,
-  neutralIconColor,
-  sectionPadding,
-  cardBaseStyle,
-  sectionHeadingStyle,
-  buttonPrimaryStyle,
-  buttonSecondaryStyleHero, // Using Hero for secondary actions like "Clear Filters"
-  infoIconColor, // For section heading icons if desired
-  infoText,      // For general info text
-  successText, // For prices if they should be highlighted
-  successIconColor,
-} from "@/styles/26themeandstyle";
-// --- End Common Styles Import ---
-
-// --- Page-specific Category Colors (Retained for visual distinction) ---
-const transportCategoryColor = "#3B82F6"; // Blue-500
-const rentalCategoryColor = "#F59E0B";    // Amber-500
-const activityCategoryColor = "#EC4899";  // Pink-500
-// --- End Category Colors ---
-
-// --- Helper Components (Styled with Imported Theme) ---
-const LoadingSpinner = ({ text }: { text: string }) => (
-  <div className={`flex flex-col justify-center items-center py-16 ${sectionPadding}`}>
-    <Loader2 className={`h-12 w-12 animate-spin ${infoIconColor} mb-4`} />
-    <span className={`text-lg font-medium ${infoText}`}>{text}</span>
-  </div>
-);
-
-const ErrorDisplay = ({ message, onRetry }: { message?: string, onRetry?: () => void }) => (
-  <div className={`flex flex-col justify-center items-center py-16 text-center p-6 rounded-2xl ${errorBg} border ${errorBorder} ${sectionPadding}`}>
-    <AlertTriangle className={`h-12 w-12 ${errorIconColor} mb-4`} />
-    <span className={`text-lg font-medium ${errorText}`}>Oops! Something went wrong.</span>
-    <p className={`text-sm ${neutralTextLight} mt-2`}>{message || "Failed to load services."}</p>
-    {onRetry && (
-      <button
-        onClick={onRetry}
-        className={`mt-6 ${buttonSecondaryStyleHero} text-sm py-2 px-4 border-red-300 text-red-600 hover:bg-red-100`} // Error specific secondary button
-      >
-        Try Again
-      </button>
-    )}
-  </div>
-);
-
-interface ServiceCardProps {
-  service: CategorizedService;
-  categoryColor: string; // Retained for the small tag, but card itself is themed
+// --- Define Interfaces ---
+interface Destination {
+  id: number;
+  name: string;
+  description: string | null;
+  images: string | string[] | null;
+  slug?: string;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({ service, categoryColor }) => {
-  const [imgError, setImgError] = useState(false);
+interface Activity {
+  id: number;
+  name: string;
+  description: string | null;
+  images: string | string[] | null;
+  island_name?: string;
+  slug?: string;
+  price: string;
+}
 
-  const normalizeImageUrl = (url: string | null | undefined): string => {
-    const placeholder = "/images/placeholder_service.jpg"; // Generic placeholder
-    if (imgError || !url || typeof url !== 'string' || url.trim() === "" || ["null", "undefined"].includes(url.toLowerCase())) {
-      return placeholder;
-    }
-    // Assuming images are in public/images or served from an external URL
-    return url.startsWith("http") || url.startsWith("/") ? url : `/images/${url}`;
+interface ActivityCardProps {
+  activity: Activity;
+}
+
+interface Package {
+  id: number;
+  name: string;
+  description: string | null;
+  duration: string;
+  base_price: number;
+  max_people: number | null;
+  images: string[] | null;
+  slug?: string;
+}
+
+interface GetPackagesApiResponse {
+  packages: Package[];
+  pagination?: any;
+  success?: boolean;
+  message?: string;
+}
+
+interface HomePageHotel {
+  id: number;
+  name: string;
+  images: string[] | null;
+  address: string;
+  rooms: Array<{ base_price: number }>;
+}
+
+interface GetHotelsApiResponse {
+  success: boolean;
+  data: HomePageHotel[];
+  total: number;
+  page: number;
+  limit: number;
+  message?: string;
+}
+
+// --- Interfaces for Rental and Transport Services (from provided example) ---
+interface ProviderInfo {
+  id?: number;
+  user_id?: string;
+  business_name?: string;
+  // ... other provider fields if needed
+}
+
+interface SpecificsTransport {
+  vehicle_type?: string;
+  capacity_passengers?: number;
+  price_per_km?: string | number;
+  price_per_trip?: string | number;
+  // ... other transport specifics
+}
+
+interface SpecificsRental {
+  unit?: string; // e.g., 'per day', 'per hour'
+  // ... other rental specifics
+}
+
+interface ServiceAmenityDetails {
+  specifics?: {
+    transport?: SpecificsTransport;
+    rental?: SpecificsRental;
   };
+  // ... other amenity details
+}
 
-  const imageUrl = normalizeImageUrl(service.images?.[0]);
-  const rating = service.rating || null;
 
-  const getSpecificsData = (svc: CategorizedService) => {
-    if (svc.amenities && typeof svc.amenities === 'string') {
-      try { return JSON.parse(svc.amenities)?.specifics || null; } 
-      catch (e) { console.error("Failed to parse amenities JSON for specifics:", e); }
-    } else if (typeof svc.amenities === 'object' && svc.amenities !== null) {
-      return (svc.amenities as any).specifics || null;
-    }
-    return null;
-  };
+interface CategorizedService {
+  id: number;
+  name: string;
+  description: string | null;
+  images: string[] | string | null; // Can be string or array
+  slug?: string;
+  island_name?: string;
+  service_category: 'transport' | 'rental' | 'activity'; // Added 'activity' for completeness
+  type?: string; // e.g., "transport_cab", "rental_scooter"
+  item_type?: string; // For rentals, e.g., "Scooter", "Bike"
+  price_numeric?: number | null;
+  price_details?: string | null; // e.g., "per day", "per km"
+  rating?: number | null;
+  provider?: ProviderInfo | null;
+  amenities?: string | ServiceAmenityDetails | null; // Can be JSON string or object
+}
 
-  const getPriceDisplay = (svc: CategorizedService) => {
-    if (svc.price_details) return svc.price_details;
-    const specifics = getSpecificsData(svc);
-    if (svc.service_category === "transport") {
-      const ts = specifics?.transport;
-      if (ts?.price_per_trip) return `₹${Number(ts.price_per_trip).toLocaleString("en-IN")} per trip`;
-      if (ts?.price_per_km) return `₹${Number(ts.price_per_km).toLocaleString("en-IN")} per km`;
-    } else if (svc.service_category === "rental") {
-      const rs = specifics?.rental;
-      if (rs?.unit && svc.price_numeric) return `₹${svc.price_numeric.toLocaleString("en-IN")} ${rs.unit}`;
-    }
-    return svc.price_numeric ? `₹${svc.price_numeric.toLocaleString("en-IN")} (approx)` : "Price on request";
-  };
+// Assuming TransportService and RentalService are specific types of CategorizedService
+type TransportService = CategorizedService & { service_category: 'transport' };
+type RentalService = CategorizedService & { service_category: 'rental' };
 
-  const priceDisplay = getPriceDisplay(service);
 
-  const handleImageError = () => {
-    if (!imgError) setImgError(true);
-  };
+interface PaginatedServicesResponse {
+  data: CategorizedService[];
+  total: number;
+  page: number;
+  limit: number;
+  success?: boolean;
+  message?: string;
+}
 
-  let detailPath = "";
-  if (service.service_category === "transport") detailPath = `/services/transport/${service.id}`;
-  else if (service.service_category === "rental") detailPath = `/services/rental/${service.id}`;
-  else if (service.service_category === "activity") detailPath = `/activities/${service.id}`;
 
-  const getAdditionalDetails = () => {
-    const specifics = getSpecificsData(service);
-    const iconClass = `mr-1.5 flex-shrink-0 ${neutralIconColor}`;
-    const textClass = `text-xs ${neutralTextLight}`;
+interface RentalTransportServiceCardProps {
+  service: CategorizedService; // Use the broader type
+}
 
-    if (service.service_category === "transport") {
-      const ts = specifics?.transport;
-      return (
-        <div className={`flex flex-wrap items-center ${textClass} mb-2 gap-x-3 gap-y-1`}>
-          {ts?.vehicle_type && <div className="flex items-center"><Car size={14} className={iconClass} /><span>{ts.vehicle_type}</span></div>}
-          {ts?.capacity_passengers && <div className="flex items-center"><Users size={14} className={iconClass} /><span>{ts.capacity_passengers} passengers</span></div>}
-        </div>
-      );
-    } else if (service.service_category === "rental") {
-      const rs = specifics?.rental;
-      return (
-        <div className={`flex flex-wrap items-center ${textClass} mb-2 gap-x-3 gap-y-1`}>
-          {service.item_type && <div className="flex items-center"><ShoppingBag size={14} className={iconClass} /><span>{service.item_type}</span></div>}
-          {rs?.unit && <div className="flex items-center"><Clock size={14} className={iconClass} /><span>{rs.unit}</span></div>}
-        </div>
-      );
-    }
-    return null;
-  };
 
-  return (
-    <div className={`${cardBaseStyle} flex flex-col overflow-hidden group p-0 hover:shadow-xl transition-shadow duration-300`}> {/* p-0 from cardBaseStyle, apply padding internally */}
-      <div className={`h-52 w-full relative flex-shrink-0 ${neutralBgLight}`}>
-        <Image
-          src={imageUrl}
-          alt={service.name || "Service Image"}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          onError={handleImageError}
-        />
-        {imageUrl === "/images/placeholder_service.jpg" && (
-          <div className={`absolute inset-0 flex items-center justify-center ${neutralBgLight}/80 pointer-events-none`}>
-            <ImageOff size={36} className={`${neutralIconColor} opacity-50`} />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
-        <div style={{ backgroundColor: categoryColor }} className={`absolute top-3 right-3 text-white text-xs font-semibold py-1 px-2.5 rounded-md shadow-lg flex items-center`}>
-          {service.service_category === "transport" ? <Car size={12} className="mr-1" /> : service.service_category === "rental" ? <ShoppingBag size={12} className="mr-1" /> : <Tag size={12} className="mr-1" />}
-          {(service.type || service.service_category || "").replace(/^(transport_|rental_|activity_)/, '').replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
-        </div>
-      </div>
+interface HotelCardProps {
+  hotel: HomePageHotel;
+}
 
-      <div className="p-4 md:p-5 flex flex-col flex-grow">
-        <h3 className={`text-lg font-semibold leading-tight ${neutralText} line-clamp-2 mb-1.5 group-hover:${infoText} transition-colors`}>{service.name}</h3>
+interface PackageCardProps {
+  pkg: Package;
+}
 
-        <div className={`flex items-center text-xs ${neutralTextLight} mb-2`}>
-          <MapPin size={14} className={`mr-1.5 flex-shrink-0 ${neutralIconColor}`} />
-          <span className="truncate">{service.island_name}</span>
-          {service.provider?.business_name && <span className={`mx-1.5 ${neutralBorderLight}`}>|</span>}
-          {service.provider?.business_name && <span className={`truncate ${neutralTextLight}`}>By: {service.provider.business_name}</span>}
-        </div>
+interface DestinationCardProps {
+  destination: Destination;
+}
 
-        {getAdditionalDetails()}
+export default function Home() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState('Packages');
+  const [selectedDuration, setSelectedDuration] = useState('');
+  const [selectedPriceRange, setSelectedPriceRange] = useState('');
 
-        <p className={`${neutralTextLight} text-sm mb-3 line-clamp-3 flex-grow`}>
-          {service.description || "Reliable service for your travel needs."}
-        </p>
+  // --- Common Styles ---
+  const sectionPadding = "py-6 md:py-8";
+  const cardBaseStyle = "flex flex-col bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg min-w-[300px] sm:min-w-[340px] h-[280px]";
+  const cardImageContainerStyle = "w-full aspect-video bg-cover rounded-t-xl relative flex-shrink-0";
+  const cardContentStyle = "p-3 sm:p-4 flex flex-col items-center flex-grow text-center";
+  const cardTitleStyle = "text-[#111518] text-base sm:text-lg font-medium leading-normal line-clamp-2 mb-1";
+  const cardDescriptionStyle = "text-[#637988] text-sm font-normal leading-normal line-clamp-2 flex-grow mb-2";
+  const cardPriceStyle = "text-[#111518] text-lg font-bold";
+  const cardLinkStyle = "text-sm font-medium text-[#1A237E] hover:text-[#161D6F] mt-auto pt-2 inline-flex items-center group";
 
-        <div className="flex justify-between items-center mb-4">
-          <div className={`text-lg font-semibold ${successText}`}>
-            <IndianRupee size={16} className={`mr-0.5 inline-block ${successIconColor}`} /> {priceDisplay}
-          </div>
-          {rating !== null && (
-            <div className="flex items-center">
-              <Star size={16} fill="currentColor" className="text-yellow-400" />
-              <span className={`ml-1.5 font-medium ${neutralText}`}>{rating.toFixed(1)}</span>
-            </div>
-          )}
-        </div>
-
-        {detailPath && (
-          <Link
-            href={detailPath}
-            className={`mt-auto block w-full text-center ${buttonPrimaryStyle} text-sm py-2.5`}
-          >
-            View Details <ArrowRight size={16} className="ml-1.5 inline-block" />
-          </Link>
-        )}
-      </div>
+  // Loading indicator component
+  const loadingIndicator = (
+    <div className="flex justify-center items-center py-10 text-center w-full">
+      <Loader2 className="h-8 w-8 animate-spin text-[#637988]" />
+      <span className="ml-3 text-[#637988] font-medium">Loading...</span>
     </div>
   );
-};
-// --- End Helper Components ---
-
-
-// --- Main Component Logic ---
-function ServicesMainPageContent() {
-  const [filters, setFilters] = useState({ search: "", islandId: "" });
-  // Define input styles using theme variables
-  const focusRingClass = `focus:ring-${primaryButtonBg.split('-')[1] || 'gray'}-${primaryButtonBg.split('-')[2] || '500'}`;
-  const focusBorderClass = `focus:border-${primaryButtonBg.split('-')[1] || 'gray'}-${primaryButtonBg.split('-')[2] || '500'}`;
-  const inputBaseStyle = `w-full p-3 text-base ${neutralText} bg-white border ${neutralBorder} rounded-lg focus:outline-none focus:ring-2 ${focusRingClass} ${focusBorderClass} transition-shadow shadow-sm hover:border-gray-400`;
-  const labelBaseStyle = `block text-sm font-medium ${neutralText} mb-1.5`;
-
-
-  const [debouncedFilters, setDebouncedFilters] = useState(filters);
-  const [forceRefetch, setForceRefetch] = useState(0);
-
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedFilters(filters), 500);
-    return () => clearTimeout(handler);
-  }, [filters]);
-
-  const apiUrl = useCallback(() => {
-    const params = new URLSearchParams();
-    params.append("category", "transport,rental,activity"); // Fetch all categories
-    if (debouncedFilters.search) params.append("search", debouncedFilters.search);
-    if (debouncedFilters.islandId) params.append("islandId", debouncedFilters.islandId);
-    return `/api/services-main?${params.toString()}${forceRefetch ? `&_cacheBust=${forceRefetch}` : ''}`;
-  }, [debouncedFilters, forceRefetch]);
-
-  const { data: apiResponse, error, status } = useFetch<PaginatedServicesResponse | CategorizedService[]>(apiUrl());
-
-  const refetchData = useCallback(() => setForceRefetch(prev => prev + 1), []);
-
-  let allServices: CategorizedService[] = [];
-  if (apiResponse) {
-    allServices = (Array.isArray(apiResponse) ? apiResponse : apiResponse.data || [])
-      .map(service => { // Ensure service_category is present
-        const svc = service as any;
-        if (!svc.service_category) {
-          if (svc.type?.startsWith('transport')) return { ...svc, service_category: 'transport' };
-          if (svc.type?.startsWith('rental')) return { ...svc, service_category: 'rental' };
-          if (svc.type?.startsWith('activity')) return { ...svc, service_category: 'activity' };
-        }
-        return svc;
-      }) as CategorizedService[];
-  }
-
-  const isLoading = status === "loading";
-  const fetchError = status === "error" ? error : null;
-
-  // Filter after ensuring all services are categorized
-  const transportServices = allServices.filter(s => s?.service_category === "transport") as TransportService[];
-  const rentalServices = allServices.filter(s => s?.service_category === "rental") as RentalService[];
-  const activityServices = allServices.filter(s => s?.service_category === "activity") as ActivityService[];
-
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const islandOptions = [
-    { value: "", label: "All Islands" },
-    { value: "1", label: "Havelock Island (Swaraj Dweep)" },
-    { value: "2", label: "Neil Island (Shaheed Dweep)" },
-    { value: "3", label: "Port Blair" },
-    // Potentially fetch these from an API in the future
-  ];
-
-  const renderServiceSection = (title: string, services: CategorizedService[], icon: React.ElementType, color: string, sectionId: string) => (
-    <section id={sectionId} className="mb-12 md:mb-16 scroll-mt-20"> {/* Added scroll-mt for sticky header */}
-      <h2 className={`${sectionHeadingStyle} text-2xl md:text-3xl`}>
-        {React.createElement(icon, { size: 26, className: `mr-3 ${infoIconColor}` })} {/* Using infoIconColor for section icons */}
-        {title}
-      </h2>
-      {isLoading && services.length === 0 && <LoadingSpinner text={`Loading ${title.toLowerCase()}...`} />}
-      {fetchError && !isLoading && services.length === 0 && (
-        <ErrorDisplay message={`Could not load ${title.toLowerCase()}. ${fetchError.message}`} onRetry={refetchData} />
-      )}
-      {!isLoading && !fetchError && services.length === 0 && (
-        <div className={`${neutralBg} rounded-xl p-8 text-center border ${neutralBorder}`}>
-          <p className={`${neutralTextLight} text-lg`}>No {title.toLowerCase()} found matching your current filters.</p>
-        </div>
-      )}
-      {!isLoading && !fetchError && services.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-          {services.map(service => (
-            <ServiceCard key={`${service.service_category}-${service.id}`} service={service} categoryColor={color} />
-          ))}
-        </div>
-      )}
-    </section>
+  // Error indicator component
+  const errorIndicator = (message: string | undefined) => (
+    <div className="text-center py-10 px-4 rounded-xl shadow-md bg-red-50 border border-red-200 w-full">
+      <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+      <p className="text-red-700 font-semibold">Could not load data.</p>
+      <p className="text-red-600 text-sm mt-1">{message || 'Please try again later.'}</p>
+    </div>
+  );
+  // No data indicator component
+  const noDataIndicator = (itemType: string) => (
+    <div className="text-center py-10 px-4 rounded-xl shadow-md bg-gray-50 border border-gray-200 w-full">
+      <AlertTriangle className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+      <p className="text-gray-700 font-medium">No {itemType} available right now.</p>
+      <p className="text-gray-500 text-sm mt-1">Please check back soon for updates.</p>
+    </div>
   );
 
-  return (
-    <>
-      {/* Hero Section - Themed */}
-      <div className={`${neutralBgLight} border-b ${neutralBorderLight}`}>
-        <div className={`container mx-auto px-4 ${sectionPadding} text-center`}>
-          <h1 className={`text-4xl sm:text-5xl md:text-6xl font-bold ${neutralText} mb-4`}>
-            Services & Activities
-          </h1>
-          <p className={`text-lg sm:text-xl ${neutralTextLight} max-w-3xl mx-auto`}>
-            Discover reliable transport, convenient rentals, and exciting activities for your perfect Andaman adventure. Your seamless journey starts here.
-          </p>
+  // --- Fetch Data ---
+  const {
+    data: destinationsResponse,
+    error: destinationsError,
+    status: destinationsStatus
+  } = useFetch<Destination[]>('/api/destinations');
+  const featuredDestinationsData = destinationsResponse || [];
+
+  const {
+    data: activitiesResponse,
+    error: activitiesError,
+    status: activitiesStatus
+  } = useFetch<Activity[]>('/api/activities');
+  const popularActivitiesData = activitiesResponse || [];
+
+  const {
+    data: packagesApiResponse,
+    error: packagesError,
+    status: packagesStatus
+  } = useFetch<GetPackagesApiResponse>('/api/packages?limit=10');
+  const featuredPackagesData = packagesApiResponse?.packages || [];
+
+  const {
+    data: hotelsResponse,
+    error: hotelsError,
+    status: hotelsStatus
+  } = useFetch<GetHotelsApiResponse>('/api/hotels?limit=4');
+  const featuredHotelsData = hotelsResponse?.data || [];
+
+  // Fetch Rental Services
+  const {
+    data: rentalServicesResponse,
+    error: rentalServicesError,
+    status: rentalServicesStatus,
+  } = useFetch<PaginatedServicesResponse>(`/api/services-main?category=rental&limit=5`); // Limit for homepage
+  const featuredRentalServicesData = rentalServicesResponse?.data || [];
+
+  // Fetch Transport Services
+  const {
+    data: transportServicesResponse,
+    error: transportServicesError,
+    status: transportServicesStatus,
+  } = useFetch<PaginatedServicesResponse>(`/api/services-main?category=transport&limit=5`); // Limit for homepage
+  const featuredTransportServicesData = transportServicesResponse?.data || [];
+
+
+  // Utility function to get image URL or a placeholder
+  const getImageUrl = (images: string | string[] | null): string => {
+    if (!images) return 'https://placehold.co/600x400/f0f3f4/637988?text=No+Image';
+    let imageUrl: string | undefined;
+    if (Array.isArray(images)) {
+      imageUrl = images[0]?.trim();
+    } else if (typeof images === 'string') {
+      imageUrl = images.split(',')[0]?.trim();
+    }
+    if (!imageUrl || !(imageUrl.startsWith('/') || imageUrl.startsWith('http'))) {
+      return 'https://placehold.co/600x400/f0f3f4/637988?text=No+Image';
+    }
+    return imageUrl;
+  };
+
+  // Handles image loading errors
+  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    event.currentTarget.src = 'https://placehold.co/600x400/f0f3f4/637988?text=Image+Error';
+    event.currentTarget.srcset = '';
+  };
+
+  // Navigates to packages page
+  const handleFindPackagesClick = () => {
+    const params = new URLSearchParams();
+    if (selectedDuration) params.set('duration', selectedDuration);
+    if (selectedPriceRange) params.set('priceRange', selectedPriceRange);
+    const queryString = params.toString();
+    router.push(`/packages${queryString ? `?${queryString}` : ''}`);
+  };
+
+  // Generates slug for URLs
+  const generateSlug = (name: string): string => {
+    return name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+  };
+
+  // --- Card Components ---
+  const DestinationCard: React.FC<DestinationCardProps> = ({ destination }) => (
+    <Link href={`/destinations/${destination.slug || destination.id || generateSlug(destination.name)}`} className={cardBaseStyle}>
+      <div className={cardImageContainerStyle}>
+        <Image src={getImageUrl(destination.images)} alt={destination.name} fill className="object-cover" onError={handleImageError} sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 340px" />
+      </div>
+      <div className={cardContentStyle}>
+        <h3 className={cardTitleStyle}>{destination.name}</h3>
+        <p className={cardDescriptionStyle}>{destination.description || 'Explore this beautiful destination.'}</p>
+        <span className={cardLinkStyle}>Explore <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
+      </div>
+    </Link>
+  );
+
+  const HotelCard: React.FC<HotelCardProps> = ({ hotel }) => {
+    const price = hotel.rooms?.[0]?.base_price;
+    return (
+      <Link href={`/hotels/${hotel.id}`} className={cardBaseStyle}>
+        <div className={cardImageContainerStyle}>
+          <Image src={getImageUrl(hotel.images)} alt={hotel.name} fill className="object-cover" onError={handleImageError} sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 340px" />
+        </div>
+        <div className={cardContentStyle}>
+          <h3 className={cardTitleStyle}>{hotel.name}</h3>
+          <p className={`${cardDescriptionStyle} line-clamp-1`}>{hotel.address}</p>
+          {price !== undefined && (
+            <div className="flex flex-col items-center mt-1 sm:flex-row sm:items-baseline sm:justify-center sm:space-x-1">
+              <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{price.toLocaleString('en-IN')}</span>
+              <span className="text-xs text-[#637988]">per night</span>
+            </div>
+          )}
+          <span className={`${cardLinkStyle} mt-1`}>View Details <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
+        </div>
+      </Link>
+    );
+  };
+
+  const PackageCard: React.FC<PackageCardProps> = ({ pkg }) => (
+    <Link href={`/packages/${pkg.slug || pkg.id}`} className={cardBaseStyle}>
+      <div className={cardImageContainerStyle}>
+        <Image src={getImageUrl(pkg.images)} alt={pkg.name} fill className="object-cover" onError={handleImageError} sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 340px" />
+        <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm">
+          <Clock size={12} className="inline mr-1 -mt-0.5" /> {pkg.duration}
         </div>
       </div>
+      <div className={cardContentStyle}>
+        <h3 className={cardTitleStyle}>{pkg.name}</h3>
+        <p className={cardDescriptionStyle}>{pkg.description || 'An amazing package awaits.'}</p>
+        <div className="flex flex-col items-center mt-1 sm:flex-row sm:items-baseline sm:justify-center sm:space-x-1">
+          <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{pkg.base_price.toLocaleString('en-IN')}</span>
+          <span className="text-xs text-[#637988]">per person</span>
+        </div>
+        <span className={`${cardLinkStyle} mt-1`}>View Details <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
+      </div>
+    </Link>
+  );
 
-      {/* Main Content Area - Using neutralBgLight for the page, cards will be white */}
-      <div className={`${neutralBgLight} ${sectionPadding}`}>
-        <div className="container mx-auto px-4">
-          {isLoading && allServices.length === 0 && (
-            <div className="text-center mb-10"><LoadingSpinner text="Loading all services..." /></div>
-          )}
-          {fetchError && !isLoading && allServices.length === 0 && (
-            <div className="mb-10"><ErrorDisplay message={`Failed to load services. ${fetchError.message}`} onRetry={refetchData}/></div>
-          )}
+  const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => (
+    <Link href={`/activities/${activity.slug || activity.id}`} className={cardBaseStyle}>
+      <div className={cardImageContainerStyle}>
+        <Image src={getImageUrl(activity.images)} alt={activity.name} fill className="object-cover" onError={handleImageError} sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 340px" />
+      </div>
+      <div className={cardContentStyle}>
+        <h3 className={cardTitleStyle}>{activity.name}</h3>
+        {activity.island_name && (<p className="text-xs text-[#637988] mb-1"><MapPin size={12} className="inline mr-1 -mt-0.5" />{activity.island_name}</p>)}
+        <p className={cardDescriptionStyle}>{activity.description || 'Explore this exciting activity.'}</p>
+        <div className="flex justify-center items-center mt-1">
+          <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{isNaN(Number(activity.price)) ? activity.price : Number(activity.price).toLocaleString('en-IN')}</span>
+        </div>
+        <span className={`${cardLinkStyle} mt-1`}>View Details <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
+      </div>
+    </Link>
+  );
 
-          {/* Filters Section - Themed as a card */}
-          <div className={`${cardBaseStyle} p-5 md:p-6 mb-10 md:mb-12 shadow-lg`}>
-            <div className="flex items-center mb-5">
-              <ListFilter size={22} className={`mr-2.5 ${infoIconColor}`} />
-              <h3 className={`text-xl font-semibold ${neutralText}`}>Filter Services</h3>
+  // --- New Card for Rental and Transport Services ---
+  const RentalTransportServiceCard: React.FC<RentalTransportServiceCardProps> = ({ service }) => {
+    const getSpecificsData = (svc: CategorizedService): ServiceAmenityDetails['specifics'] | null => {
+      if (svc.amenities && typeof svc.amenities === 'string') {
+        try { return JSON.parse(svc.amenities)?.specifics || null; }
+        catch (e) { console.error("Failed to parse amenities JSON for specifics:", e); return null; }
+      } else if (typeof svc.amenities === 'object' && svc.amenities !== null) {
+        return (svc.amenities as ServiceAmenityDetails).specifics || null;
+      }
+      return null;
+    };
+
+    const specifics = getSpecificsData(service);
+    let detailText = service.item_type || ""; // For rentals
+    if (service.service_category === 'transport' && specifics?.transport?.vehicle_type) {
+      detailText = specifics.transport.vehicle_type;
+    }
+
+    const priceDisplay = service.price_details || (service.price_numeric ? `₹${service.price_numeric.toLocaleString('en-IN')}` : "On request");
+    let detailPath = `/services/${service.service_category}/${service.id}`;
+    if (service.service_category === "activity") detailPath = `/activities/${service.id}`; // Should not happen here but for safety
+
+
+    return (
+      <Link href={detailPath} className={cardBaseStyle}>
+        <div className={cardImageContainerStyle}>
+          <Image src={getImageUrl(service.images)} alt={service.name} fill className="object-cover" onError={handleImageError} sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 340px" />
+          {detailText && (
+            <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm flex items-center">
+              {service.service_category === 'transport' ? <Car size={12} className="mr-1.5 -mt-0.5" /> : <ShoppingBag size={12} className="mr-1.5 -mt-0.5" />}
+              {detailText}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6 items-end">
-              <div>
-                <label htmlFor="search" className={labelBaseStyle}>Search by Name or Type</label>
-                <div className="relative mt-1">
-                  <Search className={`absolute left-3.5 top-1/2 transform -translate-y-1/2 ${neutralIconColor} pointer-events-none`} size={18} />
-                  <input
-                    type="text" id="search" name="search"
-                    value={filters.search} onChange={handleFilterChange}
-                    placeholder="e.g., Airport Cab, Scooter"
-                    className={`${inputBaseStyle} pl-11`}
-                  />
+          )}
+        </div>
+        <div className={cardContentStyle}>
+          <h3 className={cardTitleStyle}>{service.name}</h3>
+          <p className={cardDescriptionStyle}>{service.description || 'Check out this service.'}</p>
+          <div className="flex flex-col items-center mt-1 sm:flex-row sm:items-baseline sm:justify-center sm:space-x-1">
+            <span className={cardPriceStyle}>{priceDisplay}</span>
+            {/* Add unit if available, e.g., per day for rentals */}
+            {service.service_category === 'rental' && specifics?.rental?.unit && (
+              <span className="text-xs text-[#637988]">{specifics.rental.unit}</span>
+            )}
+            {service.service_category === 'transport' && specifics?.transport?.price_per_km && !service.price_details && (
+              <span className="text-xs text-[#637988]">per km</span>
+            )}
+            {service.service_category === 'transport' && specifics?.transport?.price_per_trip && !service.price_details && (
+              <span className="text-xs text-[#637988]">per trip</span>
+            )}
+          </div>
+          <span className={`${cardLinkStyle} mt-1`}>View Details <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
+        </div>
+      </Link>
+    );
+  };
+
+
+  // Tab configuration
+  const tabs = [
+    { name: 'Packages', icon: <Briefcase size={18} className="hidden sm:inline" />, data: featuredPackagesData, CardComponent: PackageCard, status: packagesStatus, error: packagesError, type: 'packages' },
+    { name: 'Destinations', icon: <Globe size={18} className="hidden sm:inline" />, data: featuredDestinationsData, CardComponent: DestinationCard, status: destinationsStatus, error: destinationsError, type: 'destinations' },
+    { name: 'Hotels', icon: <BedDouble size={18} className="hidden sm:inline" />, data: featuredHotelsData, CardComponent: HotelCard, status: hotelsStatus, error: hotelsError, type: 'hotels' },
+    { name: 'Rentals', icon: <ShoppingBag size={18} className="hidden sm:inline" />, data: featuredRentalServicesData, CardComponent: RentalTransportServiceCard, status: rentalServicesStatus, error: rentalServicesError, type: 'rentals' },
+    { name: 'Transportation', icon: <Car size={18} className="hidden sm:inline" />, data: featuredTransportServicesData, CardComponent: RentalTransportServiceCard, status: transportServicesStatus, error: transportServicesError, type: 'transportation' },
+    { name: 'Activities', icon: <Zap size={18} className="hidden sm:inline" />, data: popularActivitiesData, CardComponent: ActivityCard, status: activitiesStatus, error: activitiesError, type: 'activities' },
+  ];
+  const currentTabData = tabs.find(tab => tab.name === activeTab);
+
+  // "Why Choose Us" items
+  const whyChooseUsItems = [
+    { icon: <MapPin size={24} className="text-[#1A237E]" />, title: "Expert Travel Planning", description: "Our experienced team crafts personalized itineraries." },
+    { icon: <IndianRupee size={24} className="text-green-500" />, title: "Best Value Guaranteed", description: "We offer competitive deals and transparent pricing." },
+    { icon: <PhoneCall size={24} className="text-orange-500" />, title: "24/7 Support", description: "Assistance is available anytime during your trip." },
+  ];
+
+  // Testimonial data
+  const testimonials = [
+    { name: "Sharath P.", image: "https://placehold.co/128x128/e2e8f0/4a5568?text=SP", quote: "The trip of a lifetime! Everything was perfect in Andaman.", rating: 5, trip: "Havelock Island Adventure" },
+    { name: "Sindhuja R.", image: "https://placehold.co/128x128/e2e8f0/4a5568?text=SR", quote: "Incredible value and seamless planning for our family. Highly recommend!", rating: 5, trip: "Family Island Hopping" },
+    { name: "Sushanth S.", image: "https://placehold.co/128x128/e2e8f0/4a5568?text=SS", quote: "Felt supported every step of the way. The sunset cruise was amazing.", rating: 5, trip: "Neil Island Explorer" },
+    { name: "Priya K.", image: "https://placehold.co/128x128/e2e8f0/4a5568?text=PK", quote: "Amazing experience! The scuba diving was unforgettable.", rating: 5, trip: "Scuba Diving Special" }
+  ];
+
+  // Hero images
+  const heroImageMobile = "/images/hero_mobile.webp";
+  const heroImageDesktop = "/images/hero-min.webp";
+
+
+  return (
+    <div className="flex flex-col min-h-screen bg-slate-50" style={{ fontFamily: '"Plus Jakarta Sans", "Noto Sans", sans-serif' }}>
+      <style jsx global>{`
+       @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;700&display=swap');
+     `}</style>
+
+      {/* Hero Section */}
+      <section className="relative w-full h-[380px] sm:h-[420px] md:h-[480px] lg:h-[550px]">
+        <Image
+          src={heroImageMobile}
+          alt="Scenic travel destination hero image for mobile"
+          layout="fill"
+          objectFit="cover"
+          priority
+          className="z-0 block sm:hidden"
+          onError={handleImageError}
+        />
+        <Image
+          src={heroImageDesktop}
+          alt="Scenic travel destination hero image for desktop"
+          layout="fill"
+          objectFit="cover"
+          priority
+          className="z-0 hidden sm:block"
+          onError={handleImageError}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-transparent z-10"></div>
+        <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
+          <h1 className="text-white font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-center [text-shadow:0_2px_10px_rgba(0,0,0,0.6)] px-4">
+            Reach Andaman
+          </h1>
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 z-30">
+          <div className="max-w-4xl mx-auto backdrop-blur-sm sm:bg-white/80 sm:backdrop-blur-md p-3 sm:p-4 rounded-xl shadow-2xl border border-white sm:border-none">
+            <div className="flex flex-col md:flex-row md:items-end gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-2/3">
+                <div className="flex-1">
+                  <label htmlFor="homeDuration" className="sr-only">Duration</label>
+                  <div className="relative flex items-center bg-[#f0f3f4] hover:bg-white rounded-lg group h-full transition-colors duration-200">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#637988] group-focus-within:text-[#1A237E]" size={18} />
+                    <select
+                      id="homeDuration"
+                      name="duration"
+                      value={selectedDuration}
+                      onChange={(e) => setSelectedDuration(e.target.value)}
+                      className="w-full h-full pl-10 pr-8 py-2.5 text-sm text-[#111518] bg-transparent border border-transparent group-hover:border-slate-300 focus:border-[#1A237E] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1A237E]/50 appearance-none"
+                    >
+                      <option value="">Any Duration</option>
+                      <option value="1-3">1-3 Days</option>
+                      <option value="4-6">4-6 Days</option>
+                      <option value="7-10">7-10 Days</option>
+                      <option value="10+">10+ Days</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#637988] pointer-events-none" size={16} />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <label htmlFor="homePriceRange" className="sr-only">Price Range</label>
+                  <div className="relative flex items-center bg-[#f0f3f4] hover:bg-white rounded-lg group h-full transition-colors duration-200">
+                    <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#637988] group-focus-within:text-[#1A237E]" size={18} />
+                    <select
+                      id="homePriceRange"
+                      name="priceRange"
+                      value={selectedPriceRange}
+                      onChange={(e) => setSelectedPriceRange(e.target.value)}
+                      className="w-full h-full pl-10 pr-8 py-2.5 text-sm text-[#111518] bg-transparent border border-transparent group-hover:border-slate-300 focus:border-[#1A237E] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1A237E]/50 appearance-none"
+                    >
+                      <option value="">Any Price</option>
+                      <option value="0-10000">₹0 - ₹10,000</option>
+                      <option value="10001-20000">₹10,001 - ₹20,000</option>
+                      <option value="20001-30000">₹20,001 - ₹30,000</option>
+                      <option value="30001+">₹30,001+</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#637988] pointer-events-none" size={16} />
+                  </div>
                 </div>
               </div>
-              <div>
-                <label htmlFor="islandId" className={labelBaseStyle}>Filter by Island</label>
-                <select
-                  id="islandId" name="islandId"
-                  value={filters.islandId} onChange={handleFilterChange}
-                  className={`${inputBaseStyle} appearance-none bg-no-repeat`} // Basic select styling, can be enhanced
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundSize: '1.5em 1.5em' }}
+              <div className="w-full md:w-1/3">
+                <button
+                  onClick={handleFindPackagesClick}
+                  className="w-full bg-[#1A237E] hover:bg-[#161D6F] text-white font-semibold py-2.5 px-5 rounded-lg transition-colors duration-300 shadow-md hover:shadow-lg flex items-center justify-center text-sm h-[42px]"
                 >
-                  {islandOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
+                  <Search size={18} className="mr-2" />
+                  <span>Find Packages</span>
+                </button>
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {!isLoading && !fetchError && allServices.length === 0 && filtersApplied(debouncedFilters) && (
-            <div className={`${neutralBg} rounded-xl p-8 text-center border ${neutralBorder} shadow-md mb-10`}>
-              <p className={`text-xl ${neutralText} mb-3`}>No Services Found</p>
-              <p className={`${neutralTextLight} mb-5`}>No services matched your current filter criteria. Please try adjusting your search.</p>
-              <button
-                onClick={() => setFilters({ search: "", islandId: "" })}
-                className={`${buttonSecondaryStyleHero} bg-white hover:bg-gray-100 text-gray-700 border-gray-300`}
-              >
-                Clear All Filters
-              </button>
+      <main className="pt-0">
+        <section className="pb-3 pt-6 md:pt-8">
+          <div className="w-full border-b border-[#dce1e5]">
+            <div className="container mx-auto flex justify-center overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.name}
+                  onClick={() => setActiveTab(tab.name)}
+                  className={`flex items-center space-x-2 pb-[13px] pt-3 px-4 text-sm font-bold leading-normal tracking-[0.015em] whitespace-nowrap transition-colors duration-200
+                   ${activeTab === tab.name ? 'border-b-[3px] border-b-[#111518] text-[#111518]' : 'border-b-[3px] border-b-transparent text-[#637988] hover:text-[#111518]'}`}
+                >
+                  {tab.icon}
+                  <span>{tab.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className={sectionPadding}>
+          <div className="container mx-auto">
+            {currentTabData && (
+              <h2 className="text-[#111518] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 text-center">
+                Featured {currentTabData.name}
+              </h2>
+            )}
+          </div>
+
+          {currentTabData && currentTabData.status === 'loading' && (<div className="container mx-auto px-4">{loadingIndicator}</div>)}
+          {currentTabData && currentTabData.status === 'error' && (<div className="container mx-auto px-4">{errorIndicator(currentTabData.error?.message)}</div>)}
+          {currentTabData && currentTabData.status === 'success' && (!currentTabData.data || currentTabData.data.length === 0) && (<div className="container mx-auto px-4">{noDataIndicator(currentTabData.type)}</div>)}
+
+          {currentTabData && currentTabData.status === 'success' && currentTabData.data && currentTabData.data.length > 0 && (
+            <div className="w-full overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-2">
+              <div className="flex flex-nowrap items-stretch gap-3 sm:gap-4 px-4">
+                {(currentTabData.data as any[]).map((item: any, index: number) => {
+                  const key = item.id || index;
+                  if (currentTabData.type === 'packages') {
+                    const PackageComponent = currentTabData.CardComponent as React.ComponentType<PackageCardProps>;
+                    return <PackageComponent key={key} pkg={item} />;
+                  } else if (currentTabData.type === 'destinations') {
+                    const DestinationComponent = currentTabData.CardComponent as React.ComponentType<DestinationCardProps>;
+                    return <DestinationComponent key={key} destination={item} />;
+                  } else if (currentTabData.type === 'hotels') {
+                    const HotelComponent = currentTabData.CardComponent as React.ComponentType<HotelCardProps>;
+                    return <HotelComponent key={key} hotel={item} />;
+                  } else if (currentTabData.type === 'activities') {
+                    const ActivityComponent = currentTabData.CardComponent as React.ComponentType<ActivityCardProps>;
+                    return <ActivityComponent key={key} activity={item} />;
+                  } else if (currentTabData.type === 'rentals' || currentTabData.type === 'transportation') {
+                    const ServiceComponent = currentTabData.CardComponent as React.ComponentType<RentalTransportServiceCardProps>;
+                    return <ServiceComponent key={key} service={item as CategorizedService} />;
+                  }
+                  return null;
+                })}
+              </div>
             </div>
           )}
-          
-          {(!isLoading || allServices.length > 0) && (
-            <>
-              {renderServiceSection("Transport Services", transportServices, Car, transportCategoryColor, "transport")}
-              {renderServiceSection("Rental Services", rentalServices, ShoppingBag, rentalCategoryColor, "rental")}
-              {renderServiceSection("Activity Services", activityServices, Tag, activityCategoryColor, "activity")}
-            </>
-          )}
-        </div>
-      </div>
-    </>
+        </section>
+
+        <section className={`${sectionPadding} bg-slate-100`}>
+          <div className="container mx-auto px-4">
+            <h2 className="text-[#111518] text-[22px] font-bold leading-tight tracking-[-0.015em] text-center pb-5 pt-2">Why Choose Us</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {whyChooseUsItems.map(item => (
+                <div key={item.title} className="flex flex-col items-center gap-3 rounded-lg border border-[#dce1e5] bg-white p-4 text-center hover:shadow-md transition-shadow">
+                  <div className="flex justify-center text-[#111518]">
+                    {React.cloneElement(item.icon, { className: `${item.icon.props.className || ''}` })}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-[#111518] text-base font-bold leading-tight">{item.title}</h3>
+                    <p className="text-[#637988] text-sm font-normal leading-normal">{item.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className={sectionPadding}>
+          <div className="container mx-auto px-4">
+            <h2 className="text-[#111518] text-[22px] font-bold leading-tight tracking-[-0.015em] text-center pb-3 pt-2">
+              What Our Travelers Say
+            </h2>
+          </div>
+          <div className="w-full overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-stretch p-4 gap-8">
+              {testimonials.map((testimonial, index) => (
+                <div
+                  key={index}
+                  className="flex h-full flex-1 flex-col gap-4 text-center rounded-lg min-w-[180px] sm:min-w-[200px] md:min-w-[220px] pt-4"
+                >
+                  <div className="relative w-24 h-24 aspect-square rounded-full self-center overflow-hidden flex-shrink-0">
+                    <Image
+                      src={getImageUrl(testimonial.image)}
+                      alt={testimonial.name}
+                      fill
+                      className="object-cover"
+                      onError={handleImageError}
+                      sizes="96px"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[#111518] text-base font-medium leading-normal">{testimonial.name}</p>
+                    <p className="text-[#637988] text-sm font-normal leading-normal mt-1 px-2">"{testimonial.quote}"</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+    </div>
   );
-}
-
-const filtersApplied = (filters?: { search: string, islandId: string }) => {
-  if (!filters) return false; // Should not happen if debouncedFilters is initialized
-  return filters.search !== "" || filters.islandId !== "";
-};
-
-
-export default function ServicesMainPage() {
-  return <ServicesMainPageContent />;
 }

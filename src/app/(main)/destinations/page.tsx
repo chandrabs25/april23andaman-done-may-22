@@ -642,4 +642,3 @@ export default function DestinationsPage() {
     </Suspense>
   );
 }
-

@@ -310,12 +310,11 @@ export default function Home() {
   const DestinationCard: React.FC<DestinationCardProps> = ({ destination }) => (
     <Link href={`/destinations/${destination.slug || destination.id || generateSlug(destination.name)}`} className={cardBaseStyle}>
       <div className={cardImageContainerStyle}>
-        <Image src={getImageUrl(destination.images)} alt={destination.name} fill className="object-cover" onError={handleImageError} sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 340px" />
+        <img src={getImageUrl(destination.images)} alt={destination.name} className="w-full h-full object-cover" onError={handleImageError} />
       </div>
       <div className={cardContentStyle}>
         <h3 className={cardTitleStyle}>{destination.name}</h3>
         <p className={cardDescriptionStyle}>{destination.description || 'Explore this beautiful destination.'}</p>
-        <span className={cardLinkStyle}>Explore <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
       </div>
     </Link>
   );
@@ -325,7 +324,7 @@ export default function Home() {
     return (
       <Link href={`/hotels/${hotel.id}`} className={cardBaseStyle}>
         <div className={cardImageContainerStyle}>
-          <Image src={getImageUrl(hotel.images)} alt={hotel.name} fill className="object-cover" onError={handleImageError} sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 340px" />
+          <img src={getImageUrl(hotel.images)} alt={hotel.name} className="w-full h-full object-cover" onError={handleImageError} />
         </div>
         <div className={cardContentStyle}>
           <h3 className={cardTitleStyle}>{hotel.name}</h3>
@@ -336,7 +335,6 @@ export default function Home() {
               <span className="text-xs text-[#637988]">per night</span>
             </div>
           )}
-          <span className={`${cardLinkStyle} mt-1`}>View Details <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
         </div>
       </Link>
     );
@@ -345,7 +343,7 @@ export default function Home() {
   const PackageCard: React.FC<PackageCardProps> = ({ pkg }) => (
     <Link href={`/packages/${pkg.slug || pkg.id}`} className={cardBaseStyle}>
       <div className={cardImageContainerStyle}>
-        <Image src={getImageUrl(pkg.images_parsed)} alt={pkg.name} fill className="object-cover" onError={handleImageError} sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 340px" />
+        <img src={getImageUrl(pkg.images_parsed)} alt={pkg.name} className="w-full h-full object-cover" onError={handleImageError} />
         <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm">
           <Clock size={12} className="inline mr-1 -mt-0.5" /> {pkg.duration}
         </div>
@@ -357,7 +355,6 @@ export default function Home() {
           <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{pkg.base_price.toLocaleString('en-IN')}</span>
           <span className="text-xs text-[#637988]">per person</span>
         </div>
-        <span className={`${cardLinkStyle} mt-1`}>View Details <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
       </div>
     </Link>
   );
@@ -365,7 +362,7 @@ export default function Home() {
   const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => (
     <Link href={`/activities/${activity.slug || activity.id}`} className={cardBaseStyle}>
       <div className={cardImageContainerStyle}>
-        <Image src={getImageUrl(activity.images)} alt={activity.name} fill className="object-cover" onError={handleImageError} sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 340px" />
+        <img src={getImageUrl(activity.images)} alt={activity.name} className="w-full h-full object-cover" onError={handleImageError} />
       </div>
       <div className={cardContentStyle}>
         <h3 className={cardTitleStyle}>{activity.name}</h3>
@@ -374,7 +371,6 @@ export default function Home() {
         <div className="flex justify-center items-center mt-1">
           <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{isNaN(Number(activity.price)) ? activity.price : Number(activity.price).toLocaleString('en-IN')}</span>
         </div>
-        <span className={`${cardLinkStyle} mt-1`}>View Details <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
       </div>
     </Link>
   );
@@ -405,7 +401,7 @@ export default function Home() {
     return (
       <Link href={detailPath} className={cardBaseStyle}>
         <div className={cardImageContainerStyle}>
-          <Image src={getImageUrl(service.images)} alt={service.name} fill className="object-cover" onError={handleImageError} sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 340px" />
+          <img src={getImageUrl(service.images)} alt={service.name} className="w-full h-full object-cover" onError={handleImageError} />
           {detailText && (
             <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm flex items-center">
               {service.service_category === 'transport' ? <Car size={12} className="mr-1.5 -mt-0.5" /> : <ShoppingBag size={12} className="mr-1.5 -mt-0.5" />}
@@ -429,7 +425,6 @@ export default function Home() {
               <span className="text-xs text-[#637988]">per trip</span>
             )}
           </div>
-          <span className={`${cardLinkStyle} mt-1`}>View Details <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
         </div>
       </Link>
     );
@@ -496,9 +491,11 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-transparent z-10"></div>
         {/* MODIFIED LINE BELOW: Added pb-28 sm:pb-28 md:pb-0 */}
         <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none pb-28 sm:pb-28 md:pb-0">
-          <h1 className="text-white font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-center [text-shadow:0_2px_10px_rgba(0,0,0,0.6)] px-4">
-            Reach Andaman
-          </h1>
+          <img
+            src="/images/brand-name.png"
+            alt="Brand name logo"
+            style={{ maxWidth: '280px', height: 'auto' }}
+          />
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 z-30">
           <div className="max-w-4xl mx-auto backdrop-blur-sm sm:bg-white/80 sm:backdrop-blur-md p-3 sm:p-4 rounded-xl shadow-2xl border border-white sm:border-none">
@@ -592,30 +589,51 @@ export default function Home() {
           {currentTabData && currentTabData.status === 'success' && (!currentTabData.data || currentTabData.data.length === 0) && (<div className="container mx-auto px-4">{noDataIndicator(currentTabData.type)}</div>)}
 
           {currentTabData && currentTabData.status === 'success' && currentTabData.data && currentTabData.data.length > 0 && (
-            <div className="w-full overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-2">
-              <div className="flex flex-nowrap items-stretch gap-3 sm:gap-4 px-4">
-                {(currentTabData.data as any[]).map((item: any, index: number) => {
-                  const key = item.id || index;
-                  if (currentTabData.type === 'packages') {
-                    const PackageComponent = currentTabData.CardComponent as React.ComponentType<PackageCardProps>;
-                    return <PackageComponent key={key} pkg={item} />;
-                  } else if (currentTabData.type === 'destinations') {
-                    const DestinationComponent = currentTabData.CardComponent as React.ComponentType<DestinationCardProps>;
-                    return <DestinationComponent key={key} destination={item} />;
-                  } else if (currentTabData.type === 'hotels') {
-                    const HotelComponent = currentTabData.CardComponent as React.ComponentType<HotelCardProps>;
-                    return <HotelComponent key={key} hotel={item} />;
-                  } else if (currentTabData.type === 'activities') {
-                    const ActivityComponent = currentTabData.CardComponent as React.ComponentType<ActivityCardProps>;
-                    return <ActivityComponent key={key} activity={item} />;
-                  } else if (currentTabData.type === 'rentals' || currentTabData.type === 'transportation') {
-                    const ServiceComponent = currentTabData.CardComponent as React.ComponentType<RentalTransportServiceCardProps>;
-                    return <ServiceComponent key={key} service={item as CategorizedService} />;
-                  }
-                  return null;
-                })}
+            <>
+              <div className="w-full overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-2">
+                <div className="flex flex-nowrap items-stretch gap-3 sm:gap-4 px-4">
+                  {(currentTabData.data as any[]).map((item: any, index: number) => {
+                    const key = item.id || index;
+                    if (currentTabData.type === 'packages') {
+                      const PackageComponent = currentTabData.CardComponent as React.ComponentType<PackageCardProps>;
+                      return <PackageComponent key={key} pkg={item} />;
+                    } else if (currentTabData.type === 'destinations') {
+                      const DestinationComponent = currentTabData.CardComponent as React.ComponentType<DestinationCardProps>;
+                      return <DestinationComponent key={key} destination={item} />;
+                    } else if (currentTabData.type === 'hotels') {
+                      const HotelComponent = currentTabData.CardComponent as React.ComponentType<HotelCardProps>;
+                      return <HotelComponent key={key} hotel={item} />;
+                    } else if (currentTabData.type === 'activities') {
+                      const ActivityComponent = currentTabData.CardComponent as React.ComponentType<ActivityCardProps>;
+                      return <ActivityComponent key={key} activity={item} />;
+                    } else if (currentTabData.type === 'rentals' || currentTabData.type === 'transportation') {
+                      const ServiceComponent = currentTabData.CardComponent as React.ComponentType<RentalTransportServiceCardProps>;
+                      return <ServiceComponent key={key} service={item as CategorizedService} />;
+                    }
+                    return null;
+                  })}
+                </div>
               </div>
-            </div>
+              <div className="container mx-auto px-4 pt-4">
+                <div className="flex justify-center">
+                  <Link 
+                    href={
+                      currentTabData.type === 'packages' ? '/packages' :
+                      currentTabData.type === 'destinations' ? '/destinations' :
+                      currentTabData.type === 'hotels' ? '/hotels' :
+                      currentTabData.type === 'activities' ? '/activities' :
+                      currentTabData.type === 'rentals' || currentTabData.type === 'transportation' ? '/services' :
+                      '#'
+                    }
+                    className="inline-flex items-center justify-center px-6 py-3 bg-[#1A237E] hover:bg-[#161D6F] text-white font-medium text-sm rounded-lg transition-colors duration-300 shadow-sm hover:shadow-md"
+                  >
+                    <List size={16} className="mr-2" />
+                    View All {currentTabData.name}
+                    <ChevronRight size={16} className="ml-1" />
+                  </Link>
+                </div>
+              </div>
+            </>
           )}
         </section>
 
@@ -651,14 +669,12 @@ export default function Home() {
                   key={index}
                   className="flex h-full flex-1 flex-col gap-4 text-center rounded-lg min-w-[180px] sm:min-w-[200px] md:min-w-[220px] pt-4"
                 >
-                  <div className="relative w-24 h-24 aspect-square rounded-full self-center overflow-hidden flex-shrink-0">
-                    <Image
+                  <div className="w-24 h-24 rounded-full self-center overflow-hidden flex-shrink-0">
+                    <img
                       src={getImageUrl(testimonial.image)}
                       alt={testimonial.name}
-                      fill
-                      className="object-cover"
+                      className="w-full h-full object-cover"
                       onError={handleImageError}
-                      sizes="96px"
                     />
                   </div>
                   <div>

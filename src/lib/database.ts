@@ -219,6 +219,41 @@ export class DatabaseService {
       .run(); // Returns Promise<D1Result>
   }
 
+  async getUsers() {
+    const db = await getDatabase();
+    return db.prepare('SELECT * FROM users').all();
+  }
+
+  async updateUserPassword(userId: number, passwordHash: string): Promise<D1Result & { error?: string }> {
+    const db = await getDatabase();
+    // First, check if the user exists to provide a more specific error
+    const userExistsResult = await db.prepare('SELECT id FROM users WHERE id = ?').bind(userId).first<{ id: number }>();
+    if (!userExistsResult) {
+      return { success: false, error: `User not found with ID: ${userId}`, meta: { changes: 0, last_row_id: null, duration:0, rows_read:0, rows_written:0, size_after:0, changed_db: false} };
+    }
+
+    const result = await db
+      .prepare('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .bind(passwordHash, userId)
+      .run();
+
+    // Add an error property if the update was not successful for some reason beyond not finding the user
+    if (!result.success) {
+        return { ...result, error: result.error || "Failed to update password hash in database." };
+    }
+    // If the user existed but no rows were changed (e.g., password was already the same - though hash would differ with salt)
+    // This check is more relevant if we weren't already checking user existence above.
+    // Given the check above, meta.changes === 0 implies something unexpected if userExistsResult was true.
+    // However, for robustness:
+    if (result.success && result.meta?.changes === 0) {
+        // This case should ideally not be reached if userExistsResult found a user.
+        // If it is, it might indicate an issue or an edge case (e.g. DB quirk or concurrent modification)
+        return { ...result, error: "User found but password not updated; password might already be set to the new value or another issue occurred."};
+    }
+
+    return result;
+  }
+
   // --- Island Methods ---
   async getAllIslands() {
     const db = await getDatabase();
@@ -1085,6 +1120,11 @@ export class DatabaseService {
   async getServiceProviderById(providerId: number) {
     const db = await getDatabase();
     return db.prepare('SELECT * FROM service_providers WHERE id = ?').bind(providerId).first();
+  }
+
+  async getServiceProviders() {
+    const db = await getDatabase();
+    return db.prepare('SELECT * FROM service_providers').all();
   }
 
   async createServiceProvider(providerData: {

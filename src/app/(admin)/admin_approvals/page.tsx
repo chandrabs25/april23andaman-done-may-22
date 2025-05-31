@@ -273,18 +273,22 @@ function AdminApprovalsContent() {
   };
 
   // Helper to get the view URL for a specific item
-  const getViewUrl = (item: UnapprovedItem) => {
-    if (item.type === 'hotel' || (item.hotel_service_id && !item.type)) {
-      // For hotel or room
-      return `/hotels/${item.id}`;
+  const getViewUrl = (item: UnapprovedItem): string => {
+    let baseUrl = '#';
+    const queryParams = '?isAdminPreview=true';
+
+    if (item.room_type && item.hotel_service_id) {
+      // If it's a room, link to the parent hotel's page, and maybe an anchor to the room
+      baseUrl = `/hotels/${item.hotel_service_id}`;
+      // Optionally, you could try to add an anchor like #room-${item.id} if the hotel page supports it
+      // For now, just linking to the hotel page is sufficient for preview.
+    } else if (item.type === 'hotel') {
+      baseUrl = `/hotels/${item.id}`;
+    } else if (item.type) { // For other services like activity, rental, transport
+      baseUrl = `/services/${item.type}/${item.id}`;
     }
-    
-    if (item.type) {
-      // For services (transport, rental, etc.)
-      return `/services/${item.type}/${item.id}`;
-    }
-    
-    return '#'; // Fallback
+
+    return baseUrl === '#' ? baseUrl : baseUrl + queryParams;
   };
 
   // Helper to get the human-readable item type

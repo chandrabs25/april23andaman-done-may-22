@@ -13,6 +13,7 @@ export interface Room {
   quantity_available: number;
   created_at?: string; // ISO 8601 date string
   updated_at?: string; // ISO 8601 date string
+  is_admin_approved?: number; // Added for admin preview
 }
 
 export interface Hotel {
@@ -43,6 +44,7 @@ export interface Hotel {
   meal_plans?: string[];
   street_address?: string;
   total_rooms?: number;
+  is_admin_approved?: number; // Added for admin preview (from services or hotels table)
 }
 
 // For API responses, especially for lists with pagination

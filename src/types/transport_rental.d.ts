@@ -23,6 +23,7 @@ export interface BaseService {
   availability_summary: string | null; // e.g., "Daily 9 AM - 6 PM", "Seasonal"
   rating: number | null;
   is_active: boolean;
+  is_admin_approved?: number; // Added for admin preview
   // Common specific fields that might be in the services table or a JSON details column
   cancellation_policy?: string | null;
   amenities?: string[] | null; // General amenities or features

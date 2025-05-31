@@ -21,7 +21,9 @@ import {
   ListFilter, // Using this for filter icon
   // ShieldCheck, // Not used in this specific version, but kept for lucide-react imports
   Tag,
-  ImageOff // For image error placeholder
+  ImageOff, // For image error placeholder
+  ChevronDown,
+  X
 } from "lucide-react";
 import { useFetch } from "@/hooks/useFetch";
 import type {
@@ -62,6 +64,9 @@ import {
   infoText,      // For general info text
   successText, // For prices if they should be highlighted
   successIconColor,
+  tipBg,
+  tipText,
+  tipBorder
 } from "@/styles/26themeandstyle";
 // --- End Common Styles Import ---
 
@@ -335,10 +340,10 @@ function ServicesMainPageContent() {
       {/* Hero Section - Themed */}
       <div className={`${neutralBgLight} border-b ${neutralBorderLight}`}>
         <div className={`container mx-auto px-4 ${sectionPadding} text-center`}>
-          <h1 className={`text-4xl sm:text-5xl md:text-6xl font-bold ${neutralText} mb-4`}>
+          <h1 className={`text-4xl md:text-6xl font-bold ${neutralText} mb-4`}>
             Services & Activities
           </h1>
-          <p className={`text-lg sm:text-xl ${neutralTextLight} max-w-3xl mx-auto`}>
+          <p className={`text-xl md:text-2xl ${neutralTextLight} max-w-3xl mx-auto`}>
             Discover reliable transport, convenient rentals, and exciting activities for your perfect Andaman adventure. Your seamless journey starts here.
           </p>
         </div>
@@ -360,31 +365,86 @@ function ServicesMainPageContent() {
               <ListFilter size={22} className={`mr-2.5 ${infoIconColor}`} />
               <h3 className={`text-xl font-semibold ${neutralText}`}>Filter Services</h3>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6 items-end">
-              <div>
-                <label htmlFor="search" className={labelBaseStyle}>Search by Name or Type</label>
-                <div className="relative mt-1">
-                  <Search className={`absolute left-3.5 top-1/2 transform -translate-y-1/2 ${neutralIconColor} pointer-events-none`} size={18} />
-                  <input
-                    type="text" id="search" name="search"
-                    value={filters.search} onChange={handleFilterChange}
-                    placeholder="e.g., Airport Cab, Scooter"
-                    className={`${inputBaseStyle} pl-11`}
-                  />
-                </div>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              {/* Search Input - Prominent on mobile, similar to packages page */}
+              <div className="relative flex-grow md:max-w-md">
+                <input
+                  type="text" 
+                  id="search" 
+                  name="search"
+                  value={filters.search} 
+                  onChange={handleFilterChange}
+                  placeholder="Search services (e.g., Airport Cab, Scooter)"
+                  className={`w-full pl-10 pr-4 py-2.5 border ${neutralBorder} rounded-full focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none transition-colors text-sm`}
+                />
+                <Search className={`absolute left-3.5 top-1/2 transform -translate-y-1/2 ${neutralIconColor} pointer-events-none`} size={18} />
               </div>
-              <div>
-                <label htmlFor="islandId" className={labelBaseStyle}>Filter by Island</label>
-                <select
-                  id="islandId" name="islandId"
-                  value={filters.islandId} onChange={handleFilterChange}
-                  className={`${inputBaseStyle} appearance-none bg-no-repeat`} // Basic select styling, can be enhanced
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundSize: '1.5em 1.5em' }}
-                >
-                  {islandOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
+
+              {/* Island Filter - Hidden on mobile, visible on desktop */}
+              <div className="hidden md:flex items-center gap-3">
+                <div className="relative">
+                  <select
+                    id="islandId" 
+                    name="islandId"
+                    value={filters.islandId} 
+                    onChange={handleFilterChange}
+                    className={`appearance-none bg-white border ${neutralBorder} rounded-full pl-4 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none transition-colors cursor-pointer min-w-[140px]`}
+                  >
+                    {islandOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  </select>
+                  <ChevronDown size={16} className={`absolute right-3 top-1/2 -translate-y-1/2 ${neutralIconColor} pointer-events-none`} />
+                </div>
+
+                {/* Clear Filters Button - Desktop only */}
+                {filtersApplied(filters) && (
+                  <button
+                    onClick={() => setFilters({ search: "", islandId: "" })}
+                    className={`text-sm ${neutralTextLight} hover:text-red-600 transition-colors flex items-center ml-2`}
+                    title="Clear all filters"
+                  >
+                    <X size={14} className="mr-1" /> Clear All
+                  </button>
+                )}
               </div>
             </div>
+
+            {/* Active Filter Tags - Similar to packages page */}
+            {filtersApplied(filters) && (
+              <div className={`mt-3 pt-3 border-t ${neutralBorderLight} flex flex-wrap items-center gap-y-1`}>
+                {filters.search && (
+                  <div className={`inline-flex items-center ${tipBg} ${tipText} text-xs font-medium py-1 pl-3 pr-1.5 rounded-full mr-2 mb-2 border ${tipBorder}`}>
+                    Search: "{filters.search}"
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, search: "" }))}
+                      className={`ml-1.5 bg-yellow-100 hover:bg-yellow-200 rounded-full p-0.5 transition-colors`}
+                      aria-label="Remove search filter"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+                {filters.islandId && (
+                  <div className={`inline-flex items-center ${tipBg} ${tipText} text-xs font-medium py-1 pl-3 pr-1.5 rounded-full mr-2 mb-2 border ${tipBorder}`}>
+                    Island: {islandOptions.find(opt => opt.value === filters.islandId)?.label || filters.islandId}
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, islandId: "" }))}
+                      className={`ml-1.5 bg-yellow-100 hover:bg-yellow-200 rounded-full p-0.5 transition-colors`}
+                      aria-label="Remove island filter"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+                {/* Clear All Button - Mobile only */}
+                <button
+                  onClick={() => setFilters({ search: "", islandId: "" })}
+                  className={`md:hidden text-xs ${neutralTextLight} hover:text-red-600 transition-colors flex items-center ml-auto underline`}
+                  title="Clear all filters"
+                >
+                  Clear All
+                </button>
+              </div>
+            )}
           </div>
 
           {!isLoading && !fetchError && allServices.length === 0 && filtersApplied(debouncedFilters) && (

@@ -1,9 +1,21 @@
-// Path: .\src\app\activities\page.tsx
-'use client';
+// Path: ./src/app/activities/page.tsx
+// Redesign based on package list/details pages (Neutral Theme)
+// Changes:
+// 1. Applied neutral theme from 26themeandstyle.
+// 2. Redesigned Hero Section.
+// 3. Redesigned Filter Section (layout, input styles).
+// 4. Redesigned ActivityCard to match PackageCard style.
+// 5. Applied consistent padding and container usage.
+// 6. Ensured responsiveness.
+// 7. Kept all data fetching and filtering logic intact.
+// 8. Fixed lint errors: replaced neutralIconColor, cardLinkStyle, and fixed Set iteration.
 
-import React, { useState, useEffect, Suspense } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+"use client";
+export const dynamic = "force-dynamic";
+
+import React, { useState, useEffect, Suspense, useMemo } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import {
   Loader2,
   AlertTriangle,
@@ -19,10 +31,20 @@ import {
   Award,
   MessageSquare,
   HelpCircle,
-  IndianRupee, // Added for potential use in price
-  ArrowRight // Added for potential use in buttons
-} from 'lucide-react';
-import { useFetch } from '@/hooks/useFetch';
+  IndianRupee,
+  ArrowRight,
+  ImageOff,
+  SlidersHorizontal,
+  X,
+  ChevronDown,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  Quote,
+  Phone,
+  Activity as ActivityIcon, // Renamed to avoid conflict
+} from "lucide-react";
+import { useFetch } from "@/hooks/useFetch";
 
 // --- Define interfaces (consistent with API response) ---
 interface Activity {
@@ -34,7 +56,7 @@ interface Activity {
   island_id: number;
   price: string;
   availability: string | null;
-  images: string | null;
+  images: string | string[] | null; // Updated to handle both string and array
   amenities: string | null;
   cancellation_policy: string | null;
   island_name: string;
@@ -50,154 +72,242 @@ interface GetActivitiesApiResponse {
 }
 // --- End Interfaces ---
 
-// --- Color Theme ---
-const primaryColor = '#F59E0B'; // Amber-600 (Example primary yellow/orange)
-const primaryColorDarker = '#D97706'; // Amber-700
-const primaryColorLighter = '#FCD34D'; // Amber-400
-const primaryColorLightestBg = '#FFFBEB'; // Amber-50 (Very light yellow)
-const primaryColorLightBg = '#FEF3C7';    // Amber-100 (Light yellow)
-const primaryColorLighterBg = '#FDE68A';  // Amber-200
-const primaryColorHoverLighterBg = '#FCD34D'; // Amber-400 (used for hover)
-const iconColorYellow = '#FACC15';   // bright yellow  – yellow-400
-const iconColorGreen = '#22C55E';   // bright green   – emerald-500
-const iconColorPink = '#EC4899';   // bright pink    – pink-500
-const iconColorOrange = '#F97316';   // bright orange  – orange-500
+// --- Theme Imports (Using Neutral Theme from Package Pages) ---
+import {
+  neutralBgLight,
+  neutralText,
+  neutralTextLight,
+  neutralBorder,
+  neutralBorderLight,
+  neutralBg,
+  infoText,
+  infoIconColor, // Use this for info-related icons
+  infoBg,
+  infoBorder,
+  successText,
+  successIconColor,
+  successBg,
+  successBorder,
+  errorText,
+  errorIconColor,
+  errorBg,
+  errorBorder,
+  tipBg,
+  tipBorder,
+  tipText,
+  tipIconColor,
+  primaryButtonBg,
+  primaryButtonHoverBg,
+  primaryButtonText,
+  buttonPrimaryStyle,
+  cardBaseStyle,
+  sectionPadding,
+  sectionHeadingStyle,
+  // cardLinkStyle, // Removed as it wasn't exported
+} from "@/styles/26themeandstyle";
+// --- End Theme Imports ---
 
-// Button Styles (Reduced padding compared to original source)
-const buttonPrimaryStyle = `inline-flex items-center justify-center bg-[${primaryColor}] hover:bg-[${primaryColorDarker}] text-black font-semibold py-2.5 px-6 rounded-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1 border border-black`;
-const buttonSecondaryStyle = `inline-flex items-center justify-center bg-transparent text-white border-2 border-white hover:bg-white/10 font-semibold py-2.5 px-6 rounded-full transition-all duration-300`; // For dark backgrounds
-const ctaPrimaryOnDarkStyle = `bg-white text-[${primaryColorDarker}] hover:bg-[${primaryColorLightestBg}] font-semibold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center`; // Primary action on dark bg
-const ctaSecondaryOnDarkStyle = `bg-transparent border-2 border-white text-white hover:bg-white/10 font-semibold py-3 px-8 rounded-full transition-all duration-300 flex items-center justify-center`; // Secondary action on dark bg
-const cardLinkStyle = `inline-flex items-center text-[${primaryColor}] hover:text-[${primaryColorDarker}] font-medium text-sm group mt-auto pt-2 border-t border-gray-100`;
-// --- End Color Theme ---
-
-// --- LoadingSpinner Component with enhanced styling ---
-const LoadingSpinner = () => (
-  <div className="flex flex-col justify-center items-center py-20">
-    {/* Updated color */}
-    <Loader2 className={`h-10 w-10 animate-spin text-[${primaryColor}] mb-4`} />
-    {/* Updated text color */}
-    <span className={`text-lg font-medium text-[${primaryColorDarker}]`}>Loading exciting activities...</span>
-    <p className="text-sm text-gray-500 mt-2">This may take a moment</p>
+// --- LoadingSpinner Component (Apply Neutral Theme) ---
+const LoadingSpinner = ({ message = "Loading Activities..." }: { message?: string }) => (
+  <div className="flex flex-col justify-center items-center min-h-[60vh] text-center py-20">
+    <div className="relative w-16 h-16">
+      <div
+        className={`absolute top-0 left-0 w-full h-full border-4 ${neutralBorder} rounded-full`}
+      ></div>
+      <div
+        className={`absolute top-0 left-0 w-full h-full border-4 ${primaryButtonBg} rounded-full border-t-transparent animate-spin`}
+      ></div>
+    </div>
+    <span className={`mt-4 text-lg ${neutralText} font-medium`}>{message}</span>
   </div>
 );
 // --- End LoadingSpinner ---
 
-// --- ActivityCard Component with enhanced styling ---
+// --- Activity Card Component (Redesigned to match PackageCard) ---
 interface ActivityCardProps {
   activity: Activity;
 }
+
 const ActivityCard = ({ activity }: ActivityCardProps) => {
-  // --- Process data for display ---
-  const imageUrl = activity.images?.split(',')[0]?.trim() || '/images/placeholder.jpg';
-  const durationDisplay = activity.duration || 'Approx. 2-3 hours';
+  const [imgError, setImgError] = useState(false);
+
+  // Use the same image processing logic as the main page
+  const getImageUrl = (images: string | string[] | null): string => {
+    if (!images) return '/images/placeholder_service.jpg';
+
+    let imageUrl: string | undefined;
+
+    if (Array.isArray(images)) {
+      // Handle array of images (for services and parsed package images)
+      imageUrl = images[0]?.trim();
+    } else if (typeof images === 'string') {
+      // Handle string images (for destinations, activities - could be JSON string or comma-separated)
+      try {
+        // Try to parse as JSON first
+        const parsed = JSON.parse(images);
+        if (Array.isArray(parsed)) {
+          imageUrl = parsed[0]?.trim();
+        } else if (typeof parsed === 'string') {
+          imageUrl = parsed.trim();
+        }
+      } catch (e) {
+        // Not JSON, treat as comma-separated or single URL
+        imageUrl = images.split(',')[0]?.trim();
+      }
+    }
+
+    if (!imageUrl || !(imageUrl.startsWith('/') || imageUrl.startsWith('http'))) {
+      return '/images/placeholder_service.jpg';
+    }
+    return imageUrl;
+  };
+
+  const imageUrl = getImageUrl(activity.images);
+  const durationDisplay = activity.duration || "Varies";
   const priceNum = parseFloat(activity.price);
-  const rating = activity.rating || 4.5; // Default rating if not available
+  const rating = activity.rating || 4.5; // Default rating
+
+  const handleImageError = () => {
+    if (!imgError) setImgError(true);
+  };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl hover:scale-[1.03] border border-gray-100"> {/* Reduced hover scale */}
-      {/* Image with overlay gradient and price badge */}
-      <div className="h-52 w-full relative flex-shrink-0">
-        <Image
-          src={imageUrl}
+    <div className={`${cardBaseStyle} group`}> {/* Added group for hover effects */}
+      <div className="h-52 w-full relative flex-shrink-0 overflow-hidden">
+        <img
+          src={imgError ? '/images/placeholder_service.jpg' : imageUrl}
           alt={activity.name}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          onError={(e) => (e.currentTarget.src = '/images/placeholder.jpg')}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          onError={handleImageError}
         />
-        {/* Gradient overlay for better text visibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-
-        {/* Price badge - using primaryColor */}
-        <div className={`absolute top-3 right-3 bg-[${primaryColor}] text-white text-sm font-bold py-1.5 px-3 rounded-full shadow-md flex items-center`}>
-          <IndianRupee size={12} className="mr-0.5" /> {!isNaN(priceNum) ? `${priceNum.toLocaleString('en-IN')}` : activity.price}
-        </div>
-
-        {/* Duration badge - using primaryColorDarker text */}
-        <div className={`absolute bottom-3 left-3 bg-white/90 text-[${primaryColorDarker}] text-xs font-medium py-1 px-2 rounded-full flex items-center backdrop-blur-sm`}>
-          <Clock size={12} className="mr-1" />
-          {durationDisplay}
-        </div>
-      </div>
-
-      {/* Content with enhanced styling */}
-      <div className="p-4 flex flex-col flex-grow"> {/* Reduced padding */}
-        <div className="flex justify-between items-start mb-2">
-          <h2 className="text-lg font-semibold leading-tight flex-1 mr-2 text-gray-800 line-clamp-2">{activity.name}</h2> {/* Added line-clamp */}
-          {/* Keeping star color yellow */}
-          <div className="flex items-center text-yellow-400 flex-shrink-0">
-            <Star size={16} fill="currentColor" />
-            <span className="ml-1 text-xs font-medium">{rating.toFixed(1)}</span>
-          </div>
-        </div>
-
-        <div className="flex items-start mb-3 text-sm text-gray-600">
-          {/* Updated icon color */}
-          <MapPin size={14} className={`mr-1 mt-0.5 flex-shrink-0 text-[${primaryColor}]`} />
-          <span>{activity.island_name}</span>
-        </div>
-
-        <p className="text-gray-600 text-sm mb-3 line-clamp-2 flex-grow"> {/* Reduced mb, line-clamp */}
-          {activity.description || 'No description available.'}
-        </p>
-
-        {/* Amenities tags - assuming amenities is a comma-separated string */}
-        {activity.amenities && (
-          <div className="flex flex-wrap gap-1.5 mb-3"> {/* Reduced gap, mb */}
-            {activity.amenities.split(',').slice(0, 3).map((amenity, index) => (
-              <span key={index} className={`bg-[${primaryColorLightestBg}] text-[${primaryColorDarker}] text-xs px-2 py-0.5 rounded-full flex items-center`}> {/* Reduced py */}
-                {/* Using primary color for icon */}
-                <Camera size={10} className={`mr-1 text-[${primaryColor}]`} />
-                {amenity.trim()}
-              </span>
-            ))}
-            {activity.amenities.split(',').length > 3 && (
-              <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full"> {/* Reduced py */}
-                +{activity.amenities.split(',').length - 3} more
-              </span>
-            )}
+        {(imgError || imageUrl === "/images/placeholder_service.jpg") && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 pointer-events-none">
+            <ImageOff size={36} className="text-gray-400 opacity-50" />
           </div>
         )}
-
-        <div className="mt-auto pt-3 border-t border-gray-100"> {/* Reduced pt */}
-          <Link
-            href={`/activities/${activity.id}`} // Assuming link goes to specific activity page
-            // Using primary button style
-            className={`${buttonPrimaryStyle} w-full block text-center`}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        {/* Price badge - Neutral dark */}
+        <div
+          className={`absolute top-3 right-3 ${primaryButtonBg} ${primaryButtonText} text-sm font-bold py-1.5 px-3 rounded-full shadow-md flex items-center`}
+        >
+          <IndianRupee size={12} className="mr-0.5" />
+          {!isNaN(priceNum)
+            ? `${priceNum.toLocaleString("en-IN")}`
+            : activity.price}
+        </div>
+        {/* Duration badge - Neutral light */}
+        <div
+          className={`absolute bottom-3 left-3 bg-white/90 ${neutralText} text-xs font-medium py-1.5 px-3 rounded-full flex items-center backdrop-blur-sm border ${neutralBorderLight}`}
+        >
+          <Clock size={12} className="mr-1.5" />
+          {durationDisplay}
+        </div>
+        {/* Rating - Positioned differently */}
+        <div
+          className={`absolute top-3 left-3 bg-white/90 ${neutralText} text-xs font-medium py-1.5 px-3 rounded-full flex items-center backdrop-blur-sm border ${neutralBorderLight}`}
+        >
+          <Star size={12} className="mr-1 text-yellow-400 fill-current" />
+          {rating.toFixed(1)}
+        </div>
+      </div>
+      <div className="p-4 flex flex-col flex-grow">
+        <h3
+          className={`text-lg font-semibold leading-tight mb-1 ${neutralText} line-clamp-2`}
+        >
+          {activity.name}
+        </h3>
+        <div className={`flex items-center text-xs ${neutralTextLight} mb-2`}>
+          <MapPin size={12} className={`mr-1 ${infoIconColor}`} />
+          {activity.island_name}
+        </div>
+        <p className={`${neutralTextLight} text-sm mb-3 line-clamp-2 flex-grow`}>
+          {activity.description ||
+            "Engage in exciting activities and explore the beauty of the islands."}
+        </p>
+        {/* Example: Type Display */}
+        <div className="mb-3">
+          <span
+            className={`inline-block ${infoBg} ${infoText} text-xs font-medium px-2.5 py-0.5 rounded-full border ${infoBorder}`}
           >
-            Learn More & Book
+            {activity.type || "General Activity"}
+          </span>
+        </div>
+        <div
+          className={`flex justify-between items-center mt-auto pt-3 border-t ${neutralBorderLight}`}
+        >
+          <span className={`${neutralTextLight} text-sm`}>
+            Price:{" "}
+            <span className={`font-semibold ${neutralText}`}>
+              ₹
+              {!isNaN(priceNum)
+                ? priceNum.toLocaleString("en-IN")
+                : activity.price}
+            </span>
+          </span>
+          {/* Replaced cardLinkStyle with inline styles */}
+          <Link
+            href={`/activities/${activity.id}`}
+            className={`inline-flex items-center ${infoText} hover:underline font-medium text-sm group`}
+          >
+            View Details
+            <ArrowRight
+              size={14}
+              className="ml-1 transition-transform duration-300 group-hover:translate-x-1"
+            />
           </Link>
         </div>
       </div>
     </div>
   );
 };
-// --- End ActivityCard Component ---
+// --- End Activity Card ---
 
+// --- Filter Tag Component (Apply Contextual Tip Color) ---
+interface FilterTagProps {
+  label: string;
+  onRemove: () => void;
+}
 
-// --- Main Component Logic ---
+const FilterTag = ({ label, onRemove }: FilterTagProps) => (
+  <div
+    className={`inline-flex items-center ${tipBg} ${tipText} text-xs font-medium py-1 pl-3 pr-1.5 rounded-full mr-2 mb-2 border ${tipBorder}`}
+  >
+    {label}
+    <button
+      onClick={onRemove}
+      className={`ml-1.5 bg-yellow-100 hover:bg-yellow-200 rounded-full p-0.5 transition-colors`}
+      aria-label={`Remove ${label} filter`}
+    >
+      <X size={12} />
+    </button>
+  </div>
+);
+// --- End Filter Tag ---
+
+// --- Main Component Logic (Data handling unchanged) ---
 function ActivitiesContent() {
-  console.log('🔍 [Activities Page] Component rendering');
-  
+  console.log("🔍 [Activities Page] Component rendering");
+
   // Fetch data using the hook
-  const { data: apiResponse, error, status } = useFetch<Activity[]>('/api/activities');
-  
+  const { data: apiResponse, error, status } = useFetch<Activity[]>(
+    "/api/activities"
+  );
+
   // Log fetch state each render
-  console.log('🔍 [Activities Page] useFetch state:', { 
-    status, 
-    hasError: !!error, 
+  console.log("🔍 [Activities Page] useFetch state:", {
+    status,
+    hasError: !!error,
     errorMessage: error?.message,
     hasData: !!apiResponse,
-    dataLength: apiResponse?.length || 0
+    dataLength: apiResponse?.length || 0,
   });
 
   // State for activity filters
   const [filters, setFilters] = useState({
-    search: '',
-    island: '',
-    priceRange: '',
-    activityType: ''
+    search: "",
+    island: "",
+    priceRange: "",
+    activityType: "",
   });
 
   // State for showing/hiding filters on mobile
@@ -205,575 +315,509 @@ function ActivitiesContent() {
 
   // Extract activities from the response, default to empty array
   const activities = apiResponse || [];
-  
+
   // Log activities data when it changes
   useEffect(() => {
     if (apiResponse) {
       console.log(`🔍 [Activities Page] Received ${apiResponse.length} activities from API`);
-      
-      // Log first 3 activities for debugging (if they exist)
       const logLimit = Math.min(apiResponse.length, 3);
       for (let i = 0; i < logLimit; i++) {
-        console.log(`🔍 [Activities Page] Activity ${i+1}/${logLimit}:`, {
+        const images = apiResponse[i].images;
+        console.log(`🔍 [Activities Page] Activity ${i + 1}/${logLimit}:`, {
           id: apiResponse[i].id,
           name: apiResponse[i].name,
           island_name: apiResponse[i].island_name,
           price: apiResponse[i].price,
-          images: apiResponse[i].images?.substring(0, 50) // Just show start of images string
+          images:
+            typeof images === "string"
+              ? (images as string).substring(0, 50)
+              : Array.isArray(images)
+                ? `[${images.length} images]`
+                : "null",
         });
       }
-      
       if (apiResponse.length === 0) {
-        console.warn('⚠️ [Activities Page] API returned empty activities array');
+        console.warn("⚠️ [Activities Page] API returned empty activities array");
       }
-    } else if (status === 'success') {
-      console.warn('⚠️ [Activities Page] API request successful but no data received');
+    } else if (status === "success") {
+      console.warn("⚠️ [Activities Page] API request successful but no data received");
     }
   }, [apiResponse, status]);
 
-  // Filter activities based on user selections
-  const filteredActivities = activities.filter(activity => {
-    // Search filter
-    if (filters.search && !activity.name.toLowerCase().includes(filters.search.toLowerCase()) &&
-      !activity.description?.toLowerCase().includes(filters.search.toLowerCase())) {
-      return false;
-    }
-
-    // Island filter
-    if (filters.island && activity.island_name !== filters.island) {
-      return false;
-    }
-
-    // Price range filter - Adjust logic to handle 5000+
-    if (filters.priceRange) {
-      const price = parseFloat(activity.price);
-      if (isNaN(price)) return false; // Exclude if price is not a number
-
-      if (filters.priceRange === '5000+') {
-        if (price < 5000) return false;
-      } else {
-        const [min, max] = filters.priceRange.split('-').map(p => parseInt(p));
-        if (!isNaN(min) && !isNaN(max) && (price < min || price > max)) {
-          return false;
-        }
-        // Handle cases like "0-1000" where max is defined
-        else if (!isNaN(min) && isNaN(max) && price < min) {
-          return false;
-        }
-        // Handle cases where only min is defined (might not be used with current options)
-        // else if (!isNaN(min) && isNaN(max) && price < min) return false;
+  // Filter activities based on user selections (LOGIC UNCHANGED)
+  const filteredActivities = useMemo(() => {
+    return activities.filter((activity) => {
+      if (
+        filters.search &&
+        !activity.name.toLowerCase().includes(filters.search.toLowerCase()) &&
+        !activity.description?.toLowerCase().includes(filters.search.toLowerCase())
+      ) {
+        return false;
       }
-    }
+      if (filters.island && activity.island_name !== filters.island) {
+        return false;
+      }
+      if (filters.priceRange) {
+        const price = parseFloat(activity.price);
+        if (isNaN(price)) return false;
+        if (filters.priceRange === "5000+") {
+          if (price < 5000) return false;
+        } else {
+          const [min, max] = filters.priceRange.split("-").map((p) => parseInt(p));
+          if (!isNaN(min) && !isNaN(max) && (price < min || price > max)) {
+            return false;
+          }
+        }
+      }
+      if (filters.activityType && activity.type !== filters.activityType) {
+        return false;
+      }
+      return true;
+    });
+  }, [activities, filters]);
 
-
-    // Activity type filter (assuming activity.type contains this info)
-    if (filters.activityType && activity.type !== filters.activityType) {
-      return false;
-    }
-
-    return true;
-  });
-  
   // Log filtered activities count
-  console.log(`🔍 [Activities Page] After filtering: ${filteredActivities.length} activities`);
+  console.log(
+    `🔍 [Activities Page] After filtering: ${filteredActivities.length} activities`
+  );
 
-  // Handle filter changes
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // Handle filter changes (LOGIC UNCHANGED)
+  const handleFilterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Clear all filters
+  // Clear all filters (LOGIC UNCHANGED)
   const handleClearFilters = () => {
     setFilters({
-      search: '',
-      island: '',
-      priceRange: '',
-      activityType: ''
+      search: "",
+      island: "",
+      priceRange: "",
+      activityType: "",
     });
   };
 
+  // Get active filter tags (LOGIC UNCHANGED)
+  const activeFilterTags = useMemo(() => {
+    const tags = [];
+    if (filters.search) tags.push({ key: "search", label: `Search: "${filters.search}"` });
+    if (filters.island) tags.push({ key: "island", label: `Island: ${filters.island}` });
+    if (filters.activityType) tags.push({ key: "activityType", label: `Type: ${filters.activityType}` });
+    if (filters.priceRange) {
+      const range = filters.priceRange.split("-");
+      const label = range.length > 1 ? `Price: ₹${Number(range[0]).toLocaleString("en-IN")} - ₹${Number(range[1]).toLocaleString("en-IN")}` : `Price: ₹${Number(range[0].replace("+", "")).toLocaleString("en-IN")}+`;
+      tags.push({ key: "priceRange", label });
+    }
+    return tags;
+  }, [filters]);
+
   // Add a log before returning the JSX to confirm we're reaching the render
-  console.log('🔍 [Activities Page] Rendering component with filtered activities:', filteredActivities.length);
+  console.log("🔍 [Activities Page] Rendering JSX...");
 
+  // --- Render Logic (UI Redesigned) ---
   return (
-    <>
-      {/* --- Hero Section with enhanced styling --- */}
-      {/* Updated background gradient */}
-      <div className={`relative bg-gradient-to-r from-[${primaryColor}] to-[${primaryColorDarker}] h-72 md:h-96`}>
-        {/* Enhanced overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
-
-        {/* Added opacity */}
-        <div className="absolute inset-0 z-0 opacity-80">
-          <Image src="/images/activities-hero.jpg" alt="Andaman Activities - Desktop" fill className="object-cover hidden md:block" priority />
-          <Image src="/images/activities-hero-mobile.jpg" alt="Andaman Activities - Mobile" fill className="object-cover block md:hidden" priority />
-        </div>
-
-        <div className="container mx-auto px-4 h-full flex flex-col justify-center items-center relative z-20">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white text-center mb-3 md:mb-5 drop-shadow-lg">
-            Exciting <span className={`text-[${primaryColorLighter}]`}>Andaman</span> Activities {/* Highlight */}
+    <div className={`bg-white ${neutralText}`}>
+      {/* Hero Section - Redesigned with Neutral Theme */}
+      <div className="relative bg-gray-800 text-white py-20 md:py-32">
+        <Image
+          src="/images/activities-hero.jpg" // Replace with a suitable hero image
+          alt="Andaman Activities"
+          fill
+          style={{ objectFit: "cover" }}
+          className="opacity-30"
+          priority
+        />
+        <div className="container mx-auto px-4 relative z-10 text-center">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+            Discover Andaman Activities
           </h1>
-          <p className="text-lg sm:text-xl text-white text-center max-w-2xl opacity-95 drop-shadow-md">
-            Experience thrilling adventures and create unforgettable memories
+          <p className="text-xl md:text-2xl text-white/80 max-w-3xl mx-auto">
+            From thrilling water sports to serene nature walks, find your next
+            adventure.
           </p>
-          {/* Added CTA button - Using secondary style */}
-          <Link href="#activities-grid" className={`mt-6 ${buttonSecondaryStyle}`}>
-            Explore Activities
-          </Link>
-        </div>
-
-        {/* Added decorative wave element - using lightest background color */}
-        <div className="absolute bottom-0 left-0 right-0 h-12 md:h-16 overflow-hidden">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" className="absolute bottom-0 w-full h-auto">
-            <path fill={primaryColorLightestBg} fillOpacity="1" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,261.3C960,256,1056,224,1152,197.3C1248,171,1344,149,1392,138.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-          </svg>
         </div>
       </div>
 
-      {/* --- Activities Content with enhanced styling --- */}
-      {/* Updated background color */}
-      <div id="activities-grid" className={`bg-[${primaryColorLightestBg}] py-12 md:py-20`}>
+      {/* Filter Section - Redesigned with Neutral Theme */}
+      <section
+        className={`sticky top-0 z-30 bg-white/95 backdrop-blur-sm shadow-sm border-b ${neutralBorderLight} py-4`}
+      >
         <div className="container mx-auto px-4">
-          {/* Added section header with icon */}
-          <div className="flex items-center justify-center mb-10 md:mb-14">
-            {/* Updated icon color */}
-            <Compass className={`text-[${primaryColorDarker}] mr-3 flex-shrink-0`} size={24} />
-            {/* Updated heading color */}
-            <h2 className={`text-2xl md:text-3xl font-bold text-[${primaryColorDarker}]`}>Find Your Perfect Activity</h2>
-          </div>
-
-          {/* Added filters section */}
-          <div className="mb-10">
-            {/* Mobile filter toggle */}
-            <div className="md:hidden mb-6 text-center">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                // Updated button styles
-                className={`inline-flex items-center px-5 py-2.5 border border-[${primaryColorLighter}] rounded-full shadow-sm text-sm font-medium text-[${primaryColorDarker}] bg-white hover:bg-[${primaryColorLightestBg}] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[${primaryColor}] transition-all duration-300`}
-              >
-                <Filter size={16} className="mr-2" /> {showFilters ? 'Hide Filters' : 'Show Filters'}
-              </button>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Search Input - Styled like package list */}
+            <div className="relative flex-grow md:max-w-xs lg:max-w-sm">
+              <input
+                type="text"
+                name="search"
+                placeholder="Search activities (e.g., Scuba, Kayaking)"
+                value={filters.search}
+                onChange={handleFilterChange}
+                className={`w-full pl-10 pr-4 py-2.5 border ${neutralBorder} rounded-full focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none transition-colors text-sm`}
+              />
+              {/* Replaced neutralIconColor with neutralTextLight */}
+              <Search
+                size={18}
+                className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${neutralTextLight}`}
+              />
             </div>
 
-            {/* Filters */}
-            <div className={`bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-gray-100 ${showFilters ? 'block' : 'hidden'} md:block`}>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center">
-                  {/* Updated icon color */}
-                  <Filter className={`text-[${primaryColorDarker}] mr-2`} size={20} />
-                  Filter Activities
-                </h3>
-                <button
-                  onClick={() => handleClearFilters()}
-                  // Updated hover text color
-                  className={`text-sm text-gray-600 hover:text-[${primaryColorDarker}] flex items-center transition-colors`}
+            {/* Filter Controls - Hidden on mobile, visible on desktop */}
+            <div className="hidden md:flex items-center gap-3 flex-wrap">
+              {/* Island Dropdown */}
+              <div className="relative">
+                <select
+                  name="island"
+                  value={filters.island}
+                  onChange={handleFilterChange}
+                  className={`appearance-none bg-white border ${neutralBorder} rounded-full pl-4 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none transition-colors cursor-pointer min-w-[120px]`}
                 >
-                  Clear All
-                </button>
+                  <option value="">All Islands</option>
+                  {/* Fixed Set iteration: Use Array.from() */}
+                  {Array.from(new Set(activities.map((a) => a.island_name)))
+                    .sort()
+                    .map((island) => (
+                      <option key={island} value={island}>
+                        {island}
+                      </option>
+                    ))}
+                </select>
+                {/* Replaced neutralIconColor with neutralTextLight */}
+                <ChevronDown
+                  size={16}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 ${neutralTextLight} pointer-events-none`}
+                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {/* Search filter */}
-                <div className="md:col-span-4">
-                  <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Search Activities
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      id="search"
-                      name="search"
-                      value={filters.search}
-                      onChange={handleFilterChange}
-                      // Updated focus styles
-                      className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[${primaryColor}] focus:border-[${primaryColor}] text-base`}
-                      placeholder="Search by activity name or description"
+              {/* Activity Type Dropdown */}
+              <div className="relative">
+                <select
+                  name="activityType"
+                  value={filters.activityType}
+                  onChange={handleFilterChange}
+                  className={`appearance-none bg-white border ${neutralBorder} rounded-full pl-4 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none transition-colors cursor-pointer min-w-[120px]`}
+                >
+                  <option value="">All Types</option>
+                  {/* Fixed Set iteration: Use Array.from() */}
+                  {Array.from(new Set(activities.map((a) => a.type)))
+                    .sort()
+                    .map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                </select>
+                {/* Replaced neutralIconColor with neutralTextLight */}
+                <ChevronDown
+                  size={16}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 ${neutralTextLight} pointer-events-none`}
+                />
+              </div>
+
+              {/* Price Dropdown */}
+              <div className="relative">
+                <select
+                  name="priceRange"
+                  value={filters.priceRange}
+                  onChange={handleFilterChange}
+                  className={`appearance-none bg-white border ${neutralBorder} rounded-full pl-4 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-gray-300 focus:border-gray-400 outline-none transition-colors cursor-pointer min-w-[120px]`}
+                >
+                  <option value="">Price Range</option>
+                  <option value="0-1000">Under ₹1,000</option>
+                  <option value="1000-3000">₹1,000 - ₹3,000</option>
+                  <option value="3000-5000">₹3,000 - ₹5,000</option>
+                  <option value="5000+">₹5,000+</option>
+                </select>
+                {/* Replaced neutralIconColor with neutralTextLight */}
+                <ChevronDown
+                  size={16}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 ${neutralTextLight} pointer-events-none`}
+                />
+              </div>
+
+              {/* Clear Filters Button - Desktop only */}
+              {Object.values(filters).some((v) => v !== "") && (
+                <button
+                  onClick={handleClearFilters}
+                  className={`text-sm ${neutralTextLight} hover:text-red-600 transition-colors ml-2 flex items-center`}
+                  title="Clear all filters"
+                >
+                  <X size={14} className="mr-1" /> Clear All
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Active Filter Tags & Mobile Clear Button */}
+          {activeFilterTags.length > 0 && (
+            <div
+              className={`mt-3 pt-3 border-t ${neutralBorderLight} flex flex-wrap items-center gap-y-1`}
+            >
+              {activeFilterTags.map((tag) => (
+                <FilterTag
+                  key={tag.key}
+                  label={tag.label}
+                  onRemove={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      [tag.key]: "",
+                    }))
+                  }
+                />
+              ))}
+              {/* Clear All Button - Mobile only */}
+              <button
+                onClick={handleClearFilters}
+                className={`md:hidden text-xs ${neutralTextLight} hover:text-red-600 transition-colors flex items-center ml-auto underline`}
+                title="Clear all filters"
+              >
+                Clear All
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Main Content Area - Neutral Light Background */}
+      <div className={`${sectionPadding} ${neutralBgLight}`}>
+        <div className="container mx-auto px-4">
+          {/* Loading State */}
+          {status === "loading" && <LoadingSpinner />}
+
+          {/* Error State - Contextual Error Red */}
+          {status === "error" && (
+            <div
+              className={`min-h-[40vh] flex flex-col justify-center items-center text-center p-8 rounded-2xl ${errorBg} border ${errorBorder}`}
+            >
+              <AlertTriangle className={`w-16 h-16 ${errorIconColor} mb-6`} />
+              <h3 className={`text-2xl font-semibold ${errorText} mb-3`}>
+                Oops! Something went wrong.
+              </h3>
+              <p className={`${neutralTextLight} mb-6`}>
+                We couldn't load the activities right now. Please try again later.
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className={`${buttonPrimaryStyle} bg-red-600 hover:bg-red-700 focus:ring-red-500`}
+              >
+                <RefreshCw size={16} className="mr-2" /> Try Again
+              </button>
+            </div>
+          )}
+
+          {/* Success State */}
+          {status === "success" && (
+            <>
+              {filteredActivities.length > 0 ? (
+                <>
+                  {/* Results Count - Simplified */}
+                  <div className="mb-8 text-center md:text-left">
+                    <p className={`${neutralTextLight} text-sm`}>
+                      Showing{" "}
+                      <span className={`font-semibold ${neutralText}`}>
+                        {filteredActivities.length}
+                      </span>{" "}
+                      {filteredActivities.length === activities.length
+                        ? ""
+                        : `of ${activities.length}`}{" "}
+                      activit{filteredActivities.length === 1 ? "y" : "ies"}
+                      {activeFilterTags.length > 0 ? " matching your filters" : ""}
+                    </p>
+                  </div>
+
+                  {/* Activities Grid */}
+                  <div
+                    id="activities-grid"
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
+                  >
+                    {filteredActivities.map((activity) => (
+                      <ActivityCard key={activity.id} activity={activity} />
+                    ))}
+                  </div>
+
+                  {/* Pagination Placeholder - Add if needed */}
+                  {/* <nav className="mt-16 flex justify-center">...</nav> */}
+                </>
+              ) : (
+                /* No Results State - Contextual Tip Yellow */
+                <div
+                  className={`min-h-[40vh] flex flex-col justify-center items-center text-center p-8 rounded-2xl ${tipBg} border ${tipBorder}`}
+                >
+                  <Compass className={`w-16 h-16 ${tipIconColor} mb-6`} />
+                  <h3 className={`text-2xl font-semibold ${tipText} mb-3`}>
+                    No Activities Found
+                  </h3>
+                  <p className={`${neutralTextLight} mb-6`}>
+                    Try adjusting your filters or search terms. We couldn't find
+                    activities matching your current selection.
+                  </p>
+                  <button onClick={handleClearFilters} className={buttonPrimaryStyle}>
+                    <RefreshCw size={16} className="mr-2" /> Clear Filters
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* --- FAQ Section (Styled like package list) --- */}
+      <section className={`${sectionPadding} ${neutralBgLight}`}>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center mb-10 md:mb-14">
+            <div
+              className={`w-12 h-12 bg-white rounded-full flex items-center justify-center mr-4 border ${neutralBorderLight}`}
+            >
+              {/* Replaced neutralIconColor with neutralTextLight */}
+              <HelpCircle className={neutralTextLight} size={24} />
+            </div>
+            <h2 className={`${sectionHeadingStyle} ${neutralText}`}>
+              Frequently Asked Questions
+            </h2>
+          </div>
+          <div className="max-w-3xl mx-auto space-y-4">
+            {[1, 2, 3].map((i) => (
+              <details
+                key={i}
+                className={`bg-white p-5 rounded-xl shadow-md border ${neutralBorderLight} group transition-all duration-300 hover:shadow-lg`}
+              >
+                <summary
+                  className={`flex justify-between items-center font-semibold ${neutralText} cursor-pointer list-none text-lg`}
+                >
+                  <span>Question {i}: What should I bring for water sports?</span>
+                  <div
+                    className={`w-8 h-8 flex items-center justify-center rounded-full border ${neutralBorder} group-hover:bg-gray-100 transition-colors`}
+                  >
+                    {/* Replaced neutralIconColor with neutralTextLight */}
+                    <ChevronDown
+                      size={20}
+                      className={`transition-transform duration-300 group-open:rotate-180 ${neutralTextLight}`}
                     />
                   </div>
+                </summary>
+                <div className="overflow-hidden max-h-0 group-open:max-h-screen transition-all duration-500 ease-in-out">
+                  <p
+                    className={`mt-4 text-sm ${neutralTextLight} leading-relaxed border-t ${neutralBorderLight} pt-4`}
+                  >
+                    Answer {i}: We recommend bringing swimwear, a towel, sunscreen,
+                    sunglasses, a hat, and a waterproof bag for your valuables.
+                    Specific gear for the activity is usually provided.
+                  </p>
                 </div>
-
-                {/* Island filter */}
-                <div>
-                  <label htmlFor="island" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Island
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <select
-                      id="island"
-                      name="island"
-                      value={filters.island}
-                      onChange={handleFilterChange}
-                      // Updated focus styles
-                      className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[${primaryColor}] focus:border-[${primaryColor}] text-base appearance-none`}
-                    >
-                      <option value="">All Islands</option>
-                      {/* Dynamically load islands if needed, otherwise hardcode */}
-                      <option value="Havelock Island">Havelock Island</option>
-                      <option value="Neil Island">Neil Island</option>
-                      <option value="Port Blair">Port Blair</option>
-                      <option value="Baratang Island">Baratang Island</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Price range filter */}
-                <div>
-                  <label htmlFor="priceRange" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Price Range
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="priceRange"
-                      name="priceRange"
-                      value={filters.priceRange}
-                      onChange={handleFilterChange}
-                      // Updated focus styles
-                      className={`w-full pl-3 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[${primaryColor}] focus:border-[${primaryColor}] text-base appearance-none`}
-                    >
-                      <option value="">Any Price</option>
-                      <option value="0-1000">Under ₹1,000</option>
-                      <option value="1000-3000">₹1,000 - ₹3,000</option>
-                      <option value="3000-5000">₹3,000 - ₹5,000</option>
-                      <option value="5000+">₹5,000+</option> {/* Match filter logic */}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Activity type filter */}
-                <div>
-                  <label htmlFor="activityType" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Activity Type
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="activityType"
-                      name="activityType"
-                      value={filters.activityType}
-                      onChange={handleFilterChange}
-                      // Updated focus styles
-                      className={`w-full pl-3 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[${primaryColor}] focus:border-[${primaryColor}] text-base appearance-none`}
-                    >
-                      <option value="">All Types</option>
-                      <option value="water">Water Activities</option>
-                      <option value="adventure">Adventure</option>
-                      <option value="nature">Nature & Wildlife</option>
-                      <option value="cultural">Cultural</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Add a debugging panel - can be removed in production */}
-          <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-            <h3 className="font-semibold mb-2">Debug Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <p><span className="font-medium">API Status:</span> {status}</p>
-                <p><span className="font-medium">Error:</span> {error ? error.message : 'None'}</p>
-                <p><span className="font-medium">API Data:</span> {apiResponse ? `${apiResponse.length} items` : 'None'}</p>
-              </div>
-              <div>
-                <p><span className="font-medium">Filters:</span></p>
-                <ul className="ml-4 list-disc">
-                  <li>Search: {filters.search || 'None'}</li>
-                  <li>Island: {filters.island || 'None'}</li>
-                  <li>Price Range: {filters.priceRange || 'None'}</li>
-                  <li>Activity Type: {filters.activityType || 'None'}</li>
-                </ul>
-              </div>
-            </div>
-            <div className="mt-2">
-              <button 
-                onClick={() => window.location.reload()}
-                className="px-3 py-1 bg-blue-500 text-white rounded text-xs"
-              >
-                Refresh Page
-              </button>
-              <button 
-                onClick={() => console.log('API Data:', apiResponse)}
-                className="px-3 py-1 bg-gray-500 text-white rounded text-xs ml-2"
-              >
-                Log Data to Console
-              </button>
-            </div>
-          </div>
-
-          {/* Activities list with enhanced states */}
-          {status === 'loading' ? (
-            <LoadingSpinner />
-          ) : status === 'error' ? (
-            // Keep error style red
-            <div className="text-center py-12 px-6 bg-red-50 border border-red-200 rounded-2xl shadow-md">
-              <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-3" />
-              <p className="text-red-700 font-medium">Could not load activities.</p>
-              <p className="text-red-600 text-sm mt-1">{error?.message || "An unknown error occurred."}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-4 px-5 py-2 bg-white text-red-600 border border-red-300 rounded-full hover:bg-red-50 transition-colors shadow-sm"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : (
-            filteredActivities.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                {filteredActivities.map((activity) => (
-                  <ActivityCard key={activity.id} activity={activity} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 bg-white rounded-2xl shadow-lg border border-gray-100">
-                <Image
-                  src="/images/no-results.svg"
-                  alt="No activities found"
-                  width={150}
-                  height={150}
-                  className="mx-auto mb-6 opacity-80"
-                />
-                <h2 className="text-xl md:text-2xl font-semibold mb-2 text-gray-800">No Activities Found</h2>
-                <p className="text-gray-600 mb-6">Try adjusting your filters or check back later for new activities.</p>
-                <button
-                  onClick={() => handleClearFilters()}
-                  // Use primary button style
-                  className={buttonPrimaryStyle}
-                >
-                  Clear All Filters
-                </button>
-              </div>
-            )
-          )}
-
-          {/* Add a debug message if no activities are found */}
-          {status === 'success' && filteredActivities.length === 0 && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded relative my-6">
-              <strong className="font-bold">No activities found!</strong>
-              <p>Debug info: API status: {status}, Error: {error?.message || 'none'}, Data received: {activities.length}</p>
-              <p>Try clearing your filters or refreshing the page.</p>
-            </div>
-          )}
-
-          {/* Added Featured Activities section */}
-          <div className="mt-16 md:mt-20">
-            <div className="flex items-center justify-center mb-10">
-              {/* Updated icon color */}
-              <Award className={`text-[${primaryColorDarker}] mr-3 flex-shrink-0`} size={24} />
-              {/* Updated heading color */}
-              <h2 className={`text-2xl md:text-3xl font-bold text-[${primaryColorDarker}]`}>Popular Activities</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Featured Activity 1 */}
-              <div className="bg-white p-6 rounded-2xl shadow-lg text-center border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
-                {/* Updated icon background and color */}
-                <div className={`w-16 h-16 bg-[${primaryColorLightBg}] rounded-full flex items-center justify-center mx-auto mb-5`}>
-                  <Anchor className={`h-8 w-8 text-[${primaryColorDarker}]`} />
-                </div>
-                <h3 className="text-lg md:text-xl font-semibold mb-3 text-gray-800">Scuba Diving</h3>
-                <p className="text-gray-600 mb-5">
-                  Explore vibrant coral reefs and encounter exotic marine life in the crystal-clear waters of the Andaman Sea.
-                </p>
-                <Link href="/activities/scuba-diving" className={`text-[${primaryColor}] hover:text-[${primaryColorDarker}] font-medium inline-flex items-center`}>
-                  Learn More
-                  <span className="ml-1 transition-transform duration-300 group-hover:translate-x-1">→</span>
-                </Link>
-              </div>
-
-              {/* Featured Activity 2 */}
-              <div className="bg-white p-6 rounded-2xl shadow-lg text-center border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
-                {/* Updated icon background and color */}
-                <div className={`w-16 h-16 bg-[${primaryColorLightBg}] rounded-full flex items-center justify-center mx-auto mb-5`}>
-                  <Umbrella className={`h-8 w-8 text-[${primaryColorDarker}]`} />
-                </div>
-                <h3 className="text-lg md:text-xl font-semibold mb-3 text-gray-800">Beach Hopping</h3>
-                <p className="text-gray-600 mb-5">
-                  Visit the most beautiful beaches in Andaman, from the famous Radhanagar Beach to hidden gems only locals know about.
-                </p>
-                <Link href="/activities/beach-hopping" className={`text-[${primaryColor}] hover:text-[${primaryColorDarker}] font-medium inline-flex items-center`}>
-                  Learn More
-                  <span className="ml-1 transition-transform duration-300 group-hover:translate-x-1">→</span>
-                </Link>
-              </div>
-
-              {/* Featured Activity 3 */}
-              <div className="bg-white p-6 rounded-2xl shadow-lg text-center border border-gray-100 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
-                {/* Updated icon background and color */}
-                <div className={`w-16 h-16 bg-[${primaryColorLightBg}] rounded-full flex items-center justify-center mx-auto mb-5`}>
-                  <Camera className={`h-8 w-8 text-[${primaryColorDarker}]`} />
-                </div>
-                <h3 className="text-lg md:text-xl font-semibold mb-3 text-gray-800">Island Tours</h3>
-                <p className="text-gray-600 mb-5">
-                  Discover the unique culture, history, and natural wonders of the Andaman Islands with guided tours led by local experts.
-                </p>
-                <Link href="/activities/island-tours" className={`text-[${primaryColor}] hover:text-[${primaryColorDarker}] font-medium inline-flex items-center`}>
-                  Learn More
-                  <span className="ml-1 transition-transform duration-300 group-hover:translate-x-1">→</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Added Testimonials section */}
-          <div className="mt-16 md:mt-20">
-            <div className="flex items-center justify-center mb-10">
-              {/* Updated icon color */}
-              <MessageSquare className={`text-[${primaryColorDarker}] mr-3 flex-shrink-0`} size={24} />
-              {/* Updated heading color */}
-              <h2 className={`text-2xl md:text-3xl font-bold text-[${primaryColorDarker}]`}>What Travelers Say</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-              {/* Testimonial 1 */}
-              <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
-                <div className="flex items-center mb-4">
-                  {/* Updated avatar placeholder style */}
-                  <div className={`h-12 w-12 rounded-full bg-[${primaryColorLightBg}] flex items-center justify-center mr-4`}>
-                    <span className={`text-[${primaryColorDarker}] font-bold`}>AK</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800">Amit Kumar</h4>
-                    {/* Keeping star color yellow */}
-                    <div className="flex text-yellow-400">
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current" />
-                    </div>
-                  </div>
-                </div>
-                <p className="text-gray-600 italic">"The scuba diving experience was incredible! The instructors were professional and made me feel safe throughout the dive. Saw amazing coral and colorful fish!"</p>
-              </div>
-
-              {/* Testimonial 2 */}
-              <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
-                <div className="flex items-center mb-4">
-                  {/* Updated avatar placeholder style */}
-                  <div className={`h-12 w-12 rounded-full bg-[${primaryColorLightBg}] flex items-center justify-center mr-4`}>
-                    <span className={`text-[${primaryColorDarker}] font-bold`}>PG</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800">Priya Gupta</h4>
-                    {/* Keeping star color yellow */}
-                    <div className="flex text-yellow-400">
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current opacity-30" />
-                    </div>
-                  </div>
-                </div>
-                <p className="text-gray-600 italic">"The sea walking activity was a unique experience. It's perfect for those who want to explore underwater without diving certification. The guides were very helpful."</p>
-              </div>
-
-              {/* Testimonial 3 */}
-              <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
-                <div className="flex items-center mb-4">
-                  {/* Updated avatar placeholder style */}
-                  <div className={`h-12 w-12 rounded-full bg-[${primaryColorLightBg}] flex items-center justify-center mr-4`}>
-                    <span className={`text-[${primaryColorDarker}] font-bold`}>RS</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800">Rahul Singh</h4>
-                    {/* Keeping star color yellow */}
-                    <div className="flex text-yellow-400">
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current" />
-                      <Star size={16} className="fill-current" />
-                    </div>
-                  </div>
-                </div>
-                <p className="text-gray-600 italic">"The island tour was well organized and our guide was knowledgeable about the history and culture. We visited places we wouldn't have found on our own."</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Added FAQ section */}
-          <div className="mt-16 md:mt-20">
-            <div className="flex items-center justify-center mb-10">
-              {/* Updated icon color */}
-              <HelpCircle className={`text-[${primaryColorDarker}] mr-3 flex-shrink-0`} size={24} />
-              {/* Updated heading color */}
-              <h2 className={`text-2xl md:text-3xl font-bold text-[${primaryColorDarker}]`}>Frequently Asked Questions</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* FAQ Item 1 */}
-              <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Do I need to know swimming for water activities?</h3>
-                <p className="text-gray-600">For activities like scuba diving and snorkeling, basic swimming skills are recommended. However, for sea walking and glass-bottom boat rides, swimming knowledge is not required.</p>
-              </div>
-
-              {/* FAQ Item 2 */}
-              <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">What should I bring for activities?</h3>
-                <p className="text-gray-600">For most activities, bring comfortable clothing, sunscreen, a hat, and a water bottle. For water activities, bring a change of clothes and a towel. Specific requirements will be provided upon booking.</p>
-              </div>
-
-              {/* FAQ Item 3 */}
-              <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Can children participate in these activities?</h3>
-                <p className="text-gray-600">Many activities have age restrictions. Scuba diving typically requires participants to be at least 10 years old, while activities like glass-bottom boat rides are suitable for all ages.</p>
-              </div>
-
-              {/* FAQ Item 4 */}
-              <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">What is the cancellation policy?</h3>
-                <p className="text-gray-600">Cancellation policies vary by activity. Generally, full refunds are available if cancelled 24-48 hours before the scheduled time. Please check the specific policy for each activity.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Added Call to Action section */}
-          {/* Updated gradient */}
-          <div className={`mt-16 md:mt-20 bg-gradient-to-r from-[${primaryColor}] to-[${primaryColorDarker}] rounded-2xl p-8 md:p-10 text-center relative overflow-hidden shadow-lg`}>
-            {/* Background pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-white"></div>
-              <div className="absolute -left-20 -bottom-20 w-64 h-64 rounded-full bg-white"></div>
-            </div>
-
-            <div className="relative z-10">
-              <h2 className={`text-2xl md:text-3xl font-bold text-[${primaryColorDarker}]`}>Ready for an Adventure?</h2>
-              {/* Updated text color */}
-              <p className={`text-[${primaryColorLightestBg}] mb-6 max-w-2xl mx-auto`}>
-                Book your activities now and create unforgettable memories in the beautiful Andaman Islands.
-                Our team is ready to help you plan the perfect experience!
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                {/* Use CTA styles */}
-                <Link href="/packages" /* Or specific booking link */ className={ctaPrimaryOnDarkStyle}>
-                  Book an Activity
-                </Link>
-                <Link href="/contact" className={ctaSecondaryOnDarkStyle}>
-                  Contact Us
-                </Link>
-              </div>
-            </div>
+              </details>
+            ))}
           </div>
         </div>
-      </div>
-    </>
+      </section>
+      {/* --- END FAQ Section --- */}
+
+      {/* --- Testimonials Section (Styled like package list) --- */}
+      <section className={`${sectionPadding} bg-white`}>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center mb-10 md:mb-14">
+            <div
+              className={`w-12 h-12 ${neutralBg} rounded-full flex items-center justify-center mr-4 border ${neutralBorder}`}
+            >
+              {/* Replaced neutralIconColor with neutralTextLight */}
+              <MessageSquare className={neutralTextLight} size={24} />
+            </div>
+            <h2 className={sectionHeadingStyle}>What Our Adventurers Say</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className={`bg-white rounded-2xl p-6 border ${neutralBorderLight} shadow-lg flex flex-col text-center items-center transition-all duration-300 hover:shadow-xl hover:transform hover:-translate-y-2`}
+              >
+                {/* Replaced neutralIconColor with neutralTextLight */}
+                <Quote
+                  className={`w-10 h-10 ${neutralTextLight} opacity-30 mb-4`}
+                />
+                <p className={`text-base italic ${neutralTextLight} mb-6 flex-grow`}>
+                  "Testimonial {i}: The scuba diving was incredible! The instructors
+                  were professional and made us feel safe. Saw amazing coral and
+                  fish!"
+                </p>
+                <div
+                  className={`flex items-center justify-center flex-col mt-auto pt-4 border-t ${neutralBorderLight} w-full`}
+                >
+                  <Image
+                    src={`/images/avatar-${i}.jpg`}
+                    alt={`Adventurer ${i}`}
+                    width={56}
+                    height={56}
+                    className="rounded-full mb-3 border-2 border-white shadow-md"
+                  />
+                  <p className={`font-semibold ${neutralText}`}>Adventurer Name {i}</p>
+                  <div className="flex items-center mt-1">
+                    {[...Array(5)].map((_, s) => (
+                      <Star
+                        key={s}
+                        size={16}
+                        className={`fill-current text-yellow-400`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      {/* --- END Testimonials Section --- */}
+
+      {/* --- Call to Action Section (Styled like package list) --- */}
+      <section className={`${sectionPadding} ${primaryButtonBg} text-white`}>
+        <div className="container mx-auto px-4 text-center">
+          <ActivityIcon size={48} className="mx-auto mb-6 opacity-80" />
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Ready for Your Andaman Adventure?
+          </h2>
+          <p className="text-lg md:text-xl text-white/80 mb-8 max-w-2xl mx-auto">
+            Book your activities today and create unforgettable memories.
+          </p>
+          {/* Button style adjusted for dark background */}
+          <Link
+            href="/contact"
+            className={`inline-flex items-center justify-center bg-white ${neutralText} hover:bg-gray-100 font-semibold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1`}
+          >
+            Contact Us for Custom Plans
+          </Link>
+        </div>
+      </section>
+      {/* --- END Call to Action Section --- */}
+
+      {/* Footer - Neutral Dark */}
+      <footer className={`py-12 ${neutralBg} border-t ${neutralBorder}`}>
+        <div
+          className={`container mx-auto px-4 text-center ${neutralTextLight} text-sm`}
+        >
+          <p>
+            &copy; {new Date().getFullYear()} Your Company Name. All rights reserved.
+          </p>
+          <nav className="mt-4 space-x-4">
+            <Link href="/privacy" className={`hover:${neutralText}`}>
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className={`hover:${neutralText}`}>
+              Terms of Service
+            </Link>
+          </nav>
+        </div>
+      </footer>
+    </div>
   );
 }
 
-// Wrap the main content component with Suspense
+// --- Suspense Wrapper (Keep as is) ---
 export default function ActivitiesPage() {
-  console.log('🔍 [Activities Page] Main page component rendering');
+  // Add log to confirm top-level component render
+  console.log("🔍 [Activities Page] Rendering ActivitiesPage (Suspense Wrapper)");
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <ActivitiesContent />
     </Suspense>
   );
 }
+

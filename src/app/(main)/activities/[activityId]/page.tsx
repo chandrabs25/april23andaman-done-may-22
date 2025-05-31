@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -115,6 +115,10 @@ const DetailSection: React.FC<DetailSectionProps> = ({ title, icon: Icon, childr
 const ActivityDetailsPage = () => {
   const params = useParams();
   const activityId = params.activityId as string;
+  
+  // Add state for image loading
+  const [mainImageError, setMainImageError] = useState(false);
+  const [galleryImageErrors, setGalleryImageErrors] = useState<Record<number, boolean>>({});
 
   console.log("🔍 ActivityDetailPage: Loading activity with ID:", activityId);
 
@@ -183,6 +187,14 @@ const ActivityDetailsPage = () => {
     ? `${activity.duration} ${activity.duration_unit}`
     : activity.duration ? `${activity.duration} hours` : null;
 
+  const handleMainImageError = () => {
+    setMainImageError(true);
+  };
+
+  const handleGalleryImageError = (index: number) => {
+    setGalleryImageErrors(prev => ({ ...prev, [index]: true }));
+  };
+
   return (
     <div className="bg-white min-h-screen"> {/* Base background to white */}
       {/* Sticky Header */}
@@ -233,12 +245,19 @@ const ActivityDetailsPage = () => {
                 alt={`Main image for ${activity.name}`}
                 fill style={{ objectFit: 'cover' }}
                 className="bg-gray-100"
-                onError={(e) => { e.currentTarget.src = "/images/placeholder_service.jpg"; e.currentTarget.onerror = null; }}
+                onError={(e) => { 
+                  e.currentTarget.src = "/images/placeholder_service.jpg"; 
+                  e.currentTarget.onerror = null;
+                  handleMainImageError();
+                }}
                 priority unoptimized={true} sizes="(max-width: 1024px) 100vw, 66vw" loading="eager"
               />
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100/50 pointer-events-none">
-                <ImageOff size={48} className={`${neutralIconColor} opacity-50`} />
-              </div>
+              {/* Only show ImageOff overlay when there's an actual error */}
+              {mainImageError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100/50 pointer-events-none">
+                  <ImageOff size={48} className={`${neutralIconColor} opacity-50`} />
+                </div>
+              )}
             </div>
 
             {/* Gallery Images */}
@@ -249,12 +268,19 @@ const ActivityDetailsPage = () => {
                     <Image
                       src={img} alt={`${activity.name} gallery image ${index + 1}`}
                       fill style={{ objectFit: 'cover' }} className="bg-gray-100"
-                      onError={(e) => { e.currentTarget.src = "/images/placeholder_service.jpg"; e.currentTarget.onerror = null; }}
+                      onError={(e) => { 
+                        e.currentTarget.src = "/images/placeholder_service.jpg"; 
+                        e.currentTarget.onerror = null;
+                        handleGalleryImageError(index);
+                      }}
                       unoptimized={true} sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw" loading="lazy"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100/50 pointer-events-none">
-                      <ImageOff size={32} className={`${neutralIconColor} opacity-50`} />
-                    </div>
+                    {/* Only show ImageOff overlay when there's an actual error */}
+                    {galleryImageErrors[index] && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100/50 pointer-events-none">
+                        <ImageOff size={32} className={`${neutralIconColor} opacity-50`} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -152,10 +152,28 @@ interface PackageCardProps {
 }
 
 const PackageCard = ({ pkg }: PackageCardProps) => {
-  const imageUrl = (pkg.images_parsed && pkg.images_parsed.length > 0) ? pkg.images_parsed[0] : '/images/placeholder.jpg';
+  // Add image error state management
+  const [imgError, setImgError] = useState(false);
+  
+  // Robust image URL normalization
+  const normalizeImageUrl = (url: string | null | undefined): string => {
+    const placeholder = "/images/placeholder.jpg";
+    if (imgError || !url || typeof url !== 'string' || url.trim() === "" || ["null", "undefined"].includes(url.toLowerCase())) {
+      return placeholder;
+    }
+    // Handle both http URLs and relative paths
+    return url.startsWith("http") || url.startsWith("/") ? url : `/images/${url}`;
+  };
+  
+  const imageUrl = normalizeImageUrl((pkg.images_parsed && pkg.images_parsed.length > 0) ? pkg.images_parsed[0] : null);
   const includedServicesToDisplay = Array.isArray(pkg.included_services_parsed)
     ? pkg.included_services_parsed.slice(0, 3)
     : ['Hotel stays included', 'All transfers & sightseeing', 'Expert local guides'];
+
+  // Image error handler
+  const handleImageError = () => {
+    if (!imgError) setImgError(true);
+  };
 
   return (
     <div className={cardBaseStyle}> {/* Use cardBaseStyle */}
@@ -167,8 +185,16 @@ const PackageCard = ({ pkg }: PackageCardProps) => {
           className="object-cover transition-transform duration-700 group-hover:scale-110"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           priority={false}
-          onError={(e) => { if (e.currentTarget.src !== '/images/placeholder.jpg') e.currentTarget.src = '/images/placeholder.jpg'; }}
+          onError={handleImageError}
         />
+        
+        {/* Only show overlay when there's an actual error */}
+        {imageUrl === "/images/placeholder.jpg" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 pointer-events-none">
+            <PackageIcon size={36} className="text-gray-400 opacity-50" />
+          </div>
+        )}
+        
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         {/* Price badge - Neutral dark */}
         <div className={`absolute top-3 right-3 ${primaryButtonBg} ${primaryButtonText} text-sm font-bold py-1.5 px-3 rounded-full shadow-md flex items-center`}>
@@ -200,7 +226,7 @@ const PackageCard = ({ pkg }: PackageCardProps) => {
             </div>
           ))}
         </div>
-        <div className="flex justify-between items-center mt-auto pt-3 border-t ${neutralBorderLight}"> {/* Reduced pt */}
+        <div className={`flex justify-between items-center mt-auto pt-3 border-t ${neutralBorderLight}`}> {/* Reduced pt */}
           <span className={`${neutralTextLight} text-sm`}>
             From <span className={`font-semibold ${neutralText}`}>₹{pkg.base_price.toLocaleString('en-IN')}</span>
           </span>

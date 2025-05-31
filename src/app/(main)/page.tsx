@@ -358,7 +358,7 @@ export default function Home() {
       </div>
       <div className={cardContentStyle}>
         <h3 className={cardTitleStyle}>{pkg.name}</h3>
-        <p className={cardDescriptionStyle}>{pkg.description || 'An amazing package awaits.'}</p>
+        <div className="flex-1"></div>
         <div className={cardBottomStyle}>
           <div className="flex flex-col items-center">
             <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{pkg.base_price.toLocaleString('en-IN')}</span>
@@ -416,7 +416,7 @@ export default function Home() {
     // Format price for consistent display
     let formattedPrice = priceDisplay;
     let priceUnit = "";
-    
+
     if (service.service_category === 'rental' && specifics?.rental?.unit) {
       priceUnit = specifics.rental.unit;
     } else if (service.service_category === 'transport' && specifics?.transport?.price_per_km && !service.price_details) {
@@ -635,14 +635,14 @@ export default function Home() {
               </div>
               <div className="container mx-auto px-4 pt-4">
                 <div className="flex justify-center">
-                  <Link 
+                  <Link
                     href={
                       currentTabData.type === 'packages' ? '/packages' :
-                      currentTabData.type === 'destinations' ? '/destinations' :
-                      currentTabData.type === 'hotels' ? '/hotels' :
-                      currentTabData.type === 'activities' ? '/activities' :
-                      currentTabData.type === 'rentals' || currentTabData.type === 'transportation' ? '/services' :
-                      '#'
+                        currentTabData.type === 'destinations' ? '/destinations' :
+                          currentTabData.type === 'hotels' ? '/hotels' :
+                            currentTabData.type === 'activities' ? '/activities' :
+                              currentTabData.type === 'rentals' || currentTabData.type === 'transportation' ? '/services' :
+                                '#'
                     }
                     className="inline-flex items-center justify-center px-6 py-3 bg-[#1A237E] hover:bg-[#161D6F] text-white font-medium text-sm rounded-lg transition-colors duration-300 shadow-sm hover:shadow-md"
                   >

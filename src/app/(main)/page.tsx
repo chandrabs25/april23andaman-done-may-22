@@ -178,12 +178,13 @@ export default function Home() {
   // --- Common Styles ---
   const sectionPadding = "py-6 md:py-8";
   const cardBaseStyle = "flex flex-col bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg min-w-[300px] sm:min-w-[340px] h-[340px]";
-  const cardImageContainerStyle = "w-full aspect-video bg-cover rounded-t-xl relative flex-shrink-0";
-  const cardContentStyle = "p-3 sm:p-4 flex flex-col items-center flex-grow text-center";
-  const cardTitleStyle = "text-[#111518] text-base sm:text-lg font-medium leading-normal line-clamp-2 mb-1";
-  const cardDescriptionStyle = "text-[#637988] text-sm font-normal leading-normal line-clamp-2 flex-grow mb-2";
+  const cardImageContainerStyle = "w-full h-[180px] bg-cover rounded-t-xl relative flex-shrink-0 overflow-hidden";
+  const cardContentStyle = "p-3 sm:p-4 flex flex-col h-[160px] text-center";
+  const cardTitleStyle = "text-[#111518] text-base sm:text-lg font-medium leading-tight line-clamp-2 mb-2 h-[48px] flex items-center justify-center";
+  const cardDescriptionStyle = "text-[#637988] text-sm font-normal leading-relaxed line-clamp-2 flex-1 mb-3 overflow-hidden";
   const cardPriceStyle = "text-[#111518] text-lg font-bold";
   const cardLinkStyle = "text-sm font-medium text-[#1A237E] hover:text-[#161D6F] mt-auto pt-2 inline-flex items-center group";
+  const cardBottomStyle = "mt-auto pt-2 flex flex-col items-center justify-center min-h-[40px]";
 
   // Loading indicator component
   const loadingIndicator = (
@@ -315,6 +316,9 @@ export default function Home() {
       <div className={cardContentStyle}>
         <h3 className={cardTitleStyle}>{destination.name}</h3>
         <p className={cardDescriptionStyle}>{destination.description || 'Explore this beautiful destination.'}</p>
+        <div className={cardBottomStyle}>
+          <span className="text-sm text-[#1A237E] font-medium">Explore Destination</span>
+        </div>
       </div>
     </Link>
   );
@@ -328,13 +332,17 @@ export default function Home() {
         </div>
         <div className={cardContentStyle}>
           <h3 className={cardTitleStyle}>{hotel.name}</h3>
-          <p className={`${cardDescriptionStyle} line-clamp-1`}>{hotel.address}</p>
-          {price !== undefined && (
-            <div className="flex flex-col items-center mt-1 sm:flex-row sm:items-baseline sm:justify-center sm:space-x-1">
-              <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{price.toLocaleString('en-IN')}</span>
-              <span className="text-xs text-[#637988]">per night</span>
-            </div>
-          )}
+          <p className={cardDescriptionStyle}>{hotel.address}</p>
+          <div className={cardBottomStyle}>
+            {price !== undefined ? (
+              <div className="flex flex-col items-center">
+                <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{price.toLocaleString('en-IN')}</span>
+                <span className="text-xs text-[#637988]">per night</span>
+              </div>
+            ) : (
+              <span className="text-sm text-[#1A237E] font-medium">View Details</span>
+            )}
+          </div>
         </div>
       </Link>
     );
@@ -344,16 +352,18 @@ export default function Home() {
     <Link href={`/packages/${pkg.slug || pkg.id}`} className={cardBaseStyle}>
       <div className={cardImageContainerStyle}>
         <img src={getImageUrl(pkg.images_parsed)} alt={pkg.name} className="w-full h-full object-cover" onError={handleImageError} />
-        <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm">
+        <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm">
           <Clock size={12} className="inline mr-1 -mt-0.5" /> {pkg.duration}
         </div>
       </div>
       <div className={cardContentStyle}>
         <h3 className={cardTitleStyle}>{pkg.name}</h3>
         <p className={cardDescriptionStyle}>{pkg.description || 'An amazing package awaits.'}</p>
-        <div className="flex flex-col items-center mt-1 sm:flex-row sm:items-baseline sm:justify-center sm:space-x-1">
-          <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{pkg.base_price.toLocaleString('en-IN')}</span>
-          <span className="text-xs text-[#637988]">per person</span>
+        <div className={cardBottomStyle}>
+          <div className="flex flex-col items-center">
+            <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{pkg.base_price.toLocaleString('en-IN')}</span>
+            <span className="text-xs text-[#637988]">per person</span>
+          </div>
         </div>
       </div>
     </Link>
@@ -363,13 +373,19 @@ export default function Home() {
     <Link href={`/activities/${activity.slug || activity.id}`} className={cardBaseStyle}>
       <div className={cardImageContainerStyle}>
         <img src={getImageUrl(activity.images)} alt={activity.name} className="w-full h-full object-cover" onError={handleImageError} />
+        {activity.island_name && (
+          <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm">
+            <MapPin size={12} className="inline mr-1 -mt-0.5" />{activity.island_name}
+          </div>
+        )}
       </div>
       <div className={cardContentStyle}>
         <h3 className={cardTitleStyle}>{activity.name}</h3>
-        {activity.island_name && (<p className="text-xs text-[#637988] mb-1"><MapPin size={12} className="inline mr-1 -mt-0.5" />{activity.island_name}</p>)}
         <p className={cardDescriptionStyle}>{activity.description || 'Explore this exciting activity.'}</p>
-        <div className="flex justify-center items-center mt-1">
-          <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{isNaN(Number(activity.price)) ? activity.price : Number(activity.price).toLocaleString('en-IN')}</span>
+        <div className={cardBottomStyle}>
+          <div className="flex flex-col items-center">
+            <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{isNaN(Number(activity.price)) ? activity.price : Number(activity.price).toLocaleString('en-IN')}</span>
+          </div>
         </div>
       </div>
     </Link>
@@ -397,13 +413,24 @@ export default function Home() {
     let detailPath = `/services/${service.service_category}/${service.id}`;
     if (service.service_category === "activity") detailPath = `/activities/${service.id}`; // Should not happen here but for safety
 
+    // Format price for consistent display
+    let formattedPrice = priceDisplay;
+    let priceUnit = "";
+    
+    if (service.service_category === 'rental' && specifics?.rental?.unit) {
+      priceUnit = specifics.rental.unit;
+    } else if (service.service_category === 'transport' && specifics?.transport?.price_per_km && !service.price_details) {
+      priceUnit = "per km";
+    } else if (service.service_category === 'transport' && specifics?.transport?.price_per_trip && !service.price_details) {
+      priceUnit = "per trip";
+    }
 
     return (
       <Link href={detailPath} className={cardBaseStyle}>
         <div className={cardImageContainerStyle}>
           <img src={getImageUrl(service.images)} alt={service.name} className="w-full h-full object-cover" onError={handleImageError} />
           {detailText && (
-            <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm flex items-center">
+            <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm flex items-center">
               {service.service_category === 'transport' ? <Car size={12} className="mr-1.5 -mt-0.5" /> : <ShoppingBag size={12} className="mr-1.5 -mt-0.5" />}
               {detailText}
             </div>
@@ -412,18 +439,11 @@ export default function Home() {
         <div className={cardContentStyle}>
           <h3 className={cardTitleStyle}>{service.name}</h3>
           <p className={cardDescriptionStyle}>{service.description || 'Check out this service.'}</p>
-          <div className="flex flex-col items-center mt-1 sm:flex-row sm:items-baseline sm:justify-center sm:space-x-1">
-            <span className={cardPriceStyle}>{priceDisplay}</span>
-            {/* Add unit if available, e.g., per day for rentals */}
-            {service.service_category === 'rental' && specifics?.rental?.unit && (
-              <span className="text-xs text-[#637988]">{specifics.rental.unit}</span>
-            )}
-            {service.service_category === 'transport' && specifics?.transport?.price_per_km && !service.price_details && (
-              <span className="text-xs text-[#637988]">per km</span>
-            )}
-            {service.service_category === 'transport' && specifics?.transport?.price_per_trip && !service.price_details && (
-              <span className="text-xs text-[#637988]">per trip</span>
-            )}
+          <div className={cardBottomStyle}>
+            <div className="flex flex-col items-center">
+              <span className={cardPriceStyle}>{formattedPrice}</span>
+              {priceUnit && <span className="text-xs text-[#637988]">{priceUnit}</span>}
+            </div>
           </div>
         </div>
       </Link>
@@ -489,12 +509,11 @@ export default function Home() {
           onError={handleImageError}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-transparent z-10"></div>
-        {/* MODIFIED LINE BELOW: Added pb-28 sm:pb-28 md:pb-0 */}
         <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none pb-28 sm:pb-28 md:pb-0">
           <img
-            src="/images/brand-name.png"
+            src="/images/brand-name.webp"
             alt="Brand name logo"
-            style={{ maxWidth: '280px', height: 'auto' }}
+            className="w-[350px] sm:w-[450px] md:w-[500px] lg:w-[750px] h-auto opacity-90"
           />
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 z-30">

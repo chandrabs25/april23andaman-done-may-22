@@ -10,7 +10,6 @@ import {
   Menu,
   X,
   User,
-  Search,
   ShoppingCart,
   LogOut,
   ChevronDown,
@@ -122,19 +121,19 @@ const Header = () => {
       
 
       {/* Main Header */}
-      <div className="container mx-auto px-4 py-2">
+      <div className="container mx-auto px-4 py-1">
         <div className="flex justify-between items-center">
           {/* Logo (Reverted to original src) */}
           <div className="flex-shrink-0">
             <Link href="/" className="inline-block align-middle" onClick={closeMenu}>
-              <div className="relative h-9 w-36">
+              <div className="relative h-11 w-40">
                 <Image
-                  src="/images/logo01.webp" // Reverted src
+                  src="/images/logoresized.webp" // Reverted src
                   alt="Reach Andaman Logo"
                   fill
                   className="object-contain"
                   priority
-                  sizes="(max-width: 768px) 100px, 144px"
+                  sizes="(max-width: 768px) 120px, 160px"
                 />
               </div>
             </Link>
@@ -198,7 +197,6 @@ const Header = () => {
 
           {/* User Actions & Mobile Toggle */}
           <div className="flex items-center space-x-2">
-            <button className={iconHoverStyle} aria-label="Search"><Search size={18} /></button>
             <Link href="/wishlist" className={`hidden sm:flex relative ${iconHoverStyle}`} aria-label="Wishlist">
               <Heart size={18} />
               <span className={`absolute -top-0.5 -right-0.5 bg-[${primaryColor}] text-white text-[9px] rounded-full h-3.5 w-3.5 flex items-center justify-center`}>0</span>
@@ -241,7 +239,6 @@ const Header = () => {
             <div
               className="fixed inset-y-0 right-0 w-[85%] max-w-sm h-screen bg-white shadow-xl overflow-y-auto transition-transform duration-300 ease-out transform translate-x-0"
               onClick={(e) => e.stopPropagation()}
-              style={{ top: `calc(${isScrolled ? '0px' : '40px'} + 0.5rem)` }} // Adjust top based on scroll state and top bar height + main header padding
             >
               <div className="p-5 pt-6">
                 <button onClick={closeMenu} className={`absolute top-4 right-4 ${iconHoverStyle}`} aria-label="Close menu"><X size={24} /></button>
@@ -341,14 +338,6 @@ const Header = () => {
                     <Heart size={18} className="mr-3 text-gray-500" />Wishlist
                   </Link>
                 </nav>
-
-                {/* Search Bar */}
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="relative">
-                    <input type="text" placeholder="Search..." className={`w-full px-4 py-3 pl-10 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[${primaryColor}] focus:border-[${primaryColor}]`} />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  </div>
-                </div>
 
                 {/* Contact Info */}
                 <div className="mt-6 pt-6 border-t border-gray-200 text-sm text-gray-600">

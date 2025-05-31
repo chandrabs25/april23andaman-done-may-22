@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation"; // Added useSearchParams
 import Link from "next/link";
 import Image from "next/image";
 import { useFetch } from "@/hooks/useFetch"; // Assuming this hook exists
@@ -107,11 +107,16 @@ const DetailSection: React.FC<DetailSectionProps> = ({ title, icon: Icon, childr
 const TransportServiceDetailPage = () => {
   const params = useParams();
   const serviceId = params.serviceId as string;
+  const searchParams = useSearchParams(); // Added
+  const isAdminPreview = searchParams.get('isAdminPreview') === 'true'; // Added
 
   console.log("🔍 TransportServiceDetailPage: Loading service with ID:", serviceId);
 
   // Fetch data using the custom hook
-  const { data: apiResponse, error, status } = useFetch<SingleServiceResponse>(serviceId ? `/api/services-main/${serviceId}` : null);
+  const apiUrl = isAdminPreview
+    ? `/api/admin/service_preview/${serviceId}`
+    : `/api/services-main/${serviceId}`;
+  const { data: apiResponse, error, status } = useFetch<SingleServiceResponse>(serviceId ? apiUrl : null);
 
   const isLoading = status === "loading";
   const fetchError = status === "error" ? error : null;
@@ -279,6 +284,12 @@ const TransportServiceDetailPage = () => {
   // --- JSX Structure using the imported theme ---
   return (
     <div className={`${neutralBgLight} min-h-screen`}>
+      {isAdminPreview && (
+        <div className="container mx-auto px-4 py-3 my-4 text-center bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg shadow">
+          <p className="font-semibold text-base">ADMIN PREVIEW MODE</p>
+          <p className="text-sm">You are viewing this transport service as an administrator. Approval status is shown below.</p>
+        </div>
+      )}
       {/* Hero Section */}
       <div className={`relative h-[50vh] md:h-[60vh] w-full ${galleryMainImageContainerStyle.replace('rounded-2xl shadow-lg border', 'rounded-none shadow-none border-none')}`}>
         <Image
@@ -305,7 +316,14 @@ const TransportServiceDetailPage = () => {
                 <li className={`${breadcrumbItemStyle} ${neutralTextLight.replace('text-gray-600', 'text-white/90')}`}><span className="font-medium line-clamp-1">{service.name}</span></li>
               </ol>
             </nav>
-            <h1 className="text-3xl md:text-5xl font-bold mb-3 drop-shadow-lg">{service.name}</h1>
+            <h1 className="text-3xl md:text-5xl font-bold mb-3 drop-shadow-lg">
+              {service.name}
+              {isAdminPreview && service.is_admin_approved !== undefined && (
+                <span className={`ml-3 text-base align-middle font-medium px-3 py-1 rounded-full ${service.is_admin_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  Status: {service.is_admin_approved ? 'Approved' : 'Pending Approval'}
+                </span>
+              )}
+            </h1>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-white/90 text-sm md:text-base">
               {service.island_name && <span className="flex items-center"><MapPin size={16} className="mr-1.5" /> {service.island_name}</span>}
               {transportDetails.vehicle_type && <span className="flex items-center"><Car size={16} className="mr-1.5" /> {transportDetails.vehicle_type}</span>}

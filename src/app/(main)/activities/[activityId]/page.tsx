@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation"; // Added useSearchParams
 import Link from "next/link";
 import Image from "next/image";
 import { useFetch } from "@/hooks/useFetch";
@@ -115,6 +115,8 @@ const DetailSection: React.FC<DetailSectionProps> = ({ title, icon: Icon, childr
 const ActivityDetailsPage = () => {
   const params = useParams();
   const activityId = params.activityId as string;
+  const searchParams = useSearchParams(); // Added
+  const isAdminPreview = searchParams.get('isAdminPreview') === 'true'; // Added
   
   // Add state for image loading
   const [mainImageError, setMainImageError] = useState(false);
@@ -122,7 +124,10 @@ const ActivityDetailsPage = () => {
 
   console.log("🔍 ActivityDetailPage: Loading activity with ID:", activityId);
 
-  const { data: apiResponse, error, status } = useFetch<SingleServiceResponse>(activityId ? `/api/services-main/${activityId}` : null);
+  const apiUrl = isAdminPreview
+    ? `/api/admin/service_preview/${activityId}`
+    : `/api/services-main/${activityId}`;
+  const { data: apiResponse, error, status } = useFetch<SingleServiceResponse>(activityId ? apiUrl : null);
 
   const isLoading = status === "loading";
   const fetchError = status === "error" ? error : null;
@@ -197,6 +202,12 @@ const ActivityDetailsPage = () => {
 
   return (
     <div className="bg-white min-h-screen"> {/* Base background to white */}
+      {isAdminPreview && (
+        <div className="container mx-auto px-4 py-3 my-4 text-center bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg shadow">
+          <p className="font-semibold text-base">ADMIN PREVIEW MODE</p>
+          <p className="text-sm">You are viewing this activity as an administrator. Approval status is shown below.</p>
+        </div>
+      )}
       {/* Sticky Header */}
       <div className={`bg-white shadow-sm py-3 sticky top-0 z-40 border-b ${neutralBorderLight}`}>
         <div className="container mx-auto px-4 flex justify-between items-center">
@@ -211,7 +222,14 @@ const ActivityDetailsPage = () => {
       <div className={`container mx-auto px-4 ${sectionPadding}`}>
         {/* Service Title and Meta */}
         <div className="mb-8">
-          <h1 className={`text-3xl md:text-4xl font-bold ${neutralText} mb-2`}>{activity.name}</h1>
+          <h1 className={`text-3xl md:text-4xl font-bold ${neutralText} mb-2`}>
+            {activity.name}
+            {isAdminPreview && activity.is_admin_approved !== undefined && (
+              <span className={`ml-3 text-sm align-middle font-medium px-2.5 py-0.5 rounded-full ${activity.is_admin_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                Status: {activity.is_admin_approved ? 'Approved' : 'Pending Approval'}
+              </span>
+            )}
+          </h1>
           <div className={`flex flex-wrap items-center text-sm ${neutralTextLight} gap-x-4 gap-y-1.5`}>
             {activity.island_name && <span className="flex items-center"><MapPin size={15} className={`mr-1.5 ${neutralIconColor}`} /> {activity.island_name}</span>}
             {formattedDuration && <span className="flex items-center"><Clock size={15} className={`mr-1.5 ${neutralIconColor}`} /> {formattedDuration}</span>}

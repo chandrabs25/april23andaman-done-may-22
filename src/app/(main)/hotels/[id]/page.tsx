@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import Link from "next/link";
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation'; // Added useSearchParams
 import { useFetch } from "@/hooks/useFetch";
 import type { Hotel, Room } from "@/types/hotel";
 import {
@@ -101,6 +101,8 @@ const DetailSection: React.FC<DetailSectionProps> = ({ id, title, icon: Icon, ch
 const HotelDetailPage = () => {
   const params = useParams();
   const hotelId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const searchParams = useSearchParams(); // Added
+  const isAdminPreview = searchParams.get('isAdminPreview') === 'true'; // Added
   const [retryToken, setRetryToken] = useState(0);
 
   // Construct focus ring classes based on the primaryButtonBg variable
@@ -108,14 +110,21 @@ const HotelDetailPage = () => {
   const focusRingColorShade = primaryButtonBg?.split('-')[2] || '500'; 
   const focusRingClass = `focus:ring-${focusRingColorName}-${focusRingColorShade}`;
 
+  const apiUrl = isAdminPreview
+    ? `/api/admin/hotel_preview/${hotelId}?_retry=${retryToken}`
+    : `/api/hotels/${hotelId}?_retry=${retryToken}`;
+
   const {
-    data: selectedHotelData,
+    data: rawHotelData, // Renamed to rawHotelData
     error: selectedHotelError,
     status: selectedHotelStatus,
-  } = useFetch<Hotel>(`/api/hotels/${hotelId}?_retry=${retryToken}`);
+  } = useFetch<any>(apiUrl); // Use <any> for now, will type check 'data' property later
 
   const isLoadingSelectedHotel = selectedHotelStatus === 'loading';
-  const selectedHotel = selectedHotelData && 'id' in selectedHotelData ? selectedHotelData : undefined;
+
+  const selectedHotel: Hotel | undefined = isAdminPreview
+    ? (rawHotelData?.success ? rawHotelData.data : undefined)
+    : (rawHotelData && 'id' in rawHotelData ? rawHotelData : undefined);
 
   const normalizeImageUrl = (url: string | null | undefined): string => {
     const placeholder = "https://placehold.co/600x400/E2E8F0/AAAAAA?text=No+Image+Available";
@@ -143,7 +152,18 @@ const HotelDetailPage = () => {
   };
 
   if (isLoadingSelectedHotel) return <LoadingState message="Loading Hotel Details..." />;
-  if (selectedHotelError || !selectedHotel) return <ErrorState message={selectedHotelError?.message || "Hotel details could not be found."} onRetry={() => setRetryToken(c => c + 1)} />;
+
+  // Updated Error Handling
+  if (selectedHotelError || (isAdminPreview && !rawHotelData?.success) || (!isAdminPreview && !selectedHotel && rawHotelData)) {
+    // If it's admin preview and success is false, or if it's not admin and selectedHotel is not derived (but rawHotelData might exist with error)
+    // This also covers cases where rawHotelData itself might be an error object from useFetch if the request failed fundamentally.
+    const message = selectedHotelError?.message ||
+                    (isAdminPreview && rawHotelData?.message) ||
+                    (!isAdminPreview && rawHotelData && !rawHotelData.id ? "Hotel data is not in expected format." : "Hotel details could not be found.");
+    return <ErrorState message={message} onRetry={() => setRetryToken(c => c + 1)} />;
+  }
+  // Final check if selectedHotel is truly undefined after all logic.
+  if (!selectedHotel) return <ErrorState message={"Hotel details could not be loaded or processed."} onRetry={() => setRetryToken(c => c + 1)} />;
 
   let calculatedMinPrice: number | null = null;
   if (selectedHotel.rooms && selectedHotel.rooms.length > 0) {
@@ -159,6 +179,12 @@ const HotelDetailPage = () => {
 
   return (
     <div className={`${neutralBgLight} min-h-screen`}>
+      {isAdminPreview && (
+        <div className="container mx-auto px-4 py-3 my-4 text-center bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg shadow">
+          <p className="font-semibold text-base">ADMIN PREVIEW MODE</p>
+          <p className="text-sm">You are viewing this page as an administrator. Approval statuses are shown below.</p>
+        </div>
+      )}
       {/* Sticky Header for Back Button - Themed */}
       <div className={`bg-white shadow-md py-3 sticky top-0 z-40 border-b ${neutralBorderLight}`}>
         <div className="container mx-auto px-4 flex justify-between items-center">
@@ -189,7 +215,14 @@ const HotelDetailPage = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white">
               <div className="container mx-auto">
-                  <h1 className="text-3xl md:text-5xl font-bold mb-2 drop-shadow-lg">{selectedHotel.name}</h1>
+                  <h1 className="text-3xl md:text-5xl font-bold mb-2 drop-shadow-lg">
+                    {selectedHotel.name}
+                    {isAdminPreview && typeof selectedHotel.is_admin_approved === 'number' && (
+                      <span className={`ml-3 text-base align-middle font-medium px-3 py-1 rounded-full ${selectedHotel.is_admin_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        Status: {selectedHotel.is_admin_approved ? 'Approved' : 'Pending Approval'}
+                      </span>
+                    )}
+                  </h1>
                   <div className={`flex flex-wrap items-center text-sm md:text-base ${neutralTextLight} text-white/90 gap-x-4 gap-y-1 drop-shadow-sm`}>
                       <span className="flex items-center"><MapPin size={16} className="mr-1.5" /> {selectedHotel.address}</span>
                   </div>
@@ -271,7 +304,14 @@ const HotelDetailPage = () => {
                             </div>
                           )}
                           <div className="p-4 md:p-5 flex-grow flex flex-col">
-                            <h3 className={`text-lg md:text-xl font-semibold ${neutralText} mb-2`}>{room.room_type_name}</h3>
+                            <h3 className={`text-lg md:text-xl font-semibold ${neutralText} mb-2`}>
+                              {room.room_type_name}
+                              {isAdminPreview && typeof room.is_admin_approved === 'number' && (
+                                <span className={`ml-2 text-xs font-medium px-2 py-0.5 rounded-full ${room.is_admin_approved ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                  {room.is_admin_approved ? 'Approved' : 'Pending'}
+                                </span>
+                              )}
+                            </h3>
                             <div className={`grid grid-cols-2 gap-x-4 gap-y-2 text-sm ${neutralTextLight} mb-3`}>
                               <div className="flex items-center"><Users className={`h-4 w-4 mr-2 ${neutralIconColor}`} /> {room.capacity_adults} Adults{room.capacity_children ? `, ${room.capacity_children} Ch.` : ""}</div>
                               {typeof room.quantity_available === 'number' && (

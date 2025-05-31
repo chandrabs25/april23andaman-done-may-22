@@ -423,8 +423,8 @@ function PackagesContent() {
               <Search size={18} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${neutralIconColor}`} />
             </div>
 
-            {/* Filter Controls */}
-            <div className="flex items-center gap-3 flex-wrap">
+            {/* Filter Controls - Hidden on mobile, visible on desktop */}
+            <div className="hidden md:flex items-center gap-3 flex-wrap">
               {/* Duration Dropdown */}
               <div className="relative">
                 <select
@@ -473,8 +473,8 @@ function PackagesContent() {
             </div>
           </div>
 
-          {/* Quick Destination Buttons */}
-          <div className="mt-3 flex flex-wrap gap-2">
+          {/* Quick Destination Buttons - Hidden on mobile, visible on desktop */}
+          <div className="hidden md:flex mt-3 flex-wrap gap-2">
             <span className={`text-xs font-medium ${neutralTextLight} mr-2 mt-1`}>Popular:</span>
             {['Havelock', 'Neil Island', 'Port Blair', 'Honeymoon', 'Family'].map(dest => (
               <button
@@ -521,8 +521,8 @@ function PackagesContent() {
             <>
               {filteredPackages.length > 0 ? (
                 <>
-                  {/* Results Count and Sorting (UI only) */}
-                  <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+                  {/* Results Count and Sorting (UI only) - Hidden on mobile, visible on desktop */}
+                  <div className="hidden md:flex flex-col md:flex-row justify-between items-center mb-8">
                     <p className={`${neutralTextLight} text-sm mb-4 md:mb-0`}>
                       Showing <span className={`font-semibold ${neutralText}`}>{filteredPackages.length}</span> of <span className={`font-semibold ${neutralText}`}>{paginationInfo?.totalItems || packages.length}</span> packages
                     </p>

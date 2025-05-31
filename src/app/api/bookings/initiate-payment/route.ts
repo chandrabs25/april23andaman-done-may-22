@@ -96,8 +96,8 @@ export async function POST(request: NextRequest) {
       console.error("Database error creating booking with D1:", dbError);
       return NextResponse.json({ success: false, message: "Failed to save booking details." }, { status: 500 });
     }
-    
-    
+
+
     const clientRedirectUrl = `${process.env.NGROK_PUBLIC_URL}/api/bookings/booking-payment-status?mtid=${newBookingIdAsString}`;
     // THIS IS THE CRUCIAL LOG:
     console.log("DEBUG: Sending this redirectUrl to PhonePe (clientRedirectUrl):", clientRedirectUrl);

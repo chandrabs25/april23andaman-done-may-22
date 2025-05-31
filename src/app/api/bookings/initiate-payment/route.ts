@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: BookingDetails = await request.json();
+    console.log("DEBUG: Received booking details:", JSON.stringify(body, null, 2));
 
     if (!body.packageId || !body.categoryId || !body.totalPeople || body.totalPeople <= 0 || !body.dates?.startDate || !body.dates?.endDate) {
       return NextResponse.json({ success: false, message: "Missing or invalid booking details." }, { status: 400 });

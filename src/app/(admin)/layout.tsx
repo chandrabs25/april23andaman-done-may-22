@@ -108,12 +108,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) { // Removed
       href: '/admin_approvals',
       label: 'Approvals',
       icon: <CheckCircleIcon className="h-5 w-5" />
-    },
-    {
-      href: '/admin_users',
-      label: 'Users',
-      icon: <UsersIcon className="h-5 w-5" />
     }
+    // Removed Users link:
+    // {
+    //   href: '/admin_users',
+    //   label: 'Users',
+    //   icon: <UsersIcon className="h-5 w-5" />
+    // }
   ];
 
   return (

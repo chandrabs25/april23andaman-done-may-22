@@ -145,9 +145,9 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('Error fetching pending approvals:', error);
+    console.error('Error fetching items for admin status page:', error); // Updated console message
     const apiError: ApiError = {
-      message: 'Failed to fetch pending approvals',
+      message: 'Failed to fetch items for admin status page', // Updated error message
       error: error instanceof Error ? error.message : 'An unknown error occurred'
     };
     return NextResponse.json({

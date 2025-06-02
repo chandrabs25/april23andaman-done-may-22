@@ -6,10 +6,10 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CheckIcon, XIcon, EyeIcon, Loader2 } from 'lucide-react';
+import { CheckIcon, XIcon, EyeIcon, Loader2, InfoIcon } from 'lucide-react'; // Added InfoIcon for status
 
 // Define types for our data
-interface UnapprovedItem {
+interface ManagedItem { // Renamed from UnapprovedItem
   id: number;
   name?: string;
   hotel_name?: string;
@@ -21,6 +21,7 @@ interface UnapprovedItem {
   price_per_night?: number;
   created_at: string;
   hotel_service_id?: number; // For rooms
+  is_admin_approved?: number | null; // Added field
 }
 
 interface PaginationInfo {
@@ -34,14 +35,14 @@ interface ApiResponse {
   success: boolean;
   message: string;
   data: {
-    items: UnapprovedItem[];
+    items: ManagedItem[]; // Updated to ManagedItem
     pagination: PaginationInfo;
   };
   error?: string;
 }
 
 // Loading Spinner Component
-const LoadingSpinner = ({ text = "Loading..." }: { text?: string }) => (
+const LoadingSpinner = ({ text = "Loading..." }: { text?: string }) => ( // Default text updated later if needed
   <div className="flex justify-center items-center py-10">
     <Loader2 className="h-6 w-6 animate-spin text-blue-600 mr-2" />
     <span>{text}</span>
@@ -54,7 +55,7 @@ function AdminApprovalsContent() {
   const router = useRouter();
   const type = searchParams.get('type') || 'all';
   
-  const [items, setItems] = useState<UnapprovedItem[]>([]);
+  const [items, setItems] = useState<ManagedItem[]>([]); // Updated to ManagedItem
   const [loading, setLoading] = useState(false); // Default to not loading for SSR
   const [error, setError] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<Record<string, boolean>>({});
@@ -82,8 +83,8 @@ function AdminApprovalsContent() {
     { value: 'services', label: 'Services' }
   ];
 
-  // Hoisted fetchPendingApprovals function
-  const fetchPendingApprovals = async () => {
+  // Renamed and hoisted function
+  const fetchAllItemsForStatusPage = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -107,21 +108,21 @@ function AdminApprovalsContent() {
         setItems(data.data.items);
         setPagination(data.data.pagination);
       } else {
-        throw new Error(data.message || 'Failed to fetch approvals');
+        throw new Error(data.message || 'Failed to fetch items for status page'); // Updated error message
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      console.error('Failed to fetch approvals:', err);
+      console.error('Failed to fetch items for status page:', err); // Updated error message
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch pending approvals data on component mount and when searchParams change
+  // Fetch items data on component mount and when searchParams change
   useEffect(() => {
     if (!isBrowser) return;
-    fetchPendingApprovals();
-  }, [searchParams, isBrowser]); // Removed 'type' from dep array as fetchPendingApprovals now uses searchParams directly for type
+    fetchAllItemsForStatusPage(); // Renamed call
+  }, [searchParams, isBrowser]);
 
   // Handle page change
   const handlePageChange = (newPage: number) => {
@@ -155,7 +156,7 @@ function AdminApprovalsContent() {
   };
 
   // Handle approve action
-  const handleApprove = async (item: UnapprovedItem) => {
+  const handleApprove = async (item: ManagedItem) => { // Updated to ManagedItem
     if (actionInProgress[`${getApiTypeId(item)}_${item.id}`]) {
       return; // Don't allow multiple simultaneous actions on the same item
     }
@@ -189,10 +190,7 @@ function AdminApprovalsContent() {
       }
       
       if (data.success) {
-        // Remove the approved item from the list
-        setItems(items.filter(i => !(i.id === item.id && getItemType(i) === getItemType(item))));
-        // Update pagination
-        setPagination(prev => ({ ...prev, totalItems: prev.totalItems - 1 }));
+        fetchAllItemsForStatusPage(); // Refresh list
       } else {
         throw new Error(data.message || 'Failed to approve item');
       }
@@ -210,7 +208,7 @@ function AdminApprovalsContent() {
   };
 
   // Handle reject action
-  const handleReject = async (item: UnapprovedItem) => {
+  const handleReject = async (item: ManagedItem) => { // Updated to ManagedItem
     if (actionInProgress[`${getApiTypeId(item)}_${item.id}`]) {
       return; // Don't allow multiple simultaneous actions on the same item
     }
@@ -252,7 +250,7 @@ function AdminApprovalsContent() {
       
       if (data.success) {
         // Instead of client-side filtering, refresh data from server
-        fetchPendingApprovals();
+        fetchAllItemsForStatusPage(); // Renamed call
         // Optionally, show a success toast/message here
         // e.g., toast.success('Item rejected successfully');
       } else {
@@ -272,7 +270,7 @@ function AdminApprovalsContent() {
   };
 
   // Helper to get the view URL for a specific item
-  const getViewUrl = (item: UnapprovedItem): string => {
+  const getViewUrl = (item: ManagedItem): string => { // Updated to ManagedItem
     let baseUrl = '#';
     const queryParams = '?isAdminPreview=true';
 
@@ -291,7 +289,7 @@ function AdminApprovalsContent() {
   };
 
   // Helper to get the human-readable item type
-  const getItemType = (item: UnapprovedItem): string => {
+  const getItemType = (item: ManagedItem): string => { // Updated to ManagedItem
     if (item.room_type) {
       return 'room';
     }
@@ -305,7 +303,7 @@ function AdminApprovalsContent() {
   };
 
   // Helper to get API type ID for the approval endpoint
-  const getApiTypeId = (item: UnapprovedItem): string => {
+  const getApiTypeId = (item: ManagedItem): string => { // Updated to ManagedItem
     if (item.room_type) {
       return 'room';
     }
@@ -316,7 +314,7 @@ function AdminApprovalsContent() {
   };
 
   // Helper to get the name of the item
-  const getItemName = (item: UnapprovedItem): string => {
+  const getItemName = (item: ManagedItem): string => { // Updated to ManagedItem
     if (item.room_type) {
       return `${item.room_type} at ${item.hotel_name || 'Unknown Hotel'}`;
     }
@@ -324,7 +322,7 @@ function AdminApprovalsContent() {
   };
 
   // Helper to get the price display
-  const getPriceDisplay = (item: UnapprovedItem): string => {
+  const getPriceDisplay = (item: ManagedItem): string => { // Updated to ManagedItem
     if (item.price_per_night) {
       return `₹${item.price_per_night}/night`;
     }
@@ -334,9 +332,20 @@ function AdminApprovalsContent() {
     return 'N/A';
   };
 
+  };
+
+  const getItemApprovalStatus = (itemValue: number | null | undefined) => {
+    if (itemValue === 1) {
+      return { text: 'Approved', className: 'bg-green-100 text-green-700' };
+    } else if (itemValue === 0) {
+      return { text: 'Pending/Rejected', className: 'bg-yellow-100 text-yellow-700' };
+    }
+    return { text: 'Pending', className: 'bg-gray-100 text-gray-700' }; // Fallback for null/undefined
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold mb-6">Pending Approvals</h1>
+      <h1 className="text-2xl font-semibold mb-6">Manage Item Statuses</h1> {/* Updated Title */}
 
       {/* Tabs for filtering */}
       <div className="border-b border-gray-200">
@@ -367,13 +376,13 @@ function AdminApprovalsContent() {
 
       {/* Loading state */}
       {!isBrowser || loading ? (
-        <LoadingSpinner text="Loading pending approvals..." />
+        <LoadingSpinner text="Loading item statuses..." /> // Updated loading text
       ) : (
         <>
           {/* Items table */}
           {items.length === 0 ? (
             <div className="bg-white p-6 text-center rounded-lg shadow">
-              <p className="text-gray-500">No pending approvals found.</p>
+              <p className="text-gray-500">No items found for the selected criteria.</p> {/* Updated empty state text */}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -385,6 +394,7 @@ function AdminApprovalsContent() {
                     <th className="py-3 px-4 text-left">Name</th>
                     <th className="py-3 px-4 text-left">Price</th>
                     <th className="py-3 px-4 text-left">Submitted</th>
+                    <th className="py-3 px-4 text-left">Status</th> {/* New Column */}
                     <th className="py-3 px-4 text-left">Actions</th>
                   </tr>
                 </thead>
@@ -398,6 +408,11 @@ function AdminApprovalsContent() {
                       <td className="py-3 px-4">{getItemName(item)}</td>
                       <td className="py-3 px-4">{getPriceDisplay(item)}</td>
                       <td className="py-3 px-4">{formatDate(item.created_at)}</td>
+                      <td className="py-3 px-4"> {/* New Cell for Status */}
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getItemApprovalStatus(item.is_admin_approved).className}`}>
+                          {getItemApprovalStatus(item.is_admin_approved).text}
+                        </span>
+                      </td>
                       <td className="py-3 px-4">
                         <div className="flex space-x-2">
                           {/* View button */}
@@ -410,23 +425,27 @@ function AdminApprovalsContent() {
                             <EyeIcon className="h-5 w-5" />
                           </Link>
 
-                          {/* Approve button */}
-                          <button
-                            onClick={() => handleApprove(item)}
-                            className="text-green-600 hover:text-green-800 disabled:opacity-50"
-                            disabled={!!actionInProgress[`${getApiTypeId(item)}_${item.id}`]}
-                          >
-                            <CheckIcon className="h-5 w-5" />
-                          </button>
+                          {/* Approve button - Conditional */}
+                          {item.is_admin_approved !== 1 && (
+                            <button
+                              onClick={() => handleApprove(item)}
+                              className="text-green-600 hover:text-green-800 disabled:opacity-50"
+                              disabled={!!actionInProgress[`${getApiTypeId(item)}_${item.id}`]}
+                            >
+                              <CheckIcon className="h-5 w-5" />
+                            </button>
+                          )}
 
-                          {/* Reject button */}
-                          <button
-                            onClick={() => handleReject(item)}
-                            className="text-red-600 hover:text-red-800 disabled:opacity-50"
-                            disabled={!!actionInProgress[`${getApiTypeId(item)}_${item.id}`]}
-                          >
-                            <XIcon className="h-5 w-5" />
-                          </button>
+                          {/* Reject button - Conditional */}
+                          {item.is_admin_approved !== 0 && (
+                            <button
+                              onClick={() => handleReject(item)}
+                              className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                              disabled={!!actionInProgress[`${getApiTypeId(item)}_${item.id}`]}
+                            >
+                              <XIcon className="h-5 w-5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

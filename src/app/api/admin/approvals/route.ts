@@ -63,9 +63,9 @@ export async function GET(request: NextRequest) {
     if (!type || type === 'all') {
       // For "all", we need to fetch each type separately then combine
       const [hotelsResult, hotelRoomsResult, servicesResult] = await Promise.all([
-        dbService.getUnapprovedHotels(limit, offset),
-        dbService.getUnapprovedHotelRooms(limit, offset),
-        dbService.getUnapprovedServices(limit, offset)
+        dbService.getAllHotelsForAdminStatusPage(limit, offset), // Updated
+        dbService.getAllHotelRoomsForAdminStatusPage(limit, offset), // Updated
+        dbService.getAllOtherServicesForAdminStatusPage(limit, offset) // Updated
       ]);
       
       // Combine results
@@ -77,9 +77,9 @@ export async function GET(request: NextRequest) {
       
       // Get total count for pagination
       const [hotelCount, roomCount, serviceCount] = await Promise.all([
-        dbService.countUnapprovedHotels(),
-        dbService.countUnapprovedHotelRooms(),
-        dbService.countUnapprovedServices()
+        dbService.countAllHotelsForAdminStatusPage(), // Updated
+        dbService.countAllHotelRoomsForAdminStatusPage(), // Updated
+        dbService.countAllOtherServicesForAdminStatusPage() // Updated
       ]);
       
       total = (hotelCount?.total || 0) + (roomCount?.total || 0) + (serviceCount?.total || 0);
@@ -96,23 +96,23 @@ export async function GET(request: NextRequest) {
       // Handle specific type filter
       switch (type) {
         case 'hotels':
-          const hotelsResult = await dbService.getUnapprovedHotels(limit, offset);
+          const hotelsResult = await dbService.getAllHotelsForAdminStatusPage(limit, offset); // Updated
           items = (hotelsResult.results || []).map(h => ({ ...h, type: 'hotel' }));
-          const hotelCount = await dbService.countUnapprovedHotels();
+          const hotelCount = await dbService.countAllHotelsForAdminStatusPage(); // Updated
           total = hotelCount?.total || 0;
           break;
           
         case 'rooms':
-          const roomsResult = await dbService.getUnapprovedHotelRooms(limit, offset);
+          const roomsResult = await dbService.getAllHotelRoomsForAdminStatusPage(limit, offset); // Updated
           items = roomsResult.results || [];
-          const roomCount = await dbService.countUnapprovedHotelRooms();
+          const roomCount = await dbService.countAllHotelRoomsForAdminStatusPage(); // Updated
           total = roomCount?.total || 0;
           break;
           
         case 'services':
-          const servicesResult = await dbService.getUnapprovedServices(limit, offset);
+          const servicesResult = await dbService.getAllOtherServicesForAdminStatusPage(limit, offset); // Updated
           items = servicesResult.results || [];
-          const serviceCount = await dbService.countUnapprovedServices();
+          const serviceCount = await dbService.countAllOtherServicesForAdminStatusPage(); // Updated
           total = serviceCount?.total || 0;
           break;
           
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'Pending approvals retrieved successfully',
+      message: 'Admin items retrieved successfully', // Updated message
       data: {
         items,
         pagination: {

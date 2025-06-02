@@ -2009,4 +2009,89 @@ export class DatabaseService {
       return null; // Or throw, depending on desired error handling for the service layer
     }
   }
+
+  // --- Admin Status Page Methods ---
+
+  async getAllHotelsForAdminStatusPage(limit: number, offset: number): Promise<D1Result<any[]>> {
+    const db = await getDatabase();
+    return db
+      .prepare(
+        `SELECT
+           s.id, s.name, s.type, s.created_at, s.is_admin_approved, s.price, s.is_active,
+           h.star_rating
+         FROM services s
+         JOIN hotels h ON s.id = h.service_id
+         WHERE s.type = 'hotel'
+         ORDER BY s.created_at DESC
+         LIMIT ? OFFSET ?`
+      )
+      .bind(limit, offset)
+      .all();
+  }
+
+  async countAllHotelsForAdminStatusPage(): Promise<{ total: number } | null> {
+    const db = await getDatabase();
+    return db
+      .prepare(
+        `SELECT COUNT(*) as total
+         FROM services s
+         JOIN hotels h ON s.id = h.service_id
+         WHERE s.type = 'hotel'`
+      )
+      .first<{ total: number }>();
+  }
+
+  async getAllHotelRoomsForAdminStatusPage(limit: number, offset: number): Promise<D1Result<any[]>> {
+    const db = await getDatabase();
+    return db
+      .prepare(
+        `SELECT
+           hr.id, hr.room_type, hr.created_at, hr.is_admin_approved, hr.base_price as price_per_night,
+           hr.service_id AS hotel_service_id,
+           s.name AS hotel_name,
+           hr.is_active
+         FROM hotel_room_types hr
+         LEFT JOIN services s ON hr.service_id = s.id
+         ORDER BY hr.created_at DESC
+         LIMIT ? OFFSET ?`
+      )
+      .bind(limit, offset)
+      .all();
+  }
+
+  async countAllHotelRoomsForAdminStatusPage(): Promise<{ total: number } | null> {
+    const db = await getDatabase();
+    return db
+      .prepare(
+        `SELECT COUNT(*) as total
+         FROM hotel_room_types hr`
+      )
+      .first<{ total: number }>();
+  }
+
+  async getAllOtherServicesForAdminStatusPage(limit: number, offset: number): Promise<D1Result<any[]>> {
+    const db = await getDatabase();
+    return db
+      .prepare(
+        `SELECT
+           s.id, s.name, s.type, s.created_at, s.is_admin_approved, s.price, s.is_active
+         FROM services s
+         WHERE s.type NOT IN ('hotel')
+         ORDER BY s.created_at DESC
+         LIMIT ? OFFSET ?`
+      )
+      .bind(limit, offset)
+      .all();
+  }
+
+  async countAllOtherServicesForAdminStatusPage(): Promise<{ total: number } | null> {
+    const db = await getDatabase();
+    return db
+      .prepare(
+        `SELECT COUNT(*) as total
+         FROM services s
+         WHERE s.type NOT IN ('hotel')`
+      )
+      .first<{ total: number }>();
+  }
 }

@@ -115,16 +115,17 @@ const HotelDetailPage = () => {
     : `/api/hotels/${hotelId}?_retry=${retryToken}`;
 
   const {
-    data: rawHotelData, // Renamed to rawHotelData
+    data: selectedHotel, // Destructure directly as selectedHotel, this is of type Hotel | null
     error: selectedHotelError,
     status: selectedHotelStatus,
-  } = useFetch<any>(apiUrl); // Use <any> for now, will type check 'data' property later
+  } = useFetch<Hotel>(hotelId ? apiUrl : null); // Use specific type Hotel, ensure hotelId is valid
 
   const isLoadingSelectedHotel = selectedHotelStatus === 'loading';
 
-  const selectedHotel: Hotel | undefined = isAdminPreview
-    ? (rawHotelData?.success ? rawHotelData.data : undefined)
-    : (rawHotelData && 'id' in rawHotelData ? rawHotelData : undefined);
+  // Removed incorrect selectedHotel derivation:
+  // const selectedHotel: Hotel | undefined = isAdminPreview
+  //   ? (rawHotelData?.success ? rawHotelData.data : undefined)
+  //   : (rawHotelData && 'id' in rawHotelData ? rawHotelData : undefined);
 
   const normalizeImageUrl = (url: string | null | undefined): string => {
     const placeholder = "https://placehold.co/600x400/E2E8F0/AAAAAA?text=No+Image+Available";
@@ -153,17 +154,17 @@ const HotelDetailPage = () => {
 
   if (isLoadingSelectedHotel) return <LoadingState message="Loading Hotel Details..." />;
 
-  // Updated Error Handling
-  if (selectedHotelError || (isAdminPreview && !rawHotelData?.success) || (!isAdminPreview && !selectedHotel && rawHotelData)) {
-    // If it's admin preview and success is false, or if it's not admin and selectedHotel is not derived (but rawHotelData might exist with error)
-    // This also covers cases where rawHotelData itself might be an error object from useFetch if the request failed fundamentally.
-    const message = selectedHotelError?.message || 
-                    (isAdminPreview && rawHotelData?.message) || 
-                    (!isAdminPreview && rawHotelData && !rawHotelData.id ? "Hotel data is not in expected format." : "Hotel details could not be found.");
-    return <ErrorState message={message} onRetry={() => setRetryToken(c => c + 1)} />;
+  // Corrected Error Handling
+  if (selectedHotelError || (!isLoadingSelectedHotel && !selectedHotel)) {
+    return <ErrorState message={selectedHotelError?.message || "Hotel details could not be found."} onRetry={() => setRetryToken(c => c + 1)} />;
   }
-  // Final check if selectedHotel is truly undefined after all logic.
-  if (!selectedHotel) return <ErrorState message={"Hotel details could not be loaded or processed."} onRetry={() => setRetryToken(c => c + 1)} />;
+  // This additional check for !selectedHotel might seem redundant if the above is correct, but it's a safeguard.
+  // If !isLoadingSelectedHotel && !selectedHotel is true, the above already catches it.
+  // If selectedHotel is still null here, it means loading is done and it's genuinely not found or error occurred.
+  // The previous error condition was too complex due to misunderstanding rawHotelData.
+  if (!selectedHotel) { // Should be caught by the condition above if loading is complete.
+    return <ErrorState message={"Hotel data is unavailable."} onRetry={() => setRetryToken(c => c + 1)} />;
+  }
 
   let calculatedMinPrice: number | null = null;
   if (selectedHotel.rooms && selectedHotel.rooms.length > 0) {

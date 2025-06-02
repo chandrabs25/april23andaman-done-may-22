@@ -1,13 +1,11 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react'; // Added useEffect for potential client-side redirect
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { HomeIcon, PackageIcon, CheckCircleIcon, UsersIcon, LogOutIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-// Authentication is now handled by middleware or individual page components
-// using our custom JWT-based auth system from src/lib/auth.ts
+import { useAuth } from '@/hooks/useAuth'; // Added useAuth
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -20,40 +18,24 @@ interface NavItem {
   icon: ReactNode;
 }
 
-// Type for the logout API response
-interface LogoutApiResponse {
-  success: boolean;
-  message?: string;
-}
-
-// New SignOutButton client component
+// New SignOutButton client component - Updated to use useAuth
 function SignOutButton() {
-  const router = useRouter();
+  const { logout: authLogout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
     try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await response.json() as LogoutApiResponse;
-
-      if (response.ok && data.success) {
-        toast.success(data.message || 'Signed out successfully!');
-        // For JWT, client-side redirection is enough after cookie is cleared by API
-        window.location.assign('/auth/signin'); // Or your desired login page
-      } else {
-        toast.error(data.message || 'Sign out failed. Please try again.');
-      }
+      await authLogout(); // This function from useAuth handles cookie clearing and redirection
+      // toast.success('Signed out successfully!'); // useAuth might handle this or you can add it
     } catch (error) {
-      console.error('Sign out error:', error);
-      toast.error('An unexpected error occurred during sign out.');
+      // useAuth().logout should ideally handle its own errors and toasts
+      // If not, or for additional logging:
+      console.error('Sign out error from useAuth:', error);
+      toast.error('Sign out failed. Please try again.');
     } finally {
-      setIsLoggingOut(false);
+      // setIsLoggingOut(false); // May not be reached if redirect is too fast
+      // The component might unmount before this is set if redirection is immediate.
     }
   };
 
@@ -73,9 +55,42 @@ function SignOutButton() {
   );
 }
 
-export default async function AdminLayout({ children }: AdminLayoutProps) {
-  // Authentication check is now handled at the API level or in middleware
-  // Admin check: role_id === 1
+export default function AdminLayout({ children }: AdminLayoutProps) { // Removed async
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const router = useRouter();
+
+  if (isAuthLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+        <p className="ml-3 text-lg">Loading Admin Panel...</p>
+      </div>
+    );
+  }
+
+  // This check runs after middleware.
+  // Middleware should handle primary redirection for unauthenticated.
+  // Middleware rewrites to /not-authorized for authenticated non-admins.
+  // This client-side check is a safeguard.
+  if (!isAuthenticated || user?.role_id !== 1) {
+    // If we are on the client-side and this condition is met,
+    // it implies middleware might not have run or some client-side routing bypassed it.
+    // Or, the user's state changed post-load and pre-navigation.
+    useEffect(() => {
+      if (!isAuthenticated) {
+        router.replace('/auth/signin');
+      } else { // Authenticated but not admin
+        router.replace('/not-authorized'); // Redirect to not-authorized page
+      }
+    }, [isAuthenticated, user, router]); // Dependencies for useEffect
+
+    return (
+       <div className="flex h-screen items-center justify-center bg-gray-100">
+           <Loader2 className="h-12 w-12 animate-spin text-gray-400" />
+           <p className="ml-3 text-lg text-gray-600">Verifying credentials and redirecting...</p>
+       </div>
+    ); // Render minimal UI during redirect
+  }
 
   // Navigation items for the sidebar
   const navItems: NavItem[] = [

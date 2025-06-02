@@ -40,10 +40,10 @@ export async function middleware(request: NextRequest) {
           { status: 403, headers: { 'Content-Type': 'application/json' } }
         );
       }
-      // For UI routes, redirect to a generic error page or home, or show a forbidden page
-      // For simplicity, redirecting to home page. Consider an actual forbidden page.
-      const homeUrl = new URL('/', request.url);
-      return NextResponse.redirect(homeUrl); // Or a specific '/forbidden' page
+      // For UI routes, rewrite to a 'not-authorized' page.
+      // This page must not use the AdminLayout.
+      console.log(`[Middleware] User not admin. Rewriting ${pathname} to /not-authorized`);
+      return NextResponse.rewrite(new URL('/not-authorized', request.url));
     }
   }
 

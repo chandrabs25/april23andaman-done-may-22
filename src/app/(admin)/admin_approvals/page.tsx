@@ -82,47 +82,46 @@ function AdminApprovalsContent() {
     { value: 'services', label: 'Services' }
   ];
 
-  // Fetch pending approvals data
-  useEffect(() => {
-    // Skip data fetching during SSR/build
-    if (!isBrowser) return;
-    
-    const fetchPendingApprovals = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const page = searchParams.get('page') || '1';
-        const limit = searchParams.get('limit') || '10';
-        
-        // Construct URL based on selected type
-        let url = `/api/admin/approvals?page=${page}&limit=${limit}`;
-        if (type !== 'all') {
-          url += `&type=${type}`;
-        }
-        
-        const response = await fetch(url);
-        const data = await response.json() as ApiResponse;
-        
-        if (!response.ok) {
-          throw new Error(data.message || data.error || `Error: ${response.status}`);
-        }
-        
-        if (data.success) {
-          setItems(data.data.items);
-          setPagination(data.data.pagination);
-        } else {
-          throw new Error(data.message || 'Failed to fetch approvals');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-        console.error('Failed to fetch approvals:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Hoisted fetchPendingApprovals function
+  const fetchPendingApprovals = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const page = searchParams.get('page') || '1';
+      const limit = searchParams.get('limit') || '10';
+      const currentTypeFromParams = searchParams.get('type') || 'all'; // Use type from searchParams
 
+      let url = `/api/admin/approvals?page=${page}&limit=${limit}`;
+      if (currentTypeFromParams !== 'all') {
+        url += `&type=${currentTypeFromParams}`;
+      }
+
+      const response = await fetch(url);
+      const data = await response.json() as ApiResponse;
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || `Error: ${response.status}`);
+      }
+
+      if (data.success) {
+        setItems(data.data.items);
+        setPagination(data.data.pagination);
+      } else {
+        throw new Error(data.message || 'Failed to fetch approvals');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      console.error('Failed to fetch approvals:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch pending approvals data on component mount and when searchParams change
+  useEffect(() => {
+    if (!isBrowser) return;
     fetchPendingApprovals();
-  }, [searchParams, type, isBrowser]);
+  }, [searchParams, isBrowser]); // Removed 'type' from dep array as fetchPendingApprovals now uses searchParams directly for type
 
   // Handle page change
   const handlePageChange = (newPage: number) => {
@@ -252,10 +251,10 @@ function AdminApprovalsContent() {
       }
       
       if (data.success) {
-        // Remove the rejected item from the list
-        setItems(items.filter(i => !(i.id === item.id && getItemType(i) === getItemType(item))));
-        // Update pagination
-        setPagination(prev => ({ ...prev, totalItems: prev.totalItems - 1 }));
+        // Instead of client-side filtering, refresh data from server
+        fetchPendingApprovals();
+        // Optionally, show a success toast/message here
+        // e.g., toast.success('Item rejected successfully');
       } else {
         throw new Error(data.message || 'Failed to reject item');
       }

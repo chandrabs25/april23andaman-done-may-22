@@ -84,7 +84,7 @@ function AdminApprovalsContent() {
   ];
 
   // Renamed and hoisted function
-  const fetchAllItemsForStatusPage = async () => {
+  const fetchAllItemsForStatusPage = async () => { 
     setLoading(true);
     setError(null);
     try {
@@ -301,11 +301,11 @@ function AdminApprovalsContent() {
     }
     // Check if type starts with 'activity' (e.g., "activity/diving")
     // and normalize it to 'activity' for routing purposes.
-    if (item.type && item.type.startsWith('activity')) {
+    if (item.type && item.type.startsWith('activity')) { 
       return 'activity';
     }
     // For other specific types like 'rental', 'transport'
-    if (item.type) {
+    if (item.type) { 
       return item.type;
     }
     return 'item'; // Fallback

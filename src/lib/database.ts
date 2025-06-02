@@ -1884,9 +1884,10 @@ export class DatabaseService {
    */
   async rejectHotel(serviceId: number, rejectReason: string = ''): Promise<D1Result> {
     const db = await getDatabase();
+    // admin_reject_reason column removed from query
     return db
-      .prepare('UPDATE services SET is_admin_approved = 0, admin_reject_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND type = \'hotel\'')
-      .bind(rejectReason || null, serviceId)
+      .prepare('UPDATE services SET is_admin_approved = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND type = \'hotel\'')
+      .bind(serviceId) // rejectReason removed from bind
       .run();
   }
 
@@ -1898,9 +1899,10 @@ export class DatabaseService {
    */
   async rejectHotelRoom(roomTypeId: number, rejectReason: string = ''): Promise<D1Result> {
     const db = await getDatabase();
+    // admin_reject_reason column removed from query
     return db
-      .prepare('UPDATE hotel_room_types SET is_admin_approved = 0, admin_reject_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-      .bind(rejectReason || null, roomTypeId)
+      .prepare('UPDATE hotel_room_types SET is_admin_approved = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .bind(roomTypeId) // rejectReason removed from bind
       .run();
   }
 
@@ -1913,9 +1915,10 @@ export class DatabaseService {
   async rejectService(serviceId: number, rejectReason: string = ''): Promise<D1Result> {
     const db = await getDatabase();
     // This should not reject hotels through this generic service method.
+    // admin_reject_reason column removed from query
     return db
-      .prepare("UPDATE services SET is_admin_approved = 0, admin_reject_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND type != 'hotel'")
-      .bind(rejectReason || null, serviceId)
+      .prepare("UPDATE services SET is_admin_approved = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND type != 'hotel'")
+      .bind(serviceId) // rejectReason removed from bind
       .run();
   }
 
@@ -2047,10 +2050,10 @@ export class DatabaseService {
       .prepare(
         `SELECT
            hr.id, hr.room_type, hr.created_at, hr.is_admin_approved, hr.base_price as price_per_night,
-           hr.service_id AS hotel_service_id,
+           hr.service_id AS hotel_service_id, 
            s.name AS hotel_name
          FROM hotel_room_types hr
-         LEFT JOIN services s ON hr.service_id = s.id
+         LEFT JOIN services s ON hr.service_id = s.id 
          ORDER BY hr.created_at DESC
          LIMIT ? OFFSET ?`
       )
@@ -2075,7 +2078,7 @@ export class DatabaseService {
         `SELECT
            s.id, s.name, s.type, s.created_at, s.is_admin_approved, s.price, s.is_active
          FROM services s
-         WHERE s.type NOT IN ('hotel')
+         WHERE s.type NOT IN ('hotel') 
          ORDER BY s.created_at DESC
          LIMIT ? OFFSET ?`
       )

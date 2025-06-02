@@ -281,7 +281,9 @@ function AdminApprovalsContent() {
       // For now, just linking to the hotel page is sufficient for preview.
     } else if (item.type === 'hotel') {
       baseUrl = `/hotels/${item.id}`;
-    } else if (item.type) { // For other services like activity, rental, transport
+    } else if (item.type === 'activity') { // Specifically handle 'activity' type
+      baseUrl = `/activities/${item.id}`;
+    } else if (item.type) { // For other generic services (rental, transport, etc.)
       baseUrl = `/services/${item.type}/${item.id}`;
     }
 

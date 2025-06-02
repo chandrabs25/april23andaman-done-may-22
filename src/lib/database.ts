@@ -2048,8 +2048,7 @@ export class DatabaseService {
         `SELECT
            hr.id, hr.room_type, hr.created_at, hr.is_admin_approved, hr.base_price as price_per_night,
            hr.service_id AS hotel_service_id,
-           s.name AS hotel_name,
-           hr.is_active
+           s.name AS hotel_name
          FROM hotel_room_types hr
          LEFT JOIN services s ON hr.service_id = s.id
          ORDER BY hr.created_at DESC

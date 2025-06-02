@@ -332,7 +332,7 @@ function AdminApprovalsContent() {
     return 'N/A';
   };
 
-  };
+  // Removed extra }; that was here
 
   const getItemApprovalStatus = (itemValue: number | null | undefined) => {
     if (itemValue === 1) {

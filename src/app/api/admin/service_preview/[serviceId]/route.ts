@@ -29,7 +29,7 @@ function parseStringList(value: string | null): string[] {
 function parseAmenities(amenitiesStr: string | null): any {
   if (!amenitiesStr) return { general: [], specifics: {} };
   try {
-    if ((amenitiesStr.trim().startsWith('{') && amenitiesStr.trim().endsWith('}')) ||
+    if ((amenitiesStr.trim().startsWith('{') && amenitiesStr.trim().endsWith('}')) || 
         (amenitiesStr.trim().startsWith('[') && amenitiesStr.trim().endsWith(']'))) {
       return JSON.parse(amenitiesStr);
     } else {
@@ -71,7 +71,7 @@ export async function GET(
       FROM services s
       LEFT JOIN islands i ON s.island_id = i.id  -- Changed to LEFT JOIN in case island_id is nullable or invalid temporarily
       LEFT JOIN service_providers sp ON s.provider_id = sp.id
-      WHERE s.id = ?
+      WHERE s.id = ? 
       AND (s.type LIKE 'transport%' OR s.type LIKE 'rental%' OR s.type LIKE 'activity%')
     `;
 
@@ -84,25 +84,25 @@ export async function GET(
         { status: 404 }
       );
     }
-
+    
     const parsedAmenities = parseAmenities(raw.amenities);
     const specificFields = parsedAmenities.specifics || {};
     const activitySpecifics = specificFields; // Assuming activity specifics might be directly under specifics
-
+    
     const locationDetails = specificFields.location_details || null;
     const whatToBring = specificFields.what_to_bring || [];
     const includedServices = specificFields.included_services || [];
     const notIncludedServices = specificFields.not_included_services || [];
     const latitude = specificFields.latitude ? parseFloat(specificFields.latitude) : null;
     const longitude = specificFields.longitude ? parseFloat(specificFields.longitude) : null;
-
+    
     const vehicleType = specificFields.vehicle_type || null;
     const capacityPassengers = specificFields.capacity_passengers ? parseInt(specificFields.capacity_passengers) : (specificFields.capacity ? parseInt(specificFields.capacity) : null);
     const routeDetails = specificFields.route_details || specificFields.route || null;
     const pricePerKm = specificFields.price_per_km ? parseFloat(specificFields.price_per_km) : null;
     const pricePerTrip = specificFields.price_per_trip ? parseFloat(specificFields.price_per_trip) : null;
     const driverIncluded = specificFields.driver_included === true;
-
+    
     const itemType = specificFields.item_type || null;
     const rentalDurationOptions = specificFields.rental_duration_options || [];
     const pricePerHour = specificFields.price_per_hour ? parseFloat(specificFields.price_per_hour) : null;
@@ -110,7 +110,7 @@ export async function GET(
     const depositAmount = specificFields.deposit?.amount ? parseFloat(specificFields.deposit.amount) : null;
     const pickupLocationOptions = specificFields.pickup_location_options || specificFields.pickup_locations || [];
     const rentalTerms = specificFields.rental_terms || specificFields.requirements?.details || null;
-
+    
     const providerInfo: ServiceProviderBasicInfo | undefined = raw.provider_business_name ? {
         id: raw.service_provider_table_id,
         business_name: raw.provider_business_name,

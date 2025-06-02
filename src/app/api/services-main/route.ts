@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
       FROM services s
       JOIN islands i ON s.island_id = i.id
       LEFT JOIN service_providers sp ON s.provider_id = sp.id
-      WHERE s.is_active = TRUE
+      WHERE s.is_active = TRUE AND s.is_admin_approved = 1
     `;
 
     const queryParams: (string | number)[] = [];
@@ -284,4 +284,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(errorResponse, { status: 500 });
   }
 }
-

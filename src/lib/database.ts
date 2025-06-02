@@ -1736,7 +1736,7 @@ export class DatabaseService {
       FROM services s
       JOIN hotels h ON s.id = h.service_id
       LEFT JOIN hotel_room_types hrt ON s.id = hrt.service_id -- LEFT JOIN to include hotels with no rooms
-      WHERE s.type = 'hotel' AND s.is_active = 1
+      WHERE s.type = 'hotel' AND s.is_active = 1 AND s.is_admin_approved = 1
     `;
     const params: (string | number)[] = [];
 
@@ -1820,7 +1820,7 @@ export class DatabaseService {
       SELECT COUNT(s.id) AS total
       FROM services s
       JOIN hotels h ON s.id = h.service_id
-      WHERE s.type = 'hotel' AND s.is_active = 1
+      WHERE s.type = 'hotel' AND s.is_active = 1 AND s.is_admin_approved = 1
     `;
     const params: (string | number)[] = [];
 
@@ -2047,10 +2047,10 @@ export class DatabaseService {
       .prepare(
         `SELECT
            hr.id, hr.room_type, hr.created_at, hr.is_admin_approved, hr.base_price as price_per_night,
-           hr.service_id AS hotel_service_id, 
+           hr.service_id AS hotel_service_id,
            s.name AS hotel_name
          FROM hotel_room_types hr
-         LEFT JOIN services s ON hr.service_id = s.id 
+         LEFT JOIN services s ON hr.service_id = s.id
          ORDER BY hr.created_at DESC
          LIMIT ? OFFSET ?`
       )
@@ -2075,7 +2075,7 @@ export class DatabaseService {
         `SELECT
            s.id, s.name, s.type, s.created_at, s.is_admin_approved, s.price, s.is_active
          FROM services s
-         WHERE s.type NOT IN ('hotel') 
+         WHERE s.type NOT IN ('hotel')
          ORDER BY s.created_at DESC
          LIMIT ? OFFSET ?`
       )

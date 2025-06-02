@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   console.log('🔍 [API] GET /api/activities: Request received');
   try {
     console.log('🔍 [API] GET /api/activities: Attempting database connection...');
-    
+
     // First check if database connection works
     let db;
     try {
@@ -36,9 +36,9 @@ export async function GET(request: Request) {
       console.error('❌ [API] GET /api/activities: Database connection failed:', dbError);
       throw new Error(`Database connection failed: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
     }
-    
+
     // await the D1Database instance
-    
+
     const { searchParams } = new URL(request.url);
     console.log('🔍 [API] GET /api/activities: Request URL:', request.url);
 
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
         i.name AS island_name
       FROM services s
       JOIN islands i ON s.island_id = i.id
-      WHERE s.type LIKE ? AND s.is_active = TRUE` // Added s.is_active = TRUE
+      WHERE s.type LIKE ? AND s.is_active = TRUE AND s.is_admin_approved = 1` // Added s.is_admin_approved = 1
 
     const queryParams: (string | number)[] = ['%activity%']
 
@@ -88,7 +88,7 @@ export async function GET(request: Request) {
 
     const stmt = db.prepare(queryString).bind(...queryParams)
     console.log('🔍 [API] GET /api/activities: Executing query...');
-    
+
     let queryResult;
     try {
       queryResult = await stmt.all<Activity>();
@@ -97,7 +97,7 @@ export async function GET(request: Request) {
       console.error('❌ [API] GET /api/activities: Query execution failed:', queryError);
       throw new Error(`Query execution failed: ${queryError instanceof Error ? queryError.message : String(queryError)}`);
     }
-    
+
     const { results, success, error } = queryResult;
 
     console.log('🔍 [API] GET /api/activities: Query complete, success:', success);
@@ -109,7 +109,7 @@ export async function GET(request: Request) {
 
     const activitiesData = results ?? []
     console.log(`🔍 [API] GET /api/activities: Found ${activitiesData.length} activities`);
-    
+
     // Log each activity for debugging (limit to first 5 for brevity)
     const logLimit = Math.min(activitiesData.length, 5);
     for (let i = 0; i < logLimit; i++) {
@@ -124,13 +124,13 @@ export async function GET(request: Request) {
 
     if (activitiesData.length === 0) {
       console.warn('⚠️ [API] GET /api/activities: No activities found matching the criteria');
-      
+
       // Try a broader query to see if any services exist at all
       try {
         console.log('🔍 [API] GET /api/activities: Trying broader query to check if any services exist...');
         const checkServices = await db.prepare(`SELECT COUNT(*) as count FROM services`).first();
         console.log('🔍 [API] GET /api/activities: Services count:', checkServices);
-        
+
         if (checkServices && checkServices.count > 0) {
           console.log('🔍 [API] GET /api/activities: Services exist but no activities match the query criteria');
         } else {
@@ -159,10 +159,10 @@ export async function GET(request: Request) {
 
 
 export async function POST(request: NextRequest) {
-  
+
   console.warn("POST /api/activities is not fully implemented.");
    try {
-      
+
        return NextResponse.json({
            success: false, // Set to false as it's not implemented
            message: 'POST method for activities not implemented yet.',

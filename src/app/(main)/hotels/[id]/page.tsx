@@ -157,8 +157,8 @@ const HotelDetailPage = () => {
   if (selectedHotelError || (isAdminPreview && !rawHotelData?.success) || (!isAdminPreview && !selectedHotel && rawHotelData)) {
     // If it's admin preview and success is false, or if it's not admin and selectedHotel is not derived (but rawHotelData might exist with error)
     // This also covers cases where rawHotelData itself might be an error object from useFetch if the request failed fundamentally.
-    const message = selectedHotelError?.message ||
-                    (isAdminPreview && rawHotelData?.message) ||
+    const message = selectedHotelError?.message || 
+                    (isAdminPreview && rawHotelData?.message) || 
                     (!isAdminPreview && rawHotelData && !rawHotelData.id ? "Hotel data is not in expected format." : "Hotel details could not be found.");
     return <ErrorState message={message} onRetry={() => setRetryToken(c => c + 1)} />;
   }

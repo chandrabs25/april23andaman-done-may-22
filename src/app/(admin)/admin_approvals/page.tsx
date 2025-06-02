@@ -84,7 +84,7 @@ function AdminApprovalsContent() {
   ];
 
   // Renamed and hoisted function
-  const fetchAllItemsForStatusPage = async () => {
+  const fetchAllItemsForStatusPage = async () => { 
     setLoading(true);
     setError(null);
     try {
@@ -273,18 +273,19 @@ function AdminApprovalsContent() {
   const getViewUrl = (item: ManagedItem): string => { // Updated to ManagedItem
     let baseUrl = '#';
     const queryParams = '?isAdminPreview=true';
+    const normalizedItemType = getItemType(item); // Use the helper
 
-    if (item.room_type && item.hotel_service_id) {
-      // If it's a room, link to the parent hotel's page, and maybe an anchor to the room
+    if (normalizedItemType === 'room' && item.hotel_service_id) {
       baseUrl = `/hotels/${item.hotel_service_id}`;
-      // Optionally, you could try to add an anchor like #room-${item.id} if the hotel page supports it
-      // For now, just linking to the hotel page is sufficient for preview.
-    } else if (item.type === 'hotel') {
+    } else if (normalizedItemType === 'hotel') {
       baseUrl = `/hotels/${item.id}`;
-    } else if (item.type === 'activity') { // Specifically handle 'activity' type
+    } else if (normalizedItemType === 'activity') {
       baseUrl = `/activities/${item.id}`;
-    } else if (item.type) { // For other generic services (rental, transport, etc.)
-      baseUrl = `/services/${item.type}/${item.id}`;
+    } else if (item.type) { // For other types like 'rental', 'transport', use original item.type for the path
+      // Ensure normalizedItemType isn't 'item' (the fallback from getItemType) before constructing a /services/ URL
+      if (normalizedItemType !== 'item') {
+         baseUrl = `/services/${item.type}/${item.id}`;
+      }
     }
 
     return baseUrl === '#' ? baseUrl : baseUrl + queryParams;
@@ -298,10 +299,16 @@ function AdminApprovalsContent() {
     if (item.type === 'hotel') {
       return 'hotel';
     }
-    if (item.type) {
+    // Check if type starts with 'activity' (e.g., "activity/diving")
+    // and normalize it to 'activity' for routing purposes.
+    if (item.type && item.type.startsWith('activity')) { 
+      return 'activity';
+    }
+    // For other specific types like 'rental', 'transport'
+    if (item.type) { 
       return item.type;
     }
-    return 'item';
+    return 'item'; // Fallback
   };
 
   // Helper to get API type ID for the approval endpoint

@@ -14,6 +14,7 @@ interface Package {
   name: string;
   description: string | null;
   duration: string;
+  number_of_days?: number | null; // Added field for number of days
   base_price: number;
   max_people: number | null;
   created_by: number;
@@ -51,6 +52,7 @@ interface CreatePackageDbPayload {
   name: string;
   description?: string | null;
   duration: string;
+  number_of_days?: number | null; // Added field for number of days
   base_price: number;
   max_people?: number | null;
   created_by: number;
@@ -610,14 +612,15 @@ export class DatabaseService {
 
     const mainPackageInsertStmt = db.prepare(`
       INSERT INTO packages (
-        name, description, duration, base_price, max_people, created_by,
+        name, description, duration, number_of_days, base_price, max_people, created_by,
         itinerary, included_services, images, cancellation_policy, is_active, 
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `).bind(
       packageData.name,
       packageData.description ?? null,
       packageData.duration,
+      packageData.number_of_days ?? null,
       packageData.base_price,
       packageData.max_people ?? null,
       packageData.created_by,
@@ -726,9 +729,10 @@ export class DatabaseService {
     const includedServicesStr = stringifyIfNeeded(packageData.included_services, 'included_services');
     const imagesStr = stringifyIfNeeded(packageData.images, 'images');
 
+    // 1. Update the main package
     const packageUpdateStmt = db.prepare(`
       UPDATE packages SET
-        name = ?, description = ?, duration = ?, base_price = ?, max_people = ?,
+        name = ?, description = ?, duration = ?, number_of_days = ?, base_price = ?, max_people = ?,
         itinerary = ?, included_services = ?, images = ?, cancellation_policy = ?,
         is_active = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
@@ -736,6 +740,7 @@ export class DatabaseService {
       packageData.name,
       packageData.description ?? null,
       packageData.duration,
+      packageData.number_of_days ?? null,
       packageData.base_price,
       packageData.max_people ?? null,
       itineraryStr,
@@ -747,32 +752,114 @@ export class DatabaseService {
     );
     statements.push(packageUpdateStmt);
 
-    const deleteCategoriesStmt = db.prepare(`DELETE FROM package_categories WHERE package_id = ?`).bind(packageId);
-    statements.push(deleteCategoriesStmt);
-    
+    // 2. Handle package categories more carefully to avoid foreign key constraint violations
     if (packageData.package_categories && packageData.package_categories.length > 0) {
-      packageData.package_categories.forEach(cat => {
-        // Assuming cat.images is already a JSON string or null from the API layer
-        // If it could be an array here, stringifyIfNeeded(cat.images, 'category_images') would be used.
-        const categoryImagesStr = typeof cat.images === 'string' ? cat.images : (cat.images ? JSON.stringify(cat.images) : null);
+      try {
+        // First, get existing categories to see which ones we can update vs. which need to be created
+        const existingCategoriesResult = await db.prepare(`SELECT id, category_name FROM package_categories WHERE package_id = ?`).bind(packageId).all();
+        const existingCategories = existingCategoriesResult.results || [];
         
-        statements.push(
-          db.prepare(`
-            INSERT INTO package_categories (
-              package_id, category_name, price, hotel_details, 
-              category_description, max_pax_included_in_price, images, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-          `).bind(
-            packageId,
-            cat.category_name,
-            cat.price,
-            cat.hotel_details ?? null,
-            cat.category_description ?? null,
-            cat.max_pax_included_in_price ?? null,
-            categoryImagesStr // Use the potentially stringified images string
-          )
-        );
-      });
+        // Check if there are any bookings that reference existing categories
+        const bookingsCheckResult = await db.prepare(`
+          SELECT COUNT(*) as count FROM bookings 
+          WHERE package_category_id IN (SELECT id FROM package_categories WHERE package_id = ?)
+        `).bind(packageId).first();
+        
+        const hasBookings = (bookingsCheckResult as any)?.count > 0;
+        
+        if (hasBookings && existingCategories.length > 0) {
+          // There are existing bookings, so we need to be careful about category updates
+          // Update existing categories in place and add new ones as needed
+          
+          packageData.package_categories.forEach((cat, index) => {
+            const categoryImagesStr = typeof cat.images === 'string' ? cat.images : (cat.images ? JSON.stringify(cat.images) : null);
+            
+            if (index < existingCategories.length) {
+              // Update existing category
+              const existingCategoryId = (existingCategories[index] as any).id;
+              statements.push(
+                db.prepare(`
+                  UPDATE package_categories SET
+                    category_name = ?, price = ?, hotel_details = ?, 
+                    category_description = ?, max_pax_included_in_price = ?, images = ?, updated_at = CURRENT_TIMESTAMP
+                  WHERE id = ?
+                `).bind(
+                  cat.category_name,
+                  cat.price,
+                  cat.hotel_details ?? null,
+                  cat.category_description ?? null,
+                  cat.max_pax_included_in_price ?? null,
+                  categoryImagesStr,
+                  existingCategoryId
+                )
+              );
+            } else {
+              // Insert new category
+              statements.push(
+                db.prepare(`
+                  INSERT INTO package_categories (
+                    package_id, category_name, price, hotel_details, 
+                    category_description, max_pax_included_in_price, images, created_at, updated_at
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                `).bind(
+                  packageId,
+                  cat.category_name,
+                  cat.price,
+                  cat.hotel_details ?? null,
+                  cat.category_description ?? null,
+                  cat.max_pax_included_in_price ?? null,
+                  categoryImagesStr
+                )
+              );
+            }
+          });
+
+          // If we have fewer new categories than existing ones, deactivate the extras
+          // (Don't delete them due to foreign key constraints)
+          if (packageData.package_categories.length < existingCategories.length) {
+            for (let i = packageData.package_categories.length; i < existingCategories.length; i++) {
+              const extraCategoryId = (existingCategories[i] as any).id;
+              statements.push(
+                db.prepare(`
+                  UPDATE package_categories SET
+                    category_name = '[REMOVED] ' || category_name, 
+                    price = 0, 
+                    updated_at = CURRENT_TIMESTAMP
+                  WHERE id = ?
+                `).bind(extraCategoryId)
+              );
+            }
+          }
+        } else {
+          // No existing bookings, safe to delete and recreate
+          const deleteCategoriesStmt = db.prepare(`DELETE FROM package_categories WHERE package_id = ?`).bind(packageId);
+          statements.push(deleteCategoriesStmt);
+          
+          packageData.package_categories.forEach(cat => {
+            const categoryImagesStr = typeof cat.images === 'string' ? cat.images : (cat.images ? JSON.stringify(cat.images) : null);
+            
+            statements.push(
+              db.prepare(`
+                INSERT INTO package_categories (
+                  package_id, category_name, price, hotel_details, 
+                  category_description, max_pax_included_in_price, images, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+              `).bind(
+                packageId,
+                cat.category_name,
+                cat.price,
+                cat.hotel_details ?? null,
+                cat.category_description ?? null,
+                cat.max_pax_included_in_price ?? null,
+                categoryImagesStr
+              )
+            );
+          });
+        }
+      } catch (dbError: any) {
+        console.error("Error checking existing categories and bookings:", dbError);
+        return { success: false, error: "Failed to check existing data: " + (dbError.message || "Unknown error"), meta: emptyMeta };
+      }
     }
 
     try {

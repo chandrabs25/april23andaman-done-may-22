@@ -54,6 +54,7 @@ interface PackageCategory {
 interface PackageDetails {
   id: number;
   name: string;
+  number_of_days?: number | null;
 }
 
 interface User {
@@ -116,6 +117,21 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
     }
   }, [user]);
 
+  // Auto-calculate end date based on start date and number of days
+  useEffect(() => {
+    if (formData.start_date && packageDetails.number_of_days) {
+      const startDate = new Date(formData.start_date);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + packageDetails.number_of_days - 1); // Subtract 1 because it's inclusive
+      const endDateString = endDate.toISOString().split('T')[0];
+      
+      setFormData(prev => ({
+        ...prev,
+        end_date: endDateString
+      }));
+    }
+  }, [formData.start_date, packageDetails.number_of_days]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     let processedValue: string | number = value;
@@ -139,10 +155,10 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
     if (formData.total_people < 1) newErrors.total_people = "At least 1 traveler is required.";
     if (!formData.start_date) newErrors.start_date = "Start date is required.";
     else if (new Date(formData.start_date) < today) newErrors.start_date = "Start date cannot be in the past.";
-    if (!formData.end_date) newErrors.end_date = "End date is required.";
-    if (formData.start_date && formData.end_date && new Date(formData.start_date) >= new Date(formData.end_date)) {
-      newErrors.end_date = "End date must be after the start date.";
-    }
+    
+    // End date validation is simplified since it's auto-calculated
+    if (!formData.end_date) newErrors.end_date = "End date could not be calculated. Please check the start date.";
+    
     if (!formData.guest_name.trim()) newErrors.guest_name = "Guest name is required.";
     if (!formData.guest_email.trim()) newErrors.guest_email = "Guest email is required.";
     else if (!/\S+@\S+\.\S+/.test(formData.guest_email)) newErrors.guest_email = "Email address is invalid.";
@@ -247,18 +263,27 @@ export function PackageBookingForm({ packageDetails, categoryDetails, user }: Pa
         <div>
           <Label htmlFor="end_date" className={labelStyle}>
             <CalendarIcon size={14} className={`mr-1.5 sm:mr-2 ${infoIconColor}`} /> End Date
+            {packageDetails.number_of_days && (
+              <span className={`ml-2 text-xs ${neutralTextLight} font-normal`}>
+                (Auto-calculated: {packageDetails.number_of_days} days)
+              </span>
+            )}
           </Label>
           <Input
             type="date"
             id="end_date"
             name="end_date"
             value={formData.end_date}
-            onChange={handleInputChange}
-            className={inputSharedStyle}
-            min={formData.start_date || new Date().toISOString().split("T")[0]} // Prevent dates before start_date
+            readOnly
+            className={`${inputSharedStyle} bg-gray-50 cursor-not-allowed`}
             aria-describedby={errors.end_date ? "end_date-error" : undefined}
           />
           {errors.end_date && <p id="end_date-error" className={errorTextStyle}>{errors.end_date}</p>}
+          {packageDetails.number_of_days && !errors.end_date && (
+            <p className={`text-xs ${neutralTextLight} mt-1`}>
+              Automatically calculated based on {packageDetails.number_of_days}-day package duration
+            </p>
+          )}
         </div>
       </div>
 

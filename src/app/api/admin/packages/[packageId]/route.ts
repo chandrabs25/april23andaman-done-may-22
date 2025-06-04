@@ -17,6 +17,7 @@ interface UpdatePackagePayload {
   name: string;
   description?: string | null;
   duration: string;
+  number_of_days?: number | null;
   base_price: number;
   max_people?: number | null;
   itinerary?: string | object | null;
@@ -142,6 +143,7 @@ export async function PUT(
       name: body.name,
       description: body.description || null,
       duration: body.duration,
+      number_of_days: body.number_of_days || null,
       base_price: body.base_price,
       max_people: body.max_people || null,
       itinerary: typeof body.itinerary === 'object' ? JSON.stringify(body.itinerary) : body.itinerary || null,

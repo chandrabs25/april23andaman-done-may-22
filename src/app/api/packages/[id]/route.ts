@@ -97,6 +97,7 @@ interface DbPackage {
   name: string;
   description: string | null;
   duration: string;
+  number_of_days?: number | null; // Added field for number of days
   base_price: number;
   max_people: number | null;
   created_by: number;
@@ -139,6 +140,7 @@ interface ApiPackageResponse {
   name: string;
   description: string | null;
   duration: string;
+  number_of_days?: number | null; // Added field for number of days
   base_price: number;
   max_people: number | null;
   created_by: number;
@@ -284,6 +286,7 @@ export async function GET(
       name: pkg.name,
       description: pkg.description,
       duration: pkg.duration,
+      number_of_days: pkg.number_of_days,
       base_price: pkg.base_price,
       max_people: pkg.max_people,
       created_by: pkg.created_by,

@@ -239,6 +239,16 @@ export default function Home() {
   } = useFetch<GetHotelsApiResponse>('/api/hotels?limit=4');
   const featuredHotelsData = hotelsResponse?.data || [];
 
+  // Add debugging for hotels data
+  useEffect(() => {
+    console.log('Hotels Debug Info:', {
+      status: hotelsStatus,
+      response: hotelsResponse,
+      data: featuredHotelsData,
+      error: hotelsError
+    });
+  }, [hotelsStatus, hotelsResponse, featuredHotelsData, hotelsError]);
+
   // Fetch Rental Services
   const {
     data: rentalServicesResponse,
@@ -461,6 +471,13 @@ export default function Home() {
     { name: 'Activities', icon: <Zap size={18} className="hidden sm:inline" />, data: popularActivitiesData, CardComponent: ActivityCard, status: activitiesStatus, error: activitiesError, type: 'activities' },
   ];
   const currentTabData = tabs.find(tab => tab.name === activeTab);
+
+  // Debug tabs configuration
+  useEffect(() => {
+    console.log('Active Tab:', activeTab);
+    console.log('Current Tab Data:', currentTabData);
+    console.log('Hotels Tab Data:', tabs.find(tab => tab.name === 'Hotels'));
+  }, [activeTab, currentTabData, tabs]);
 
   // "Why Choose Us" items
   const whyChooseUsItems = [

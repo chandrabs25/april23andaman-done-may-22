@@ -38,6 +38,7 @@ interface PackageFormData {
   name: string;
   description: string;
   duration: string;
+  number_of_days: number; // Added field for number of days
   base_price: number;
   max_people: number;
   itinerary_days: ItineraryDayData[]; // CHANGED: to structured days
@@ -73,6 +74,7 @@ export default function NewPackagePage() {
     name: '',
     description: '',
     duration: '',
+    number_of_days: 1,
     base_price: 0,
     max_people: 2,
     itinerary_days: [ // CHANGED: Initialize with one structured day
@@ -436,6 +438,23 @@ export default function NewPackagePage() {
                 value={formData.duration}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="number_of_days" className="block text-sm font-medium text-gray-700 mb-1">
+                Number of Days *
+              </label>
+              <input
+                type="number"
+                id="number_of_days"
+                name="number_of_days"
+                required
+                min="1"
+                value={formData.number_of_days}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., 3"
               />
             </div>
 

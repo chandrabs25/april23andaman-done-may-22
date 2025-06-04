@@ -1691,12 +1691,8 @@ Learn More: https://nextjs.org/docs/messages/node-module-in-edge-runtime`;
             let r3 = new URL("/auth/signin", e10.url);
             return r3.searchParams.set("callbackUrl", t2), Z.redirect(r3);
           }
-          if (n2?.role_id !== 1) {
-            if (t2.startsWith("/api/admin"))
-              return new Z(JSON.stringify({ success: false, message: "Forbidden: You do not have admin privileges." }), { status: 403, headers: { "Content-Type": "application/json" } });
-            let r3 = new URL("/", e10.url);
-            return Z.redirect(r3);
-          }
+          if (n2?.role_id !== 1)
+            return t2.startsWith("/api/admin") ? new Z(JSON.stringify({ success: false, message: "Forbidden: You do not have admin privileges." }), { status: 403, headers: { "Content-Type": "application/json" } }) : (console.log(`[Middleware] User not admin. Rewriting ${t2} to /not-authorized`), Z.rewrite(new URL("/not-authorized", e10.url)));
         }
         return Z.next();
       }

@@ -33,6 +33,7 @@ interface PackageData {
   id: number;
   name: string;
   description?: string | null;
+  number_of_days?: number | null; // Added field for number of days
   images_parsed?: string[]; // Added images support
   categories?: PackageCategory[];
   // Add other relevant fields like base_price, description, etc. if needed for display

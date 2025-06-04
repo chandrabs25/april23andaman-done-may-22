@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useFetch } from '@/hooks/useFetch'; // Assuming this custom hook exists
 import { useRouter } from 'next/navigation';
+import type { Hotel } from '@/types/hotel'; // Import Hotel type
 
 // --- Define Interfaces ---
 interface Destination {
@@ -70,23 +71,6 @@ interface GetPackagesApiResponse {
   packages: Package[];
   pagination?: any;
   success?: boolean;
-  message?: string;
-}
-
-interface HomePageHotel {
-  id: number;
-  name: string;
-  images: string[] | null;
-  address: string;
-  rooms: Array<{ base_price: number }>;
-}
-
-interface GetHotelsApiResponse {
-  success: boolean;
-  data: HomePageHotel[];
-  total: number;
-  page: number;
-  limit: number;
   message?: string;
 }
 
@@ -158,7 +142,7 @@ interface RentalTransportServiceCardProps {
 
 
 interface HotelCardProps {
-  hotel: HomePageHotel;
+  hotel: Hotel; // Updated to use Hotel type from types/hotel.d.ts
 }
 
 interface PackageCardProps {
@@ -236,8 +220,8 @@ export default function Home() {
     data: hotelsResponse,
     error: hotelsError,
     status: hotelsStatus
-  } = useFetch<GetHotelsApiResponse>('/api/hotels?limit=4');
-  const featuredHotelsData = hotelsResponse?.data || [];
+  } = useFetch<Hotel[]>('/api/hotels?limit=4');
+  const featuredHotelsData = hotelsResponse || [];
 
   // Add debugging for hotels data
   useEffect(() => {

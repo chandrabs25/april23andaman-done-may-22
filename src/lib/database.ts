@@ -2205,12 +2205,151 @@ export class DatabaseService {
 
   async countAllOtherServicesForAdminStatusPage(): Promise<{ total: number } | null> {
     const db = await getDatabase();
+    const result = await db.prepare(`
+      SELECT COUNT(*) as total 
+      FROM services s 
+      LEFT JOIN hotels h ON s.id = h.service_id 
+      WHERE h.service_id IS NULL
+    `).first<{ total: number }>();
+    return result;
+  }
+
+  // --- Admin Booking Methods ---
+  async getAllPackageBookingsForAdmin(limit = 50, offset = 0) {
+    const db = await getDatabase();
     return db
-      .prepare(
-        `SELECT COUNT(*) as total
-         FROM services s
-         WHERE s.type NOT IN ('hotel')`
-      )
-      .first<{ total: number }>();
+      .prepare(`
+        SELECT 
+          b.id,
+          b.status,
+          b.payment_status,
+          b.total_amount,
+          b.total_people,
+          b.start_date,
+          b.end_date,
+          b.created_at,
+          b.guest_name,
+          b.guest_email,
+          b.guest_phone,
+          b.special_requests,
+          p.name as package_name,
+          pc.category_name as package_category_name,
+          COALESCE(u.first_name || ' ' || u.last_name, b.guest_name) as customer_name,
+          u.email as customer_email,
+          u.phone as customer_phone
+        FROM bookings b
+        LEFT JOIN packages p ON b.package_id = p.id
+        LEFT JOIN package_categories pc ON b.package_category_id = pc.id
+        LEFT JOIN users u ON b.user_id = u.id
+        WHERE b.package_id IS NOT NULL
+        ORDER BY b.created_at DESC
+        LIMIT ? OFFSET ?
+      `)
+      .bind(limit, offset)
+      .all();
+  }
+
+  async countAllPackageBookingsForAdmin() {
+    const db = await getDatabase();
+    const result = await db.prepare(`
+      SELECT COUNT(*) as total 
+      FROM bookings 
+      WHERE package_id IS NOT NULL
+    `).first<{ total: number }>();
+    return result;
+  }
+
+  async getAllServiceBookingsForAdmin(serviceType?: string, limit = 50, offset = 0) {
+    const db = await getDatabase();
+    let whereClause = `WHERE bs.service_id IS NOT NULL`;
+    const params: any[] = [];
+    
+    if (serviceType) {
+      if (serviceType === 'hotels') {
+        whereClause += ` AND h.service_id IS NOT NULL`;
+      } else if (serviceType === 'activities') {
+        whereClause += ` AND s.type LIKE 'activity%'`;
+      } else if (serviceType === 'rentals') {
+        whereClause += ` AND s.type LIKE 'rental%'`;
+      } else if (serviceType === 'transport') {
+        whereClause += ` AND s.type LIKE 'transport%'`;
+      } else {
+        whereClause += ` AND s.type LIKE ?`;
+        params.push(`${serviceType}%`);
+      }
+    }
+    
+    params.push(limit, offset);
+
+    return db
+      .prepare(`
+        SELECT 
+          b.id,
+          b.status,
+          b.payment_status,
+          b.total_amount,
+          b.total_people,
+          b.start_date,
+          b.end_date,
+          b.created_at,
+          b.guest_name,
+          b.guest_email,
+          b.guest_phone,
+          b.special_requests,
+          bs.quantity,
+          bs.price as service_price,
+          bs.date as service_date,
+          s.name as service_name,
+          s.type as service_type,
+          hrt.room_type,
+          COALESCE(u.first_name || ' ' || u.last_name, b.guest_name) as customer_name,
+          u.email as customer_email,
+          u.phone as customer_phone,
+          sp.business_name as provider_name
+        FROM bookings b
+        INNER JOIN booking_services bs ON b.id = bs.booking_id
+        INNER JOIN services s ON bs.service_id = s.id
+        LEFT JOIN service_providers sp ON s.provider_id = sp.id
+        LEFT JOIN hotels h ON s.id = h.service_id
+        LEFT JOIN hotel_room_types hrt ON bs.hotel_room_type_id = hrt.id
+        LEFT JOIN users u ON b.user_id = u.id
+        ${whereClause}
+        ORDER BY b.created_at DESC
+        LIMIT ? OFFSET ?
+      `)
+      .bind(...params)
+      .all();
+  }
+
+  async countAllServiceBookingsForAdmin(serviceType?: string) {
+    const db = await getDatabase();
+    let whereClause = `WHERE bs.service_id IS NOT NULL`;
+    const params: any[] = [];
+    
+    if (serviceType) {
+      if (serviceType === 'hotels') {
+        whereClause += ` AND h.service_id IS NOT NULL`;
+      } else if (serviceType === 'activities') {
+        whereClause += ` AND s.type LIKE 'activity%'`;
+      } else if (serviceType === 'rentals') {
+        whereClause += ` AND s.type LIKE 'rental%'`;
+      } else if (serviceType === 'transport') {
+        whereClause += ` AND s.type LIKE 'transport%'`;
+      } else {
+        whereClause += ` AND s.type LIKE ?`;
+        params.push(`${serviceType}%`);
+      }
+    }
+
+    const result = await db.prepare(`
+      SELECT COUNT(DISTINCT b.id) as total 
+      FROM bookings b
+      INNER JOIN booking_services bs ON b.id = bs.booking_id
+      INNER JOIN services s ON bs.service_id = s.id
+      LEFT JOIN hotels h ON s.id = h.service_id
+      ${whereClause}
+    `).bind(...params).first<{ total: number }>();
+    
+    return result;
   }
 }

@@ -105,6 +105,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) { // Removed
       icon: <PackageIcon className="h-5 w-5" />
     },
     {
+      href: '/admin_bookings',
+      label: 'All Bookings',
+      icon: <UsersIcon className="h-5 w-5" />
+    },
+    {
       href: '/admin_approvals',
       label: 'Approvals',
       icon: <CheckCircleIcon className="h-5 w-5" />

@@ -41,16 +41,19 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* User Management Card */}
+        {/* Bookings Management Card */}
         <div className="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-medium mb-3">User Management</h3>
-          <p className="text-gray-600 mb-4">Manage users and service providers.</p>
+          <h3 className="text-lg font-medium mb-3">Bookings Management</h3>
+          <p className="text-gray-600 mb-4">View and manage all customer bookings across packages and services.</p>
           <div className="space-y-2">
-            <Link href="/admin/users" className="text-blue-600 hover:underline block">
-              View All Users
+            <Link href="/admin_bookings" className="text-blue-600 hover:underline block">
+              View All Bookings
             </Link>
-            <Link href="/admin/service-providers" className="text-blue-600 hover:underline block">
-              Service Providers
+            <Link href="/admin_bookings?type=packages" className="text-blue-600 hover:underline block">
+              Package Bookings
+            </Link>
+            <Link href="/admin_bookings?type=services" className="text-blue-600 hover:underline block">
+              Service Bookings
             </Link>
           </div>
         </div>

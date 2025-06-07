@@ -32,6 +32,14 @@ interface PackageCategory {
   category_description: string;
   max_pax_included_in_price: number;
   images: string[]; // Added for category images
+  activities: string[]; // Category-specific activities
+  meals: string[]; // Category-specific meals
+  accommodation: {
+    hotel_name: string;
+    room_type: string;
+    amenities: string[];
+    special_features: string;
+  } | null; // Category-specific accommodation details
 }
 
 interface PackageFormData {
@@ -102,7 +110,15 @@ export default function NewPackagePage() {
         hotel_details: '',
         category_description: '',
         max_pax_included_in_price: 2,
-        images: []
+        images: [],
+        activities: [''],
+        meals: [''],
+        accommodation: {
+          hotel_name: '',
+          room_type: '',
+          amenities: [''],
+          special_features: ''
+        }
       }
     ]
   });
@@ -172,11 +188,11 @@ export default function NewPackagePage() {
     // Handle number inputs
     if (field === 'price' || field === 'max_pax_included_in_price') {
       updatedCategories[index][field] = typeof value === 'number' ? value : parseFloat(value as string) || 0;
-    } else if (field !== 'images') { // Add this condition to exclude 'images'
-      // Handle text inputs
+    } else if (field !== 'images' && field !== 'activities' && field !== 'meals' && field !== 'accommodation') {
+      // Handle text inputs (excluding complex fields)
       updatedCategories[index][field] = value as string;
     }
-    // If field is 'images', do nothing here, as it's handled by handleCategoryImagesChange
+    // Complex fields (images, activities, meals, accommodation) are handled by specific functions
     setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
   };
 
@@ -192,7 +208,15 @@ export default function NewPackagePage() {
           hotel_details: '',
           category_description: '',
           max_pax_included_in_price: 2,
-          images: [] // Initialize category images
+          images: [], // Initialize category images
+          activities: [''],
+          meals: [''],
+          accommodation: {
+            hotel_name: '',
+            room_type: '',
+            amenities: [''],
+            special_features: ''
+          }
         }
       ]
     }));
@@ -202,6 +226,91 @@ export default function NewPackagePage() {
   const handleCategoryImagesChange = (index: number, imageUrls: string[]) => {
     const updatedCategories = [...formData.package_categories];
     updatedCategories[index].images = imageUrls;
+    setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
+  };
+
+  // Handle category activities changes
+  const handleCategoryActivitiesChange = (categoryIndex: number, activityIndex: number, value: string) => {
+    const updatedCategories = [...formData.package_categories];
+    const updatedActivities = [...updatedCategories[categoryIndex].activities];
+    updatedActivities[activityIndex] = value;
+    updatedCategories[categoryIndex].activities = updatedActivities;
+    setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
+  };
+
+  const addCategoryActivity = (categoryIndex: number) => {
+    const updatedCategories = [...formData.package_categories];
+    updatedCategories[categoryIndex].activities.push('');
+    setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
+  };
+
+  const removeCategoryActivity = (categoryIndex: number, activityIndex: number) => {
+    const updatedCategories = [...formData.package_categories];
+    if (updatedCategories[categoryIndex].activities.length > 1) {
+      updatedCategories[categoryIndex].activities = updatedCategories[categoryIndex].activities.filter((_, i) => i !== activityIndex);
+    }
+    setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
+  };
+
+  // Handle category meals changes
+  const handleCategoryMealsChange = (categoryIndex: number, mealIndex: number, value: string) => {
+    const updatedCategories = [...formData.package_categories];
+    const updatedMeals = [...updatedCategories[categoryIndex].meals];
+    updatedMeals[mealIndex] = value;
+    updatedCategories[categoryIndex].meals = updatedMeals;
+    setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
+  };
+
+  const addCategoryMeal = (categoryIndex: number) => {
+    const updatedCategories = [...formData.package_categories];
+    updatedCategories[categoryIndex].meals.push('');
+    setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
+  };
+
+  const removeCategoryMeal = (categoryIndex: number, mealIndex: number) => {
+    const updatedCategories = [...formData.package_categories];
+    if (updatedCategories[categoryIndex].meals.length > 1) {
+      updatedCategories[categoryIndex].meals = updatedCategories[categoryIndex].meals.filter((_, i) => i !== mealIndex);
+    }
+    setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
+  };
+
+  // Handle category accommodation changes
+  const handleCategoryAccommodationChange = (categoryIndex: number, field: keyof NonNullable<PackageCategory['accommodation']>, value: string | string[]) => {
+    const updatedCategories = [...formData.package_categories];
+    if (updatedCategories[categoryIndex].accommodation) {
+      if (field === 'amenities') {
+        updatedCategories[categoryIndex].accommodation![field] = value as string[];
+      } else {
+        updatedCategories[categoryIndex].accommodation![field] = value as string;
+      }
+    }
+    setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
+  };
+
+  const handleCategoryAccommodationAmenityChange = (categoryIndex: number, amenityIndex: number, value: string) => {
+    const updatedCategories = [...formData.package_categories];
+    if (updatedCategories[categoryIndex].accommodation) {
+      const updatedAmenities = [...updatedCategories[categoryIndex].accommodation!.amenities];
+      updatedAmenities[amenityIndex] = value;
+      updatedCategories[categoryIndex].accommodation!.amenities = updatedAmenities;
+    }
+    setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
+  };
+
+  const addCategoryAccommodationAmenity = (categoryIndex: number) => {
+    const updatedCategories = [...formData.package_categories];
+    if (updatedCategories[categoryIndex].accommodation) {
+      updatedCategories[categoryIndex].accommodation!.amenities.push('');
+    }
+    setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
+  };
+
+  const removeCategoryAccommodationAmenity = (categoryIndex: number, amenityIndex: number) => {
+    const updatedCategories = [...formData.package_categories];
+    if (updatedCategories[categoryIndex].accommodation && updatedCategories[categoryIndex].accommodation!.amenities.length > 1) {
+      updatedCategories[categoryIndex].accommodation!.amenities = updatedCategories[categoryIndex].accommodation!.amenities.filter((_, i) => i !== amenityIndex);
+    }
     setFormData(prev => ({ ...prev, package_categories: updatedCategories }));
   };
 
@@ -345,7 +454,15 @@ export default function NewPackagePage() {
         ...category,
         // Backend expects images to be stringified if it's an array. The POST /api/admin/packages handles this.
         // So, we send the array as is from the client for categories.
-        images: category.images || [] 
+        images: category.images || [],
+        // Filter out empty activities and meals
+        activities: category.activities.filter(activity => activity.trim() !== ''),
+        meals: category.meals.filter(meal => meal.trim() !== ''),
+        // Prepare accommodation data, ensuring amenities are filtered
+        accommodation: category.accommodation ? {
+          ...category.accommodation,
+          amenities: category.accommodation.amenities.filter(amenity => amenity.trim() !== '')
+        } : null
       })),
     };
 
@@ -858,6 +975,123 @@ export default function NewPackagePage() {
                     maxImages={5} // Example: Max 5 images per category
                     helperText="Upload images specific to this category. Images will be saved when you create the package."
                   />
+                </div>
+
+                {/* Category Activities */}
+                <div className="md:col-span-2 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="block text-sm font-medium text-gray-700">Category Activities</label>
+                    <button type="button" onClick={() => addCategoryActivity(index)} className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600">
+                      <PlusIcon size={12} className="inline mr-1"/>Add Activity
+                    </button>
+                  </div>
+                  {category.activities.map((activity, actIndex) => (
+                    <div key={actIndex} className="flex items-center gap-2 text-xs">
+                      <input 
+                        type="text" 
+                        placeholder="e.g., Private beach access, Scuba diving" 
+                        value={activity} 
+                        onChange={(e) => handleCategoryActivitiesChange(index, actIndex, e.target.value)} 
+                        className="flex-grow px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      />
+                      {category.activities.length > 1 && (
+                        <button type="button" onClick={() => removeCategoryActivity(index, actIndex)} className="p-1 bg-red-500 text-white rounded hover:bg-red-600">
+                          <MinusIcon size={12}/>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Category Meals */}
+                <div className="md:col-span-2 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="block text-sm font-medium text-gray-700">Category Meals</label>
+                    <button type="button" onClick={() => addCategoryMeal(index)} className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600">
+                      <PlusIcon size={12} className="inline mr-1"/>Add Meal
+                    </button>
+                  </div>
+                  {category.meals.map((meal, mealIndex) => (
+                    <div key={mealIndex} className="flex items-center gap-2 text-xs">
+                      <input 
+                        type="text" 
+                        placeholder="e.g., Welcome breakfast, Premium dinner buffet" 
+                        value={meal} 
+                        onChange={(e) => handleCategoryMealsChange(index, mealIndex, e.target.value)} 
+                        className="flex-grow px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      />
+                      {category.meals.length > 1 && (
+                        <button type="button" onClick={() => removeCategoryMeal(index, mealIndex)} className="p-1 bg-red-500 text-white rounded hover:bg-red-600">
+                          <MinusIcon size={12}/>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Category Accommodation */}
+                <div className="md:col-span-2 space-y-4 p-4 border border-gray-200 rounded-md">
+                  <h4 className="text-sm font-medium text-gray-700">Category Accommodation Details</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600">Hotel Name</label>
+                      <input
+                        type="text"
+                        value={category.accommodation?.hotel_name || ''}
+                        onChange={(e) => handleCategoryAccommodationChange(index, 'hotel_name', e.target.value)}
+                        className="w-full mt-1 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="e.g., Symphony Palms Beach Resort"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600">Room Type</label>
+                      <input
+                        type="text"
+                        value={category.accommodation?.room_type || ''}
+                        onChange={(e) => handleCategoryAccommodationChange(index, 'room_type', e.target.value)}
+                        className="w-full mt-1 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="e.g., Ocean View Suite, Deluxe Room"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-gray-600">Special Features</label>
+                      <textarea
+                        rows={2}
+                        value={category.accommodation?.special_features || ''}
+                        onChange={(e) => handleCategoryAccommodationChange(index, 'special_features', e.target.value)}
+                        className="w-full mt-1 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="e.g., Complimentary spa access, Private balcony"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="block text-xs font-medium text-gray-600">Amenities</label>
+                        <button type="button" onClick={() => addCategoryAccommodationAmenity(index)} className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600">
+                          <PlusIcon size={12} className="inline mr-1"/>Add Amenity
+                        </button>
+                      </div>
+                      {category.accommodation?.amenities.map((amenity, amenityIndex) => (
+                        <div key={amenityIndex} className="flex items-center gap-2 text-xs">
+                          <input 
+                            type="text" 
+                            placeholder="e.g., Mini bar, Room service, WiFi" 
+                            value={amenity} 
+                            onChange={(e) => handleCategoryAccommodationAmenityChange(index, amenityIndex, e.target.value)} 
+                            className="flex-grow px-2 py-1 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          />
+                          {category.accommodation && category.accommodation.amenities.length > 1 && (
+                            <button type="button" onClick={() => removeCategoryAccommodationAmenity(index, amenityIndex)} className="p-1 bg-red-500 text-white rounded hover:bg-red-600">
+                              <MinusIcon size={12}/>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

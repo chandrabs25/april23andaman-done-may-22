@@ -11,6 +11,14 @@ interface PackageCategoryPayload {
   category_description?: string | null;
   max_pax_included_in_price?: number | null;
   images?: string[];
+  activities?: string[];
+  meals?: string[];
+  accommodation?: {
+    hotel_name: string;
+    room_type: string;
+    amenities: string[];
+    special_features: string;
+  } | null;
 }
 
 interface CreatePackagePayload {
@@ -247,7 +255,10 @@ export async function POST(request: NextRequest) {
       created_by: adminId, // Use the fetched adminId
       package_categories: (body.package_categories || []).map(cat => ({
         ...cat,
-        images: cat.images && Array.isArray(cat.images) ? JSON.stringify(cat.images) : null // Stringify category images
+        images: cat.images && Array.isArray(cat.images) ? JSON.stringify(cat.images) : null, // Stringify category images
+        activities: cat.activities && Array.isArray(cat.activities) ? JSON.stringify(cat.activities) : null, // Stringify category activities
+        meals: cat.meals && Array.isArray(cat.meals) ? JSON.stringify(cat.meals) : null, // Stringify category meals
+        accommodation: cat.accommodation ? JSON.stringify(cat.accommodation) : null // Stringify category accommodation
       })),
       is_active: body.is_active === false ? 0 : 1 // Default to active if not specified
     };

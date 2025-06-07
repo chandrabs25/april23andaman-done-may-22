@@ -43,6 +43,7 @@ import {
   Quote,
   Phone,
   Activity as ActivityIcon, // Renamed to avoid conflict
+  Heart,
 } from "lucide-react";
 import { useFetch } from "@/hooks/useFetch";
 
@@ -171,92 +172,53 @@ const ActivityCard = ({ activity }: ActivityCardProps) => {
     if (!imgError) setImgError(true);
   };
 
+  // Home page card style constants
+  const cardBaseStyle = "bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl hover:scale-[1.03] group";
+  const cardImageContainerStyle = "w-full h-[180px] bg-cover rounded-t-2xl relative flex-shrink-0 overflow-hidden";
+  const cardContentStyle = "p-3 sm:p-4 flex flex-col text-center";
+  const cardTitleStyle = "text-[#111518] text-sm sm:text-base font-semibold leading-tight line-clamp-2 mb-1 h-[36px] flex items-center justify-center";
+  const cardDescriptionStyle = "text-[#637988] text-xs font-normal leading-relaxed line-clamp-1 flex-1 mb-2 overflow-hidden";
+  const cardBottomStyle = "mt-auto pt-1 flex flex-col items-center justify-center min-h-[32px]";
+
   return (
-    <div className={`${cardBaseStyle} group`}> {/* Added group for hover effects */}
-      <div className="h-52 w-full relative flex-shrink-0 overflow-hidden">
-        <img
-          src={imgError ? '/images/placeholder_service.jpg' : imageUrl}
-          alt={activity.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          onError={handleImageError}
-        />
-        {(imgError || imageUrl === "/images/placeholder_service.jpg") && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 pointer-events-none">
-            <ImageOff size={36} className="text-gray-400 opacity-50" />
+    <div className={cardBaseStyle}>
+      <Link href={`/activities/${activity.id}`} className="block h-full">
+        <div className={cardImageContainerStyle}>
+          <img
+            src={imgError ? '/images/placeholder_service.jpg' : imageUrl}
+            alt={activity.name}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            onError={handleImageError}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+          {activity.island_name && (
+            <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-white/20 shadow-sm">
+              <MapPin size={12} className="inline mr-1 -mt-0.5" />{activity.island_name}
+            </div>
+          )}
+          <div className="absolute bottom-3 right-3 bg-gray-800 text-white text-sm font-bold py-1.5 px-3 rounded-full shadow-md flex items-center">
+            <IndianRupee size={12} className="mr-0.5" />
+            {!isNaN(priceNum) ? priceNum.toLocaleString('en-IN') : activity.price}
           </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-        {/* Price badge - Neutral dark */}
-        <div
-          className={`absolute top-3 right-3 ${primaryButtonBg} ${primaryButtonText} text-sm font-bold py-1.5 px-3 rounded-full shadow-md flex items-center`}
-        >
-          <IndianRupee size={12} className="mr-0.5" />
-          {!isNaN(priceNum)
-            ? `${priceNum.toLocaleString("en-IN")}`
-            : activity.price}
+
+          {(imgError || imageUrl === "/images/placeholder_service.jpg") && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 pointer-events-none">
+              <ActivityIcon size={36} className="text-gray-400 opacity-50" />
+            </div>
+          )}
         </div>
-        {/* Duration badge - Neutral light */}
-        <div
-          className={`absolute bottom-3 left-3 bg-white/90 ${neutralText} text-xs font-medium py-1.5 px-3 rounded-full flex items-center backdrop-blur-sm border ${neutralBorderLight}`}
-        >
-          <Clock size={12} className="mr-1.5" />
-          {durationDisplay}
-        </div>
-        {/* Rating - Positioned differently */}
-        <div
-          className={`absolute top-3 left-3 bg-white/90 ${neutralText} text-xs font-medium py-1.5 px-3 rounded-full flex items-center backdrop-blur-sm border ${neutralBorderLight}`}
-        >
-          <Star size={12} className="mr-1 text-yellow-400 fill-current" />
-          {rating.toFixed(1)}
-        </div>
-      </div>
-      <div className="p-4 flex flex-col flex-grow">
-        <h3
-          className={`text-lg font-semibold leading-tight mb-1 ${neutralText} line-clamp-2`}
-        >
-          {activity.name}
-        </h3>
-        <div className={`flex items-center text-xs ${neutralTextLight} mb-2`}>
-          <MapPin size={12} className={`mr-1 ${infoIconColor}`} />
-          {activity.island_name}
-        </div>
-        <p className={`${neutralTextLight} text-sm mb-3 line-clamp-2 flex-grow`}>
-          {activity.description ||
-            "Engage in exciting activities and explore the beauty of the islands."}
-        </p>
-        {/* Example: Type Display */}
-        <div className="mb-3">
-          <span
-            className={`inline-block ${infoBg} ${infoText} text-xs font-medium px-2.5 py-0.5 rounded-full border ${infoBorder}`}
-          >
-            {activity.type || "General Activity"}
-          </span>
-        </div>
-        <div
-          className={`flex justify-between items-center mt-auto pt-3 border-t ${neutralBorderLight}`}
-        >
-          <span className={`${neutralTextLight} text-sm`}>
-            Price:{" "}
-            <span className={`font-semibold ${neutralText}`}>
-              ₹
-              {!isNaN(priceNum)
-                ? priceNum.toLocaleString("en-IN")
-                : activity.price}
+        
+        <div className={cardContentStyle}>
+          <h3 className={cardTitleStyle}>{activity.name}</h3>
+          <p className={cardDescriptionStyle}>{activity.description || 'Explore this exciting activity.'}</p>
+          <div className={cardBottomStyle}>
+            <span className="text-sm text-[#1A237E] font-medium group-hover:text-[#161D6F] transition-colors duration-300 flex items-center">
+              Book Now
+              <ArrowRight size={14} className="ml-1 transition-transform duration-300 group-hover:translate-x-1" />
             </span>
-          </span>
-          {/* Replaced cardLinkStyle with inline styles */}
-          <Link
-            href={`/activities/${activity.id}`}
-            className={`inline-flex items-center ${infoText} hover:underline font-medium text-sm group`}
-          >
-            View Details
-            <ArrowRight
-              size={14}
-              className="ml-1 transition-transform duration-300 group-hover:translate-x-1"
-            />
-          </Link>
+          </div>
         </div>
-      </div>
+      </Link>
     </div>
   );
 };

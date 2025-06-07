@@ -131,7 +131,7 @@ const sectionPadding = "py-16 md:py-24"; // Consistent padding
 const sectionHeadingStyle = `text-2xl md:text-3xl font-bold ${neutralText}`;
 const cardBaseStyle = `bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl hover:scale-[1.03] border ${neutralBorderLight} h-full group`;
 const buttonPrimaryStyle = `inline-flex items-center justify-center ${primaryButtonBg} ${primaryButtonHoverBg} ${primaryButtonText} font-semibold py-2.5 px-6 rounded-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1`;
-const cardLinkStyle = `inline-flex items-center ${neutralText} hover:${primaryButtonBg} hover:text-white font-medium text-sm group mt-auto pt-2 border-t ${neutralBorderLight} px-1`; // Adjusted link style
+const cardLinkStyle = `inline-flex items-center ${neutralText} hover:text-gray-800 font-medium text-sm group mt-auto pt-2 border-t ${neutralBorderLight} px-1`; // Adjusted link style
 // --- End Common Styles ---
 
 // --- LoadingSpinner Component (Apply Neutral Theme) ---

@@ -51,6 +51,14 @@ interface PackageCategory {
   category_description: string;
   max_pax_included_in_price: number;
   images: string[]; // Used for scrollable images
+  activities: string[] | null; // Category-specific activities
+  meals: string[] | null; // Category-specific meals
+  accommodation: {
+    hotel_name: string;
+    room_type: string;
+    amenities: string[];
+    special_features: string;
+  } | null; // Category-specific accommodation details
 }
 
 interface PackageDataFromApi {
@@ -431,6 +439,64 @@ function ItineraryPageContent() {
                                 {selectedCategoryData.category_description}
                               </p>
                             )}
+                            
+                            {/* Activities */}
+                            {selectedCategoryData.activities && selectedCategoryData.activities.length > 0 && (
+                              <div className="mb-3 sm:mb-4">
+                                <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Activities</p>
+                                <ul className="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                  {selectedCategoryData.activities.slice(0, 3).map((activity, index) => (
+                                    <li key={index} className="flex items-start">
+                                      <span className="text-blue-600 mr-2">•</span>
+                                      <span>{activity}</span>
+                                    </li>
+                                  ))}
+                                  {selectedCategoryData.activities.length > 3 && (
+                                    <li className="text-gray-500 text-sm">+{selectedCategoryData.activities.length - 3} more activities</li>
+                                  )}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Meals */}
+                            {selectedCategoryData.meals && selectedCategoryData.meals.length > 0 && (
+                              <div className="mb-3 sm:mb-4">
+                                <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Meals</p>
+                                <ul className="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                  {selectedCategoryData.meals.slice(0, 3).map((meal, index) => (
+                                    <li key={index} className="flex items-start">
+                                      <span className="text-green-600 mr-2">•</span>
+                                      <span>{meal}</span>
+                                    </li>
+                                  ))}
+                                  {selectedCategoryData.meals.length > 3 && (
+                                    <li className="text-gray-500 text-sm">+{selectedCategoryData.meals.length - 3} more meals</li>
+                                  )}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Accommodation */}
+                            {selectedCategoryData.accommodation && (
+                              <div className="mb-3 sm:mb-4">
+                                <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Accommodation</p>
+                                <div className="text-gray-600 text-sm sm:text-base leading-relaxed space-y-1">
+                                  {selectedCategoryData.accommodation.hotel_name && (
+                                    <p><span className="font-medium">Hotel:</span> {selectedCategoryData.accommodation.hotel_name}</p>
+                                  )}
+                                  {selectedCategoryData.accommodation.room_type && (
+                                    <p><span className="font-medium">Room:</span> {selectedCategoryData.accommodation.room_type}</p>
+                                  )}
+                                  {selectedCategoryData.accommodation.amenities && selectedCategoryData.accommodation.amenities.length > 0 && (
+                                    <p><span className="font-medium">Amenities:</span> {selectedCategoryData.accommodation.amenities.join(', ')}</p>
+                                  )}
+                                  {selectedCategoryData.accommodation.special_features && (
+                                    <p><span className="font-medium">Features:</span> {selectedCategoryData.accommodation.special_features}</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
                             {selectedCategoryData.hotel_details && (
                               <div className="mb-3 sm:mb-4">
                                 <p className="text-gray-500 text-xs sm:text-sm font-medium mb-1">Hotel Details</p>

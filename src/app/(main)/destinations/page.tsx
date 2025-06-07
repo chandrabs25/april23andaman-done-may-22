@@ -105,15 +105,15 @@ const DestinationCard = ({ destination, isScrollableItem = false }: DestinationC
     ? destination.attractions.split(',').length
     : Math.floor(Math.random() * 3) + 2; // Adjusted random attractions
 
-  const combinedCardBaseStyle = `
-    ${cardBaseStyle}
-    ${isScrollableItem ? 'min-w-[280px] w-72 md:min-w-[300px] md:w-80 flex-shrink-0' : ''}
-    // min-w values for scrollable items can be adjusted if needed.
-    // Original card was not designed for horizontal scroll, so width needs to be managed.
-  `;
+  // Separate the base card style from the scrollable item constraints
+  const baseCardClasses = `bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 ${cardNeutralBorderLight} flex flex-col group`;
+  const scrollableItemClasses = isScrollableItem ? 'min-w-[280px] w-72 md:min-w-[300px] md:w-80 flex-shrink-0 h-[440px]' : 'h-full';
+  
+  // Apply classes separately to avoid interference
+  const cardClassName = `${baseCardClasses} ${scrollableItemClasses}`;
 
   return (
-    <div className={combinedCardBaseStyle}>
+    <div className={cardClassName}>
       <div className={cardImageContainerStyle}>
         <Image
           src={imageUrl}
@@ -141,7 +141,7 @@ const DestinationCard = ({ destination, isScrollableItem = false }: DestinationC
       </div>
       <div className={cardContentStyle}>
         <h2 className={cardTitleStyle}>{destination.name}</h2>
-        <p className={`text-sm ${cardNeutralTextLight} mb-4 line-clamp-3 flex-grow`}>
+        <p className={`text-sm ${cardNeutralTextLight} mb-4 line-clamp-2 h-[2.5rem] overflow-hidden`}>
           {destination.description || 'Explore this beautiful destination.'}
         </p>
         <div className={`mt-auto pt-4 border-t ${cardNeutralBorderLight} flex justify-between items-center`}>
@@ -255,8 +255,8 @@ function DestinationsContent() {
           <h2 className={`${generalPrimaryText} text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3`}>
             Featured Destinations
           </h2>
-          <div className="flex overflow-x-auto pb-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex items-stretch gap-4 md:gap-6 px-4"> {/* Gap adjusted for potentially larger cards */}
+          <div className="overflow-x-auto pb-6 px-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-stretch gap-6 py-2">
               {featuredScrollDestinations.map((destination) => (
                 <DestinationCard key={`featured-${destination.id}`} destination={destination} isScrollableItem={true} />
               ))}

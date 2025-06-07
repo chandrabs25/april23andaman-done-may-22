@@ -121,20 +121,20 @@ const Header = () => {
       
 
       {/* Main Header */}
-      <div className="container mx-auto px-4 py-3">
+      <div className="container mx-auto px-4 py-1.5">
         <div className="flex justify-between items-center">
           {/* Logo (Reverted to original src) */}
           <div className="flex-shrink-0">
             <Link href="/" className="inline-block align-middle" onClick={closeMenu}>
-              <div className="relative h-11 w-auto">
+              <div className="relative h-8 w-auto">
                 <Image
                   src="/images/logoresized.webp" // Reverted src
                   alt="Reach Andaman Logo"
-                  height={44}
+                  height={32}
                   width={0}
                   className="object-contain w-auto h-full"
                   priority
-                  sizes="(max-width: 768px) 120px, 160px"
+                  sizes="(max-width: 768px) 100px, 120px"
                 />
               </div>
             </Link>

@@ -161,14 +161,14 @@ export default function Home() {
 
   // --- Common Styles ---
   const sectionPadding = "py-6 md:py-8";
-  const cardBaseStyle = "flex flex-col bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg min-w-[300px] sm:min-w-[340px] h-[340px]";
-  const cardImageContainerStyle = "w-full h-[180px] bg-cover rounded-t-xl relative flex-shrink-0 overflow-hidden";
-  const cardContentStyle = "p-3 sm:p-4 flex flex-col h-[160px] text-center";
-  const cardTitleStyle = "text-[#111518] text-base sm:text-lg font-medium leading-tight line-clamp-2 mb-2 h-[48px] flex items-center justify-center";
-  const cardDescriptionStyle = "text-[#637988] text-sm font-normal leading-relaxed line-clamp-2 flex-1 mb-3 overflow-hidden";
-  const cardPriceStyle = "text-[#111518] text-lg font-bold";
+  const cardBaseStyle = "bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl hover:scale-[1.03] min-w-[300px] sm:min-w-[340px] h-[280px] group";
+  const cardImageContainerStyle = "w-full h-[180px] bg-cover rounded-t-2xl relative flex-shrink-0 overflow-hidden";
+  const cardContentStyle = "p-3 sm:p-4 flex flex-col h-[100px] text-center";
+  const cardTitleStyle = "text-[#111518] text-sm sm:text-base font-semibold leading-tight line-clamp-2 mb-1 h-[36px] flex items-center justify-center";
+  const cardDescriptionStyle = "text-[#637988] text-xs font-normal leading-relaxed line-clamp-1 flex-1 mb-2 overflow-hidden";
+  const cardPriceStyle = "text-[#111518] text-base font-bold";
   const cardLinkStyle = "text-sm font-medium text-[#1A237E] hover:text-[#161D6F] mt-auto pt-2 inline-flex items-center group";
-  const cardBottomStyle = "mt-auto pt-2 flex flex-col items-center justify-center min-h-[40px]";
+  const cardBottomStyle = "mt-auto pt-1 flex flex-col items-center justify-center min-h-[32px]";
 
   // Loading indicator component
   const loadingIndicator = (
@@ -305,13 +305,26 @@ export default function Home() {
   const DestinationCard: React.FC<DestinationCardProps> = ({ destination }) => (
     <Link href={`/destinations/${destination.slug || destination.id || generateSlug(destination.name)}`} className={cardBaseStyle}>
       <div className={cardImageContainerStyle}>
-        <img src={getImageUrl(destination.images)} alt={destination.name} className="w-full h-full object-cover" onError={handleImageError} />
+        <img 
+          src={getImageUrl(destination.images)} 
+          alt={destination.name} 
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+          onError={handleImageError} 
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div className="absolute bottom-3 left-3 bg-white/90 text-[#111518] text-xs font-medium py-1.5 px-3 rounded-full flex items-center backdrop-blur-sm border border-white/20">
+          <MapPin size={12} className="mr-1.5" />
+          Destination
+        </div>
       </div>
       <div className={cardContentStyle}>
         <h3 className={cardTitleStyle}>{destination.name}</h3>
         <p className={cardDescriptionStyle}>{destination.description || 'Explore this beautiful destination.'}</p>
         <div className={cardBottomStyle}>
-          <span className="text-sm text-[#1A237E] font-medium">Explore Destination</span>
+          <span className="text-sm text-[#1A237E] font-medium group-hover:text-[#161D6F] transition-colors duration-300 flex items-center">
+            Explore Destination
+            <ArrowRight size={14} className="ml-1 transition-transform duration-300 group-hover:translate-x-1" />
+          </span>
         </div>
       </div>
     </Link>
@@ -322,11 +335,27 @@ export default function Home() {
     return (
       <Link href={`/hotels/${hotel.id}`} className={cardBaseStyle}>
         <div className={cardImageContainerStyle}>
-          <img src={getImageUrl(hotel.images)} alt={hotel.name} className="w-full h-full object-cover" onError={handleImageError} />
+          <img 
+            src={getImageUrl(hotel.images)} 
+            alt={hotel.name} 
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+            onError={handleImageError} 
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+          {price !== undefined && (
+            <div className="absolute top-3 right-3 bg-gray-800 text-white text-sm font-bold py-1.5 px-3 rounded-full shadow-md flex items-center">
+              <IndianRupee size={12} className="mr-0.5" />
+              {price.toLocaleString('en-IN')}
+            </div>
+          )}
+          <div className="absolute bottom-3 left-3 bg-white/90 text-[#111518] text-xs font-medium py-1.5 px-3 rounded-full flex items-center backdrop-blur-sm border border-white/20">
+            <MapPin size={12} className="mr-1.5" />
+            {hotel.address || 'Address not available'}
+          </div>
         </div>
         <div className={cardContentStyle}>
           <h3 className={cardTitleStyle}>{hotel.name}</h3>
-          <p className={cardDescriptionStyle}>{hotel.address}</p>
+          <div className="flex-1"></div>
           <div className={cardBottomStyle}>
             {price !== undefined ? (
               <div className="flex flex-col items-center">
@@ -334,7 +363,10 @@ export default function Home() {
                 <span className="text-xs text-[#637988]">per night</span>
               </div>
             ) : (
-              <span className="text-sm text-[#1A237E] font-medium">View Details</span>
+              <span className="text-sm text-[#1A237E] font-medium group-hover:text-[#161D6F] transition-colors duration-300 flex items-center">
+                View Details
+                <ArrowRight size={14} className="ml-1 transition-transform duration-300 group-hover:translate-x-1" />
+              </span>
             )}
           </div>
         </div>
@@ -345,8 +377,18 @@ export default function Home() {
   const PackageCard: React.FC<PackageCardProps> = ({ pkg }) => (
     <Link href={`/packages/${pkg.slug || pkg.id}`} className={cardBaseStyle}>
       <div className={cardImageContainerStyle}>
-        <img src={getImageUrl(pkg.images_parsed)} alt={pkg.name} className="w-full h-full object-cover" onError={handleImageError} />
-        <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm">
+        <img 
+          src={getImageUrl(pkg.images_parsed)} 
+          alt={pkg.name} 
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+          onError={handleImageError} 
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div className="absolute top-3 right-3 bg-gray-800 text-white text-sm font-bold py-1.5 px-3 rounded-full shadow-md flex items-center">
+          <IndianRupee size={12} className="mr-0.5" />
+          {pkg.base_price.toLocaleString('en-IN')}
+        </div>
+        <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-white/20 shadow-sm">
           <Clock size={12} className="inline mr-1 -mt-0.5" /> {pkg.duration}
         </div>
       </div>
@@ -366,20 +408,31 @@ export default function Home() {
   const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => (
     <Link href={`/activities/${activity.slug || activity.id}`} className={cardBaseStyle}>
       <div className={cardImageContainerStyle}>
-        <img src={getImageUrl(activity.images)} alt={activity.name} className="w-full h-full object-cover" onError={handleImageError} />
+        <img 
+          src={getImageUrl(activity.images)} 
+          alt={activity.name} 
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+          onError={handleImageError} 
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         {activity.island_name && (
-          <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm">
+          <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-white/20 shadow-sm">
             <MapPin size={12} className="inline mr-1 -mt-0.5" />{activity.island_name}
           </div>
         )}
+        <div className="absolute bottom-3 right-3 bg-gray-800 text-white text-sm font-bold py-1.5 px-3 rounded-full shadow-md flex items-center">
+          <IndianRupee size={12} className="mr-0.5" />
+          {isNaN(Number(activity.price)) ? activity.price : Number(activity.price).toLocaleString('en-IN')}
+        </div>
       </div>
       <div className={cardContentStyle}>
         <h3 className={cardTitleStyle}>{activity.name}</h3>
         <p className={cardDescriptionStyle}>{activity.description || 'Explore this exciting activity.'}</p>
         <div className={cardBottomStyle}>
-          <div className="flex flex-col items-center">
-            <span className={cardPriceStyle}><IndianRupee size={16} className="inline -mt-1" />{isNaN(Number(activity.price)) ? activity.price : Number(activity.price).toLocaleString('en-IN')}</span>
-          </div>
+          <span className="text-sm text-[#1A237E] font-medium group-hover:text-[#161D6F] transition-colors duration-300 flex items-center">
+            Book Now
+            <ArrowRight size={14} className="ml-1 transition-transform duration-300 group-hover:translate-x-1" />
+          </span>
         </div>
       </div>
     </Link>
@@ -422,11 +475,22 @@ export default function Home() {
     return (
       <Link href={detailPath} className={cardBaseStyle}>
         <div className={cardImageContainerStyle}>
-          <img src={getImageUrl(service.images)} alt={service.name} className="w-full h-full object-cover" onError={handleImageError} />
+          <img 
+            src={getImageUrl(service.images)} 
+            alt={service.name} 
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+            onError={handleImageError} 
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
           {detailText && (
-            <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-slate-200 shadow-sm flex items-center">
+            <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-[#111518] border border-white/20 shadow-sm flex items-center">
               {service.service_category === 'transport' ? <Car size={12} className="mr-1.5 -mt-0.5" /> : <ShoppingBag size={12} className="mr-1.5 -mt-0.5" />}
               {detailText}
+            </div>
+          )}
+          {formattedPrice !== "On request" && (
+            <div className="absolute top-3 right-3 bg-gray-800 text-white text-sm font-bold py-1.5 px-3 rounded-full shadow-md flex items-center">
+              {formattedPrice}
             </div>
           )}
         </div>

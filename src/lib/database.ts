@@ -46,6 +46,9 @@ interface PackageCategoryDbPayload {
   category_description?: string | null;
   max_pax_included_in_price?: number | null;
   images?: string | null; // Added for category images (JSON string)
+  activities?: string | null; // Category-specific activities (JSON string)
+  meals?: string | null; // Category-specific meals (JSON string)
+  accommodation?: string | null; // Category-specific accommodation (JSON string)
 }
 
 interface CreatePackageDbPayload {
@@ -561,7 +564,8 @@ export class DatabaseService {
     return db
       .prepare(`
         SELECT id, package_id, category_name, price, hotel_details, 
-               category_description, max_pax_included_in_price, images, created_at, updated_at
+               category_description, max_pax_included_in_price, images,
+               activities, meals, accommodation, created_at, updated_at
         FROM package_categories
         WHERE package_id = ?
         ORDER BY price ASC
@@ -659,12 +663,16 @@ export class DatabaseService {
         // Assuming cat.images is already a JSON string or null from the API layer
         // If it could be an array here, stringifyIfNeeded(cat.images, 'category_images') would be used.
         const categoryImagesStr = typeof cat.images === 'string' ? cat.images : (cat.images ? JSON.stringify(cat.images) : null);
+        const categoryActivitiesStr = typeof cat.activities === 'string' ? cat.activities : (cat.activities ? JSON.stringify(cat.activities) : null);
+        const categoryMealsStr = typeof cat.meals === 'string' ? cat.meals : (cat.meals ? JSON.stringify(cat.meals) : null);
+        const categoryAccommodationStr = typeof cat.accommodation === 'string' ? cat.accommodation : (cat.accommodation ? JSON.stringify(cat.accommodation) : null);
 
         return db.prepare(`
           INSERT INTO package_categories (
             package_id, category_name, price, hotel_details, 
-            category_description, max_pax_included_in_price, images, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            category_description, max_pax_included_in_price, images, 
+            activities, meals, accommodation, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         `).bind(
           packageId,
           cat.category_name,
@@ -672,7 +680,10 @@ export class DatabaseService {
           cat.hotel_details ?? null,
           cat.category_description ?? null,
           cat.max_pax_included_in_price ?? null,
-          categoryImagesStr // Use the potentially stringified images string
+          categoryImagesStr, // Use the potentially stringified images string
+          categoryActivitiesStr,
+          categoryMealsStr,
+          categoryAccommodationStr
         );
       });
 
@@ -774,6 +785,10 @@ export class DatabaseService {
           packageData.package_categories.forEach((cat, index) => {
             const categoryImagesStr = typeof cat.images === 'string' ? cat.images : (cat.images ? JSON.stringify(cat.images) : null);
             
+            const categoryActivitiesStr = typeof cat.activities === 'string' ? cat.activities : (cat.activities ? JSON.stringify(cat.activities) : null);
+            const categoryMealsStr = typeof cat.meals === 'string' ? cat.meals : (cat.meals ? JSON.stringify(cat.meals) : null);
+            const categoryAccommodationStr = typeof cat.accommodation === 'string' ? cat.accommodation : (cat.accommodation ? JSON.stringify(cat.accommodation) : null);
+
             if (index < existingCategories.length) {
               // Update existing category
               const existingCategoryId = (existingCategories[index] as any).id;
@@ -781,7 +796,8 @@ export class DatabaseService {
                 db.prepare(`
                   UPDATE package_categories SET
                     category_name = ?, price = ?, hotel_details = ?, 
-                    category_description = ?, max_pax_included_in_price = ?, images = ?, updated_at = CURRENT_TIMESTAMP
+                    category_description = ?, max_pax_included_in_price = ?, images = ?,
+                    activities = ?, meals = ?, accommodation = ?, updated_at = CURRENT_TIMESTAMP
                   WHERE id = ?
                 `).bind(
                   cat.category_name,
@@ -790,6 +806,9 @@ export class DatabaseService {
                   cat.category_description ?? null,
                   cat.max_pax_included_in_price ?? null,
                   categoryImagesStr,
+                  categoryActivitiesStr,
+                  categoryMealsStr,
+                  categoryAccommodationStr,
                   existingCategoryId
                 )
               );
@@ -799,8 +818,9 @@ export class DatabaseService {
                 db.prepare(`
                   INSERT INTO package_categories (
                     package_id, category_name, price, hotel_details, 
-                    category_description, max_pax_included_in_price, images, created_at, updated_at
-                  ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    category_description, max_pax_included_in_price, images,
+                    activities, meals, accommodation, created_at, updated_at
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 `).bind(
                   packageId,
                   cat.category_name,
@@ -808,7 +828,10 @@ export class DatabaseService {
                   cat.hotel_details ?? null,
                   cat.category_description ?? null,
                   cat.max_pax_included_in_price ?? null,
-                  categoryImagesStr
+                  categoryImagesStr,
+                  categoryActivitiesStr,
+                  categoryMealsStr,
+                  categoryAccommodationStr
                 )
               );
             }
@@ -837,13 +860,17 @@ export class DatabaseService {
           
           packageData.package_categories.forEach(cat => {
             const categoryImagesStr = typeof cat.images === 'string' ? cat.images : (cat.images ? JSON.stringify(cat.images) : null);
+            const categoryActivitiesStr = typeof cat.activities === 'string' ? cat.activities : (cat.activities ? JSON.stringify(cat.activities) : null);
+            const categoryMealsStr = typeof cat.meals === 'string' ? cat.meals : (cat.meals ? JSON.stringify(cat.meals) : null);
+            const categoryAccommodationStr = typeof cat.accommodation === 'string' ? cat.accommodation : (cat.accommodation ? JSON.stringify(cat.accommodation) : null);
             
             statements.push(
               db.prepare(`
                 INSERT INTO package_categories (
                   package_id, category_name, price, hotel_details, 
-                  category_description, max_pax_included_in_price, images, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                  category_description, max_pax_included_in_price, images,
+                  activities, meals, accommodation, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
               `).bind(
                 packageId,
                 cat.category_name,
@@ -851,7 +878,10 @@ export class DatabaseService {
                 cat.hotel_details ?? null,
                 cat.category_description ?? null,
                 cat.max_pax_included_in_price ?? null,
-                categoryImagesStr
+                categoryImagesStr,
+                categoryActivitiesStr,
+                categoryMealsStr,
+                categoryAccommodationStr
               )
             );
           });

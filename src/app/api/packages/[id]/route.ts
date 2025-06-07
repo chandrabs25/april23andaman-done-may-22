@@ -72,6 +72,14 @@ interface PackageCategory { // This is the structure we want for the API respons
   category_description: string | null;
   max_pax_included_in_price: number | null;
   images: string[] | null; // Parsed from JSON string
+  activities: string[] | null; // Category-specific activities
+  meals: string[] | null; // Category-specific meals
+  accommodation: {
+    hotel_name: string;
+    room_type: string;
+    amenities: string[];
+    special_features: string;
+  } | null; // Category-specific accommodation details
   // created_at and updated_at can be added if needed for the response
 }
 
@@ -85,6 +93,9 @@ interface DbPackageCategory {
   category_description: string | null;
   max_pax_included_in_price: number | null;
   images: string | null; // JSON string from DB
+  activities: string | null; // JSON string from DB
+  meals: string | null; // JSON string from DB
+  accommodation: string | null; // JSON string from DB
   created_at?: string;
   updated_at?: string;
 }
@@ -262,8 +273,29 @@ export async function GET(
       // Use safeJsonParseArray for category images
       const parsedCatImages = safeJsonParseArray(cat.images, `category ${cat.id} images`);
       
-      // REMOVED: Old parsing for hotel_details
-      // const parsedHotelDetails = safeJsonParseObject(cat.hotel_details, `category ${cat.id} hotel_details`, {});
+      // Parse category activities
+      const parsedCatActivities = safeJsonParseArray(cat.activities, `category ${cat.id} activities`);
+      
+      // Parse category meals
+      const parsedCatMeals = safeJsonParseArray(cat.meals, `category ${cat.id} meals`);
+      
+      // Parse category accommodation
+      let parsedCatAccommodation = null;
+      if (cat.accommodation) {
+        try {
+          const parsedAccom = JSON.parse(cat.accommodation);
+          if (parsedAccom && typeof parsedAccom === 'object') {
+            parsedCatAccommodation = {
+              hotel_name: parsedAccom.hotel_name || '',
+              room_type: parsedAccom.room_type || '',
+              amenities: Array.isArray(parsedAccom.amenities) ? parsedAccom.amenities : [],
+              special_features: parsedAccom.special_features || ''
+            };
+          }
+        } catch (e) {
+          console.warn(`Failed to parse accommodation for category ${cat.id}:`, cat.accommodation);
+        }
+      }
 
       return {
         id: cat.id,
@@ -274,6 +306,9 @@ export async function GET(
         category_description: cat.category_description,
         max_pax_included_in_price: cat.max_pax_included_in_price,
         images: parsedCatImages,
+        activities: parsedCatActivities,
+        meals: parsedCatMeals,
+        accommodation: parsedCatAccommodation,
         // created_at: cat.created_at, // uncomment if needed
         // updated_at: cat.updated_at, // uncomment if needed
       };

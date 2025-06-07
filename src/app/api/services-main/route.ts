@@ -71,12 +71,13 @@ export async function GET(request: NextRequest) {
 
     // Filtering parameters
     const islandIdParam = searchParams.get("islandId");
+    const islandNameParam = searchParams.get("island"); // Frontend sends 'island' not 'islandId'
     const islandId = islandIdParam ? parseInt(islandIdParam, 10) : null;
-    const searchTerm = searchParams.get("search") || null;
+    const searchTerm = searchParams.get("search")?.trim() || null;
     // Specific type filter for this endpoint, e.g., "transport" or "rental" or comma-separated for both
-    const serviceCategory = searchParams.get("category"); // e.g., "transport", "rental"
+    const serviceCategory = searchParams.get("category")?.trim() || null; // e.g., "transport", "rental"
     
-    console.log(`🔍 [API] GET /api/services-main: Filters - islandId: ${islandId}, search: ${searchTerm}, category: ${serviceCategory}`);
+    console.log(`🔍 [API] GET /api/services-main: Filters - islandId: ${islandId}, islandName: ${islandNameParam}, search: ${searchTerm}, category: ${serviceCategory}`);
 
     // First check if the services table exists and has records
     try {
@@ -118,12 +119,16 @@ export async function GET(request: NextRequest) {
       queryParams.push("transport%", "rental%");
     }
 
+    // Handle both islandId (number) and island (name) parameters
     if (islandId !== null && !isNaN(islandId)) {
       queryString += " AND s.island_id = ?";
       queryParams.push(islandId);
+    } else if (islandNameParam && islandNameParam.trim() !== '') {
+      queryString += " AND i.name LIKE ?";
+      queryParams.push(`%${islandNameParam.trim()}%`);
     }
 
-    if (searchTerm) {
+    if (searchTerm && searchTerm !== '') {
       queryString += " AND (s.name LIKE ? OR s.description LIKE ?)";
       queryParams.push(`%${searchTerm}%`, `%${searchTerm}%`);
     }

@@ -2352,4 +2352,84 @@ export class DatabaseService {
     
     return result;
   }
+
+  // --- Additional method for hotel bookings ---
+  async createInitialHotelBooking(bookingData: {
+    service_id: number;
+    hotel_room_type_id: number;
+    user_id: number | null;
+    total_amount: number;
+    guest_name: string | null;
+    guest_email: string | null;
+    guest_phone: string | null;
+    start_date: string;
+    end_date: string;
+    total_people: number;
+    number_of_rooms: number;
+    special_requests: string | null;
+  }) {
+    const db = await getDatabase();
+    
+    try {
+      // Create the main booking record
+      const bookingResult = await db.prepare(`
+        INSERT INTO bookings (
+          user_id, service_id, total_people, start_date, end_date,
+          status, total_amount, payment_status, guest_name, 
+          guest_email, guest_phone, special_requests, 
+          number_of_rooms, booking_type
+        ) VALUES (?, ?, ?, ?, ?, 'PENDING_PAYMENT', ?, 'INITIATED', ?, ?, ?, ?, ?, 'hotel')
+      `).bind(
+        bookingData.user_id,
+        bookingData.service_id,
+        bookingData.total_people,
+        bookingData.start_date,
+        bookingData.end_date,
+        bookingData.total_amount,
+        bookingData.guest_name,
+        bookingData.guest_email,
+        bookingData.guest_phone,
+        bookingData.special_requests,
+        bookingData.number_of_rooms
+      ).run();
+
+      if (!bookingResult.success) {
+        throw new Error('Failed to create hotel booking record');
+      }
+
+      const bookingId = bookingResult.meta?.last_row_id;
+      if (!bookingId) {
+        throw new Error('Failed to get booking ID after creation');
+      }
+
+      // Create the booking service record
+      await db.prepare(`
+        INSERT INTO booking_services (
+          booking_id, service_id, hotel_room_type_id, 
+          quantity, price, date
+        ) VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(
+        bookingId,
+        bookingData.service_id,
+        bookingData.hotel_room_type_id,
+        bookingData.number_of_rooms,
+        bookingData.total_amount,
+        bookingData.start_date
+      ).run();
+
+      return {
+        success: true,
+        meta: { last_row_id: bookingId },
+        error: null
+      };
+
+    } catch (error) {
+      console.error('Error creating hotel booking:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error creating hotel booking',
+        meta: {}
+      };
+    }
+  }
 }

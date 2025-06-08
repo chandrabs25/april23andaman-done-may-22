@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Image from 'next/image';
 import Link from "next/link";
 import { useFetch } from "@/hooks/useFetch";
-import type { Hotel } from "@/types/hotel";
+import type { Hotel, PaginatedHotelsResponse } from "@/types/hotel";
 import {
   Loader2, AlertTriangle, MapPin, ChevronLeft, Users, IndianRupee, Search, Filter as FilterIcon, Building, ChevronRight, ImageOff, X,
   Heart, Star, ArrowRight, ChevronDown, Check, Info, Ban, Quote, Phone, MessageSquare, HelpCircle, RefreshCw
@@ -232,11 +232,11 @@ const HotelsPage = () => {
     data: hotelsResponse,
     error: hotelsError,
     status: hotelsStatus,
-  } = useFetch<Hotel[]>(getHotelsListUrl());
+  } = useFetch<PaginatedHotelsResponse>(getHotelsListUrl());
 
   const isLoadingHotels = hotelsStatus === 'loading';
-  const hotelsList = hotelsResponse || [];
-  const totalHotels = hotelsResponse?.length || 0;
+  const hotelsList = hotelsResponse?.data || [];
+  const totalHotels = hotelsResponse?.total || 0;
   const totalPages = hotelsList.length > 0 ? Math.ceil(totalHotels / ITEMS_PER_PAGE) || 1 : 1;
 
   // Filter handlers

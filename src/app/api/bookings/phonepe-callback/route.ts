@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { DatabaseService } from '../../../../lib/database'; // Adjust path if your lib is elsewhere
 import { verifyXVerifyHeader } from '../../../../lib/phonepeUtils'; // Adjust path if your lib is elsewhere
+import { bookingSystem } from '../../../../lib/booking-system';
 import crypto from 'crypto';
 
 // --- Interface Definition for PhonePe S2S Callback Body ---
@@ -91,15 +92,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Invalid transaction ID format after parsing." }, { status: 400 });
     }
 
-    console.log(`LOG 10: Parsed bookingId: ${bookingId}. Proceeding with idempotency check.`);
-    const booking = await dbService.getBookingById(bookingId);
-    if (!booking) {
-      console.error(`LOG Error: Booking not found for bookingId ${bookingId} (from MTID ${merchantTransactionId}).`);
-      return NextResponse.json({ success: true, message: "Callback acknowledged, but booking not found locally." });
-    }
-    if (booking.status === 'CONFIRMED' || booking.status === 'FAILED') {
-      console.log(`LOG Info: Booking ${bookingId} already in a terminal state: ${booking.status}. Acknowledging callback.`);
-      return NextResponse.json({ success: true, message: "Callback acknowledged for already processed transaction." });
+    // Check if this is a hold-based transaction
+    const isHoldTransaction = merchantTransactionId.startsWith('HOLD_');
+    let actualBookingId = bookingId;
+    let holdId: number | null = null;
+
+    if (isHoldTransaction) {
+      // Extract hold ID from merchant transaction ID (format: HOLD_{holdId}_{timestamp})
+      const holdIdMatch = merchantTransactionId.match(/^HOLD_(\d+)_/);
+      if (!holdIdMatch) {
+        console.error(`LOG Error: Invalid hold transaction ID format: ${merchantTransactionId}`);
+        return NextResponse.json({ success: true, message: "Callback acknowledged, but invalid hold transaction format." });
+      }
+      
+      holdId = parseInt(holdIdMatch[1], 10);
+      console.log(`LOG 10a: Hold transaction detected. Hold ID: ${holdId}`);
+      
+      // For hold transactions, we don't have a booking yet - we'll create it on successful payment
+      actualBookingId = 0; // Placeholder
+    } else {
+      console.log(`LOG 10: Parsed bookingId: ${bookingId}. Proceeding with idempotency check.`);
+      const booking = await dbService.getBookingById(bookingId);
+      if (!booking) {
+        console.error(`LOG Error: Booking not found for bookingId ${bookingId} (from MTID ${merchantTransactionId}).`);
+        return NextResponse.json({ success: true, message: "Callback acknowledged, but booking not found locally." });
+      }
+      if (booking.status === 'CONFIRMED' || booking.status === 'FAILED') {
+        console.log(`LOG Info: Booking ${bookingId} already in a terminal state: ${booking.status}. Acknowledging callback.`);
+        return NextResponse.json({ success: true, message: "Callback acknowledged for already processed transaction." });
+      }
     }
 
     console.log(`LOG 11: Booking ${bookingId} found, not in terminal state. Proceeding to call PhonePe Check Status API.`);
@@ -139,15 +160,73 @@ export async function POST(request: NextRequest) {
       console.log(`LOG 14: Status API for MTID ${merchantTransactionId} successful. Code: ${confirmedPaymentCode}, PhonePeInternalTID: ${phonepeInternalTxId}`);
 
       if (confirmedPaymentCode === 'PAYMENT_SUCCESS') {
-        await dbService.updateBookingStatusAndPaymentStatus(bookingId.toString(), 'CONFIRMED', 'PAID', phonepeInternalTxId);
-        console.log(`LOG Info: Booking ${bookingId} CONFIRMED and payment PAID via D1.`);
+        if (isHoldTransaction && holdId) {
+          // Convert hold to booking
+          try {
+            console.log(`LOG 14a: Converting hold ${holdId} to booking on successful payment`);
+            
+            // Get hold details first
+            const holds = await bookingSystem.getActiveHolds();
+            const targetHold = holds.find(h => h.id === holdId);
+            
+            if (!targetHold) {
+              console.error(`LOG Error: Hold ${holdId} not found for conversion`);
+              return NextResponse.json({ success: true, message: "Hold not found for conversion" });
+            }
+
+            // Create booking data from hold
+            const bookingData = {
+              user_id: targetHold.user_id || undefined,
+              package_id: undefined, // Hotel bookings don't use package_id
+              package_category_id: undefined,
+              total_people: 1, // Will be updated with actual guest count
+              start_date: targetHold.hold_date,
+              end_date: targetHold.hold_date, // Will be updated with actual end date
+              total_amount: targetHold.hold_price || 0,
+              guest_name: targetHold.user_name || 'Guest',
+              guest_email: targetHold.user_email || '',
+              guest_phone: '',
+              special_requests: '',
+            };
+
+            const conversionResult = await bookingSystem.convertHoldToBooking(holdId, bookingData);
+            
+            if (conversionResult.success && conversionResult.booking_id) {
+              // Update the booking with payment details
+              await dbService.updateBookingStatusAndPaymentStatus(
+                conversionResult.booking_id.toString(), 
+                'CONFIRMED', 
+                'PAID', 
+                phonepeInternalTxId
+              );
+              console.log(`LOG Info: Hold ${holdId} converted to booking ${conversionResult.booking_id} and marked as CONFIRMED/PAID`);
+            } else {
+              console.error(`LOG Error: Failed to convert hold ${holdId} to booking`);
+              await bookingSystem.updateHoldStatus(holdId, 'cancelled');
+            }
+          } catch (holdConversionError) {
+            console.error(`LOG Error: Exception during hold conversion for hold ${holdId}:`, holdConversionError);
+            await bookingSystem.updateHoldStatus(holdId, 'cancelled');
+          }
+        } else {
+          // Regular booking flow
+          await dbService.updateBookingStatusAndPaymentStatus(actualBookingId.toString(), 'CONFIRMED', 'PAID', phonepeInternalTxId);
+          console.log(`LOG Info: Booking ${actualBookingId} CONFIRMED and payment PAID via D1.`);
+        }
       } else if (['PAYMENT_ERROR', 'TRANSACTION_NOT_FOUND', 'PAYMENT_FAILURE', 'TIMED_OUT', 'CARD_NOT_SUPPORTED', 'BANK_OFFLINE', 'PAYMENT_DECLINED'].includes(confirmedPaymentCode)) {
-        await dbService.updateBookingStatusAndPaymentStatus(bookingId.toString(), 'FAILED', 'FAILED', phonepeInternalTxId);
-        console.log(`LOG Info: Booking ${bookingId} FAILED via D1. Status from API: ${confirmedPaymentCode}`);
+        if (isHoldTransaction && holdId) {
+          // Cancel hold on payment failure
+          await bookingSystem.updateHoldStatus(holdId, 'cancelled');
+          console.log(`LOG Info: Hold ${holdId} cancelled due to payment failure. Status: ${confirmedPaymentCode}`);
+        } else {
+          // Regular booking flow
+          await dbService.updateBookingStatusAndPaymentStatus(actualBookingId.toString(), 'FAILED', 'FAILED', phonepeInternalTxId);
+          console.log(`LOG Info: Booking ${actualBookingId} FAILED via D1. Status from API: ${confirmedPaymentCode}`);
+        }
       } else if (confirmedPaymentCode === 'PAYMENT_PENDING') {
-        console.log(`LOG Info: Booking ${bookingId} is PENDING according to status check. No DB update to terminal state from callback.`);
+        console.log(`LOG Info: Transaction ${merchantTransactionId} is PENDING according to status check. No DB update to terminal state from callback.`);
       } else {
-        console.log(`LOG Info: Booking ${bookingId} has unhandled status via check API: ${confirmedPaymentCode}.`);
+        console.log(`LOG Info: Transaction ${merchantTransactionId} has unhandled status via check API: ${confirmedPaymentCode}.`);
       }
     } else {
       console.error(`LOG Error: PhonePe Check Status API call for ${merchantTransactionId} was not successful or malformed:`, statusResponse?.message || "No message in status response", "Full statusResponse:", JSON.stringify(statusResponse, null, 2));

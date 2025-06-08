@@ -174,3 +174,7 @@ export const galleryThumbnailContainerStyle = "flex gap-2 overflow-x-auto pb-2";
 export const galleryThumbnailItemBaseStyle = "relative h-20 w-32 rounded-lg overflow-hidden cursor-pointer transition-all";
 export const galleryThumbnailActiveRingStyle = `ring-4 ${primaryButtonBg}`; // Uses primary button bg for active state ring
 export const galleryThumbnailOpacityStyle = "opacity-70 hover:opacity-100";
+
+// Form Styles
+export const inputBaseStyle = `w-full px-4 py-3 rounded-lg border ${neutralBorder} bg-white ${neutralText} placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`;
+export const labelBaseStyle = `block text-sm font-medium ${neutralText} mb-2`;

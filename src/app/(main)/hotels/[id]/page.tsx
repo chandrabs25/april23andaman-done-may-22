@@ -4,11 +4,11 @@ import React, { useState } from "react";
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import Link from "next/link";
-import { useParams, useSearchParams } from 'next/navigation'; // Added useSearchParams
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useFetch } from "@/hooks/useFetch";
 import type { Hotel, Room } from "@/types/hotel";
 import {
-  Loader2, AlertTriangle, MapPin, ChevronLeft, Users, IndianRupee, ListChecks, BedDouble, Wifi, ParkingCircle, Utensils, Briefcase, Building, Award, CheckCircle, Info, ImageOff, Eye, ShieldCheck
+  Loader2, AlertTriangle, MapPin, ChevronLeft, Users, IndianRupee, ListChecks, BedDouble, Wifi, ParkingCircle, Utensils, Briefcase, Building, Award, CheckCircle, Info, ImageOff, Eye, ShieldCheck, Clock, Home, Star, Coffee, TreePine, Dumbbell, Waves
 } from "lucide-react";
 
 // --- Import Common Styles from theme.ts ---
@@ -44,6 +44,7 @@ import {
   warningIconColor,
   listIconWrapperStyle,
 } from "@/styles/26themeandstyle";
+
 // --- End Common Styles Import ---
 
 const HotelDetailMap = dynamic(() => import('@/components/HotelDetailMap'), {
@@ -96,13 +97,13 @@ const DetailSection: React.FC<DetailSectionProps> = ({ id, title, icon: Icon, ch
     </div>
   </div>
 );
-// --- End Helper Components ---
 
 const HotelDetailPage = () => {
   const params = useParams();
+  const router = useRouter();
   const hotelId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const searchParams = useSearchParams(); // Added
-  const isAdminPreview = searchParams.get('isAdminPreview') === 'true'; // Added
+  const searchParams = useSearchParams();
+  const isAdminPreview = searchParams.get('isAdminPreview') === 'true';
   const [retryToken, setRetryToken] = useState(0);
 
   // Construct focus ring classes based on the primaryButtonBg variable
@@ -115,17 +116,12 @@ const HotelDetailPage = () => {
     : `/api/hotels/${hotelId}?_retry=${retryToken}`;
 
   const {
-    data: selectedHotel, // Destructure directly as selectedHotel, this is of type Hotel | null
+    data: selectedHotel,
     error: selectedHotelError,
     status: selectedHotelStatus,
-  } = useFetch<Hotel>(hotelId ? apiUrl : null); // Use specific type Hotel, ensure hotelId is valid
+  } = useFetch<Hotel>(hotelId ? apiUrl : null);
 
   const isLoadingSelectedHotel = selectedHotelStatus === 'loading';
-
-  // Removed incorrect selectedHotel derivation:
-  // const selectedHotel: Hotel | undefined = isAdminPreview
-  //   ? (rawHotelData?.success ? rawHotelData.data : undefined)
-  //   : (rawHotelData && 'id' in rawHotelData ? rawHotelData : undefined);
 
   const normalizeImageUrl = (url: string | null | undefined): string => {
     const placeholder = "https://placehold.co/600x400/E2E8F0/AAAAAA?text=No+Image+Available";
@@ -140,29 +136,27 @@ const HotelDetailPage = () => {
   const getAmenityIcon = (amenity: string, size = "h-4 w-4") => {
     const lowerAmenity = amenity.toLowerCase();
     const iconClass = `${size} mr-2 ${neutralIconColor} flex-shrink-0`;
-    if (lowerAmenity.includes("wifi")) return <Wifi className={iconClass} />;
-    if (lowerAmenity.includes("parking")) return <ParkingCircle className={iconClass} />;
-    if (lowerAmenity.includes("restaurant") || lowerAmenity.includes("dining")) return <Utensils className={iconClass} />;
-    if (lowerAmenity.includes("pool")) return <Award className={iconClass} />;
-    if (lowerAmenity.includes("gym") || lowerAmenity.includes("fitness")) return <Briefcase className={iconClass} />;
+    if (lowerAmenity.includes("wifi") || lowerAmenity.includes("internet")) return <Wifi className={iconClass} />;
+    if (lowerAmenity.includes("parking") || lowerAmenity.includes("car")) return <ParkingCircle className={iconClass} />;
+    if (lowerAmenity.includes("restaurant") || lowerAmenity.includes("dining") || lowerAmenity.includes("food")) return <Utensils className={iconClass} />;
+    if (lowerAmenity.includes("pool") || lowerAmenity.includes("swimming")) return <Waves className={iconClass} />;
+    if (lowerAmenity.includes("gym") || lowerAmenity.includes("fitness")) return <Dumbbell className={iconClass} />;
+    if (lowerAmenity.includes("coffee") || lowerAmenity.includes("cafe")) return <Coffee className={iconClass} />;
+    if (lowerAmenity.includes("garden") || lowerAmenity.includes("outdoor")) return <TreePine className={iconClass} />;
     return <CheckCircle className={iconClass} />;
   };
 
   const handleBookRoom = (roomId: number, hotelName: string | undefined, roomTypeName: string) => {
-    alert(`Booking room: ${roomTypeName} at ${hotelName || 'this hotel'} (Room ID: ${roomId}). Integration pending.`);
+    router.push(`/booking/new/hotel?hotelId=${hotelId}&roomTypeId=${roomId}`);
   };
 
   if (isLoadingSelectedHotel) return <LoadingState message="Loading Hotel Details..." />;
 
-  // Corrected Error Handling
   if (selectedHotelError || (!isLoadingSelectedHotel && !selectedHotel)) {
     return <ErrorState message={selectedHotelError?.message || "Hotel details could not be found."} onRetry={() => setRetryToken(c => c + 1)} />;
   }
-  // This additional check for !selectedHotel might seem redundant if the above is correct, but it's a safeguard.
-  // If !isLoadingSelectedHotel && !selectedHotel is true, the above already catches it.
-  // If selectedHotel is still null here, it means loading is done and it's genuinely not found or error occurred.
-  // The previous error condition was too complex due to misunderstanding rawHotelData.
-  if (!selectedHotel) { // Should be caught by the condition above if loading is complete.
+
+  if (!selectedHotel) {
     return <ErrorState message={"Hotel data is unavailable."} onRetry={() => setRetryToken(c => c + 1)} />;
   }
 
@@ -186,6 +180,7 @@ const HotelDetailPage = () => {
           <p className="text-sm">You are viewing this page as an administrator. Approval statuses are shown below.</p>
         </div>
       )}
+      
       {/* Sticky Header for Back Button - Themed */}
       <div className={`bg-white shadow-md py-3 sticky top-0 z-40 border-b ${neutralBorderLight}`}>
         <div className="container mx-auto px-4 flex justify-between items-center">
@@ -225,7 +220,18 @@ const HotelDetailPage = () => {
                     )}
                   </h1>
                   <div className={`flex flex-wrap items-center text-sm md:text-base ${neutralTextLight} text-white/90 gap-x-4 gap-y-1 drop-shadow-sm`}>
-                      <span className="flex items-center"><MapPin size={16} className="mr-1.5" /> {selectedHotel.address}</span>
+                      <span className="flex items-center">
+                        <MapPin size={16} className="mr-1.5" /> 
+                        {selectedHotel.address || (selectedHotel as any).street_address || 'Andaman & Nicobar Islands'}
+                      </span>
+                      {(selectedHotel as any).star_rating && (
+                        <span className="flex items-center">
+                          {Array.from({ length: (selectedHotel as any).star_rating }, (_, i) => (
+                            <Star key={i} size={16} className="text-yellow-400 fill-current mr-1" />
+                          ))}
+                          <span className="ml-1">{(selectedHotel as any).star_rating} Star Hotel</span>
+                        </span>
+                      )}
                   </div>
               </div>
           </div>
@@ -264,7 +270,7 @@ const HotelDetailPage = () => {
             <div className={`bg-white p-2 rounded-xl shadow-md mb-8 sticky top-[70px] z-30 border ${neutralBorderLight} overflow-x-auto whitespace-nowrap`}>
               <nav className="flex space-x-1 sm:space-x-2">
                 {['Overview', 'Rooms', 'Amenities', 'Location', 'Policies', 'Reviews'].map(tab => (
-                  <a key={tab} href={`#hotel-${tab.toLowerCase()}`} 
+                  <a key={tab} href={`#hotel-${tab.toLowerCase().replace(' ', '-')}`} 
                      className={`px-3.5 py-2.5 ${neutralTextLight} font-medium hover:${neutralBg} hover:${neutralText} rounded-lg transition-colors text-sm md:text-base focus:outline-none focus:ring-2 ${focusRingClass}`}>
                     {tab}
                   </a>
@@ -276,9 +282,21 @@ const HotelDetailPage = () => {
             <div className={`${cardBaseStyle} divide-y ${neutralBorderLight}`}>
               <DetailSection id="hotel-overview" title="Overview" icon={Info}>
                 <p className="whitespace-pre-line">{selectedHotel.description || "Detailed description not available."}</p>
-                {selectedHotel.total_rooms && (
-                  <p className="mt-3"><strong>Total Rooms:</strong> {selectedHotel.total_rooms}</p>
-                )}
+                
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  {selectedHotel.total_rooms && (
+                    <p><strong>Total Rooms:</strong> {selectedHotel.total_rooms}</p>
+                  )}
+                  {selectedHotel.city && (
+                    <p><strong>Location:</strong> {selectedHotel.city}</p>
+                  )}
+                  {selectedHotel.check_in_time && (
+                    <p><strong>Check-in:</strong> {selectedHotel.check_in_time}</p>
+                  )}
+                  {selectedHotel.check_out_time && (
+                    <p><strong>Check-out:</strong> {selectedHotel.check_out_time}</p>
+                  )}
+                </div>
               </DetailSection>
 
               <DetailSection id="hotel-rooms" title="Available Rooms" icon={BedDouble}>
@@ -314,16 +332,19 @@ const HotelDetailPage = () => {
                               )}
                             </h3>
                             <div className={`grid grid-cols-2 gap-x-4 gap-y-2 text-sm ${neutralTextLight} mb-3`}>
-                              <div className="flex items-center"><Users className={`h-4 w-4 mr-2 ${neutralIconColor}`} /> {room.capacity_adults} Adults{room.capacity_children ? `, ${room.capacity_children} Ch.` : ""}</div>
+                              <div className="flex items-center"><Users className={`h-4 w-4 mr-2 ${neutralIconColor}`} /> Up to {(room as any).max_guests} guests</div>
                               {typeof room.quantity_available === 'number' && (
                                 <div className="flex items-center"><BedDouble className={`h-4 w-4 mr-2 ${neutralIconColor}`} /> {room.quantity_available} left</div>
                               )}
                             </div>
+                            {room.description && (
+                              <p className={`text-sm ${neutralTextLight} mb-3`}>{room.description}</p>
+                            )}
                             {room.amenities && room.amenities.length > 0 && (
                               <div className="mb-4">
                                 <h4 className={`text-sm font-semibold ${neutralText} mb-1.5`}>Room Amenities:</h4>
                                 <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
-                                  {room.amenities.slice(0, 4).map(amenity => (
+                                  {room.amenities.slice(0, 4).map((amenity: string) => (
                                     <li key={amenity} className={`flex items-center text-xs md:text-sm ${neutralTextLight}`}>
                                       {getAmenityIcon(amenity, "h-3.5 w-3.5")}
                                       <span className="truncate" title={amenity}>{amenity}</span>
@@ -353,10 +374,10 @@ const HotelDetailPage = () => {
                 ) : (<p className={`${neutralTextLight}`}>No specific room details available for this hotel at the moment.</p>)}
               </DetailSection>
 
-              {selectedHotel.facilities && selectedHotel.facilities.length > 0 && (
-                <DetailSection id="hotel-amenities" title="Hotel Amenities" icon={ListChecks}>
+              <DetailSection id="hotel-amenities" title="Hotel Amenities" icon={ListChecks}>
+                {(selectedHotel.facilities && selectedHotel.facilities.length > 0) || ((selectedHotel as any).amenities && (selectedHotel as any).amenities.length > 0) ? (
                   <ul className={`list-none grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-2.5`}>
-                    {selectedHotel.facilities.map((item, i) =>
+                    {(selectedHotel.facilities && selectedHotel.facilities.length > 0 ? selectedHotel.facilities : (selectedHotel as any).amenities || []).map((item: string, i: number) =>
                       <li key={i} className={`flex items-center ${neutralTextLight}`}>
                         <div className={`${listIconWrapperStyle} mr-2.5 p-1.5 border-0 ${neutralBgLight}`}>
                           {getAmenityIcon(item, "h-4 w-4")}
@@ -364,28 +385,12 @@ const HotelDetailPage = () => {
                         <span>{item}</span>
                       </li>)}
                   </ul>
-                </DetailSection>
-              )}
-
-              <DetailSection id="hotel-location" title="Location" icon={MapPin}>
-                <p className={`mb-3 ${neutralTextLight}`}>{selectedHotel.address}</p>
-                {selectedHotel.latitude && selectedHotel.longitude ? (
-                  <div className={`h-72 md:h-80 rounded-xl overflow-hidden border ${neutralBorder} shadow-sm`}>
-                    <HotelDetailMap
-                      latitude={selectedHotel.latitude}
-                      longitude={selectedHotel.longitude}
-                      name={selectedHotel.name}
-                      themeNeutralBorderLight={neutralBorderLight}
-                    />
-                  </div>
                 ) : (
-                  <div className={`h-72 md:h-80 ${neutralBgLight} rounded-xl flex flex-col items-center justify-center ${neutralTextLight} border ${neutralBorder} p-6 text-center`}>
-                     <MapPin size={40} className={`${neutralIconColor} opacity-50 mb-3`} />
-                    Map data not available.
-                  </div>
+                  <p className={`${neutralTextLight}`}>Amenity details will be updated soon. Please contact the hotel for current facilities information.</p>
                 )}
-                <p className={`mt-3 text-xs ${neutralTextLight}`}>Exact location may be provided after booking based on hotel policy.</p>
               </DetailSection>
+
+
 
               <DetailSection id="hotel-policies" title="Hotel Policies" icon={ShieldCheck} className="border-b-0 pb-0">
                 <div className={`space-y-2 ${neutralTextLight}`}>
@@ -402,7 +407,7 @@ const HotelDetailPage = () => {
                   <div className="mt-4">
                     <h4 className={`text-sm font-semibold ${neutralText} mb-1.5`}>Meal Plans:</h4>
                     <ul className={`list-disc list-inside space-y-1 ${neutralTextLight} marker:${neutralIconColor}`}>
-                      {selectedHotel.meal_plans.map(plan => <li key={plan}>{plan}</li>)}
+                      {selectedHotel.meal_plans.map((plan: string) => <li key={plan}>{plan}</li>)}
                     </ul>
                   </div>
                 )}
@@ -417,6 +422,26 @@ const HotelDetailPage = () => {
                       </div>
                       <p className={`${neutralTextLight} text-sm`}>Guest reviews are not yet available for this hotel. Be the first to share your experience!</p>
                   </div>
+              </DetailSection>
+
+              <DetailSection id="hotel-location" title="Location" icon={MapPin} className="border-b-0 pb-0">
+                <p className={`mb-3 ${neutralTextLight}`}>{selectedHotel.address || (selectedHotel as any).street_address || 'Andaman & Nicobar Islands'}</p>
+                {((selectedHotel as any).geo_lat && (selectedHotel as any).geo_lng) ? (
+                  <div className={`h-72 md:h-80 rounded-xl overflow-hidden border ${neutralBorder} shadow-sm`}>
+                    <HotelDetailMap
+                      latitude={(selectedHotel as any).geo_lat}
+                      longitude={(selectedHotel as any).geo_lng}
+                      name={selectedHotel.name}
+                      themeNeutralBorderLight={neutralBorderLight}
+                    />
+                  </div>
+                ) : (
+                  <div className={`h-72 md:h-80 ${neutralBgLight} rounded-xl flex flex-col items-center justify-center ${neutralTextLight} border ${neutralBorder} p-6 text-center`}>
+                     <MapPin size={40} className={`${neutralIconColor} opacity-50 mb-3`} />
+                    Map data not available.
+                  </div>
+                )}
+                <p className={`mt-3 text-xs ${neutralTextLight}`}>Exact location may be provided after booking based on hotel policy.</p>
               </DetailSection>
             </div>
           </div>
@@ -434,11 +459,60 @@ const HotelDetailPage = () => {
               </p>
               <button
                 type="button"
-                className={`${buttonPrimaryStyle} w-full text-base py-3`}
+                className={`${buttonPrimaryStyle} w-full text-base py-3 mb-3`}
                 onClick={() => document.getElementById('hotel-rooms')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 <Eye size={20} className="mr-2" /> View Available Rooms
               </button>
+
+              {/* Quick Hotel Facts */}
+              <div className={`${infoBg} ${infoBorder} rounded-lg p-4 mt-4`}>
+                <h4 className={`text-sm font-semibold ${infoText} mb-3 flex items-center`}>
+                  <Info size={16} className={`mr-2 ${infoIconColor}`} />
+                  Quick Facts
+                </h4>
+                <div className="space-y-2 text-xs">
+                  {(selectedHotel as any).star_rating && (
+                    <div className="flex items-center justify-between">
+                      <span>Rating:</span>
+                      <div className="flex items-center">
+                        {Array.from({ length: (selectedHotel as any).star_rating }, (_, i) => (
+                          <Star key={i} size={12} className="text-yellow-400 fill-current" />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedHotel.total_rooms && (
+                    <div className="flex items-center justify-between">
+                      <span>Total Rooms:</span>
+                      <span>{selectedHotel.total_rooms}</span>
+                    </div>
+                  )}
+                  {selectedHotel.rooms?.length && (
+                    <div className="flex items-center justify-between">
+                      <span>Room Types:</span>
+                      <span>{selectedHotel.rooms.length}</span>
+                    </div>
+                  )}
+                  {selectedHotel.pets_allowed !== undefined && (
+                    <div className="flex items-center justify-between">
+                      <span>Pets:</span>
+                      <span className={selectedHotel.pets_allowed ? 'text-green-600' : 'text-red-600'}>
+                        {selectedHotel.pets_allowed ? '✓ Allowed' : '✗ Not allowed'}
+                      </span>
+                    </div>
+                  )}
+                  {selectedHotel.children_allowed !== undefined && (
+                    <div className="flex items-center justify-between">
+                      <span>Children:</span>
+                      <span className={selectedHotel.children_allowed ? 'text-green-600' : 'text-red-600'}>
+                        {selectedHotel.children_allowed ? '✓ Welcome' : '✗ Adults only'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <p className={`text-xs ${neutralTextLight} mt-3 text-center`}>Check room options for best deals!</p>
             </div>
           </div>
@@ -448,4 +522,4 @@ const HotelDetailPage = () => {
   );
 };
 
-export default HotelDetailPage; 
+export default HotelDetailPage;

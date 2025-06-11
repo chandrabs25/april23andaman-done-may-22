@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 // Assuming you might want to use some UI components from shadcn/ui if available in project
-import { Loader2, CheckCircle, XCircle, AlertTriangle, ExternalLinkIcon, HomeIcon } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, ExternalLinkIcon, HomeIcon } from 'lucide-react';
+import Image from 'next/image';
 
 // --- Theme Imports ---
 import {
@@ -151,7 +152,7 @@ function PaymentStatusContent() {
     let statusCardBorder = infoBorder;
     let statusIconColor = infoIconColor;
     let statusTitleColor = infoText;
-    let StatusIcon = Loader2; // Default to loading/info
+    let StatusIcon = CheckCircle; // Default icon
 
     if (!isLoading) {
         if (statusMessage.includes("successful")) {
@@ -182,7 +183,18 @@ function PaymentStatusContent() {
             <h1 className={`${sectionHeadingStyle} text-3xl md:text-4xl mb-8`}>Payment Status</h1>
 
             <div className={`${cardBaseStyle} w-full max-w-lg p-6 md:p-8 text-center ${statusCardBg} border-2 ${statusCardBorder}`}>
-                <StatusIcon size={64} className={`mb-5 mx-auto ${statusIconColor} ${isLoading ? 'animate-spin' : ''}`} />
+                {isLoading ? (
+                  <Image
+                    src="/images/loading.gif"
+                    alt="Loading..."
+                    width={64}
+                    height={64}
+                    priority
+                    className="mb-5 mx-auto"
+                  />
+                ) : (
+                  <StatusIcon size={64} className={`mb-5 mx-auto ${statusIconColor}`} />
+                )}
                 
                 <p className={`text-xl md:text-2xl font-semibold mb-3 min-h-[60px] ${statusTitleColor}`}>
                     {statusMessage}
@@ -229,7 +241,14 @@ export default function PaymentStatusPage() {
             <Suspense
                 fallback={
                     <div className={`min-h-screen ${sectionPadding} flex flex-col justify-center items-center text-center ${neutralBgLight}`}>
-                        <Loader2 size={48} className={`animate-spin ${infoIconColor} mb-4`} />
+                        <Image
+                          src="/images/loading.gif"
+                          alt="Loading..."
+                          width={96}
+                          height={96}
+                          priority
+                          className="mb-4"
+                        />
                         <h1 className={`${sectionHeadingStyle} text-2xl ${infoText}`}>
                             Loading Payment Details...
                         </h1>

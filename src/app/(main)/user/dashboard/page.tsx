@@ -3,9 +3,10 @@
 export const dynamic = 'force-dynamic'
 import React, { useState, useEffect, Suspense } from 'react'; // Import useEffect, Suspense
 import Link from 'next/link';
-import { MapPin, Calendar, Clock, CreditCard, User, Star, Package, Bell, LogOut, Home, Users as UsersIcon, FileText, Shield, Loader2, AlertTriangle } from 'lucide-react';
+import { MapPin, Calendar, Clock, CreditCard, User, Star, Package, Bell, LogOut, Home, Users as UsersIcon, FileText, Shield, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth'; // Import useAuth
 import { useFetch } from '@/hooks/useFetch'; // Import useFetch
+import Image from 'next/image';
 
 // --- Define Interfaces ---
 type BookingStatus = 'confirmed' | 'pending' | 'completed' | 'cancelled';
@@ -46,9 +47,16 @@ interface AuthUser {
 
 // --- Loading Spinner ---
 const LoadingSpinner = ({ text = "Loading..." }: { text?: string }) => (
-    <div className="flex justify-center items-center py-10">
-        <Loader2 className="h-6 w-6 animate-spin text-blue-600 mr-2" />
-        <span>{text}</span>
+    <div className="flex flex-col justify-center items-center py-10">
+        <Image
+          src="/images/loading.gif"
+          alt="Loading..."
+          width={64}
+          height={64}
+          priority
+          className="mb-2"
+        />
+        <span className="text-lg text-gray-800 font-semibold">{text}</span>
     </div>
 );
 // --- End Loading Spinner ---

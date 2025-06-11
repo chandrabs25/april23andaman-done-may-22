@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { DatabaseService } from '@/lib/database'; // Adjust path if necessary
+import { DatabaseService, getDatabase } from '@/lib/database'; // Adjust path if necessary
 
 interface RouteParams { params: { bookingId: string; }; }
 
@@ -21,6 +21,21 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     if (!bookingFromDb) {
       return NextResponse.json({ message: "Booking not found" }, { status: 404 });
+    }
+
+    // Attempt to fetch service name if this is a service/hotel booking (no package_id)
+    let serviceName: string | undefined;
+    if (!bookingFromDb.package_id) {
+      try {
+        const db = await getDatabase();
+        const serviceRow = await db
+          .prepare(`SELECT s.name FROM booking_services bs JOIN services s ON bs.service_id = s.id WHERE bs.booking_id = ? LIMIT 1`)
+          .bind(parsedBookingId)
+          .first<{ name: string }>();
+        serviceName = serviceRow?.name;
+      } catch (e) {
+        console.error('Error fetching service name for booking', parsedBookingId, e);
+      }
     }
 
     // Transform flat DB result to nested structure for frontend
@@ -49,6 +64,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
       // Nested related data based on aliased names from the SQL query
       package: bookingFromDb.packageName ? { name: bookingFromDb.packageName } : undefined,
+      service: serviceName ? { name: serviceName } : undefined,
       packageCategory: bookingFromDb.packageCategoryName ? { name: bookingFromDb.packageCategoryName } : undefined,
       user: (bookingFromDb.userEmail || bookingFromDb.userFirstName || bookingFromDb.userLastName) // Check if any user detail is present
         ? { 

@@ -5,7 +5,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Loader2, AlertTriangle, MapPin, Check, Info } from 'lucide-react';
+import { AlertTriangle, MapPin, Check, Info } from 'lucide-react';
 import { useFetch } from '@/hooks/useFetch';
 
 // --- Define Interfaces ---
@@ -31,9 +31,17 @@ interface GetDestinationApiResponse {
 
 // --- LoadingSpinner Component (FIXED) ---
 const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-    <span className="ml-2">Loading destination...</span>
+  <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+    <Image
+      src="/images/loading.gif"
+      alt="Loading..."
+      width={128}
+      height={128}
+      priority
+      className="mb-4"
+    />
+    <span className="text-lg text-gray-800 font-semibold">Loading destination...</span>
+    <p className="text-gray-500 mt-1 text-sm">Please wait a moment.</p>
   </div>
 );
 // --- End LoadingSpinner ---

@@ -3,7 +3,8 @@
 export const dynamic = 'force-dynamic'
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Calendar, AlertTriangle } from 'lucide-react';
+import { Calendar, AlertTriangle } from 'lucide-react';
+import Image from 'next/image';
 
 // Define Booking Interface
 interface Booking {
@@ -167,7 +168,20 @@ export default function UserBookingsPage() {
         </div>
 
         {/* Loading / Error / Content */}
-         {loading ? ( <div className="text-center py-10"> <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" /> <p className="mt-2 text-gray-600">Loading...</p> </div> )
+         {loading ? (
+           <div className="text-center py-10">
+             <Image
+               src="/images/loading.gif"
+               alt="Loading..."
+               width={96}
+               height={96}
+               priority
+               className="mx-auto mb-2"
+             />
+             <p className="text-lg text-gray-800 font-semibold">Loading bookings...</p>
+             <p className="text-gray-500 mt-1 text-sm">Please wait a moment.</p>
+           </div>
+         )
          : error ? ( <div className="bg-red-50 border-l-4 border-red-400 p-4"> <p className="text-sm text-red-700">{error}</p> </div> )
          : ( <div> {displayedBookings.length === 0 ? ( <div className="text-center py-10 bg-gray-50 rounded-lg"> <p>No {activeTab} bookings.</p> </div> )
                  : ( <div className="bg-white shadow overflow-hidden sm:rounded-md"> <ul role="list" className="divide-y divide-gray-200"> {displayedBookings.map((booking) => ( <li key={booking.id}> <div className="block hover:bg-gray-50"> <div className="px-4 py-4 sm:px-6"> <div className="flex items-center justify-between"> <p>{booking.packageName}</p> {getStatusBadge(booking.status)} </div> <div className="mt-2 sm:flex sm:justify-between"> <p>{formatDate(booking.startDate)} - {formatDate(booking.endDate)}</p> <p>₹{booking.amount.toLocaleString()}</p> </div> <div className="mt-4 flex justify-end space-x-3"> <button onClick={() => handleViewBooking(booking.id)}>View</button> {(booking.status === 'confirmed' || booking.status === 'pending') && activeTab === 'upcoming' && ( <button onClick={() => handleCancelBooking(booking.id)}>Cancel</button> )} </div> </div> </div> </li> ))} </ul> </div> )

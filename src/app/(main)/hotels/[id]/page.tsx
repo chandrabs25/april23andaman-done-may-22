@@ -54,8 +54,17 @@ const HotelDetailMap = dynamic(() => import('@/components/HotelDetailMap'), {
 
 // --- Helper Components ---
 const LoadingState = ({ message = "Loading..." }: { message?: string }) => (
-  <div className={`container mx-auto px-4 ${sectionPadding} text-center ${neutralBgLight} rounded-2xl border ${neutralBorderLight} p-8 md:p-12`}>
-    <Loader2 className={`h-12 w-12 animate-spin ${infoIconColor} mx-auto mb-4`} />
+  <div
+    className={`container mx-auto px-4 ${sectionPadding} text-center ${neutralBgLight} rounded-2xl border ${neutralBorderLight} p-8 md:p-12`}
+  >
+    <Image
+      src="/images/loading.gif"
+      alt="Loading..."
+      width={96}
+      height={96}
+      priority
+      className="mx-auto mb-4"
+    />
     <p className={`text-xl font-semibold ${infoText}`}>{message}</p>
     <p className={`${neutralTextLight}`}>Please wait a moment.</p>
   </div>

@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { useFetch } from '@/hooks/useFetch'; // Assuming this custom hook exists
 import { useRouter } from 'next/navigation';
-import type { Hotel } from '@/types/hotel'; // Import Hotel type
+import type { Hotel, PaginatedHotelsResponse } from '@/types/hotel'; // Import Hotel type
 
 // --- Define Interfaces ---
 interface Destination {
@@ -220,8 +220,8 @@ export default function Home() {
     data: hotelsResponse,
     error: hotelsError,
     status: hotelsStatus
-  } = useFetch<Hotel[]>('/api/hotels?limit=4');
-  const featuredHotelsData = hotelsResponse || [];
+  } = useFetch<PaginatedHotelsResponse>('/api/hotels?limit=4');
+  const featuredHotelsData = hotelsResponse?.data || [];
 
   // Add debugging for hotels data
   useEffect(() => {

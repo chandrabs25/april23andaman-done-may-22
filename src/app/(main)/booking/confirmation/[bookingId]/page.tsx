@@ -6,10 +6,11 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Loader2, AlertTriangle, ArrowLeft, CheckCircle, XCircle, PackageIcon, TagIcon, CalendarDaysIcon,
+  AlertTriangle, ArrowLeft, CheckCircle, XCircle, PackageIcon, TagIcon, CalendarDaysIcon,
   UsersIcon, UserCircle2Icon, MailIcon, PhoneIcon, CreditCardIcon, FileTextIcon, ShoppingCartIcon, LandmarkIcon, InfoIcon,
   ListOrdered, HomeIcon, ExternalLinkIcon, PrinterIcon
 } from 'lucide-react';
+import Image from 'next/image';
 
 // --- Theme Imports ---
 // Assuming these variables are correctly defined in the imported file
@@ -51,10 +52,17 @@ interface BookingData {
   };
 }
 
-const LoadingSpinner = ({ message = "Loading booking confirmation..." }: { message?: string }) => (
-  <div className={`min-h-screen flex flex-col items-center justify-center ${neutralBgLight} ${sectionPadding} p-4`}>
-    <Loader2 className={`h-16 w-16 animate-spin ${infoIconColor} mb-5`} />
-    <span className={`text-xl ${infoText} font-semibold text-center`}>{message}</span>
+const LoadingSpinner = ({ message = "Loading booking details..." }: { message?: string }) => (
+  <div className={`min-h-screen flex flex-col items-center justify-center ${neutralBgLight} ${sectionPadding}`}>
+    <Image
+      src="/images/loading.gif"
+      alt="Loading..."
+      width={128}
+      height={128}
+      priority
+      className="mb-5"
+    />
+    <span className={`text-xl ${infoText} font-semibold`}>{message}</span>
     <p className={`${neutralTextLight} mt-1`}>Please wait a moment.</p>
   </div>
 );

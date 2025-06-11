@@ -25,7 +25,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image'; // Using Next.js Image
 import Head from 'next/head'; // For Google Fonts
-import { Loader2, AlertTriangle, ArrowRight, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
+import { AlertTriangle, ArrowRight, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
 import { useFetch } from '@/hooks/useFetch';
 
 // --- Interfaces (Assume these are correct and match API/DB) ---
@@ -90,8 +90,19 @@ interface PackageDataFromApi {
 
 // --- LoadingSpinner Component ---
 const LoadingSpinner = () => (
-  <div className="relative flex size-full min-h-screen flex-col bg-gray-50 justify-center items-center p-4" style={{ fontFamily: '"Plus Jakarta Sans", "Noto Sans", sans-serif' }}>
-    <Loader2 className="h-12 w-12 sm:h-16 sm:w-16 animate-spin text-gray-700 mb-4 sm:mb-5" />
+  <div
+    className="relative flex size-full min-h-screen flex-col bg-gray-50 justify-center items-center p-4"
+    style={{ fontFamily: '"Plus Jakarta Sans", "Noto Sans", sans-serif' }}
+  >
+    {/* Replaced animated SVG spinner with loading.gif */}
+    <Image
+      src="/images/loading.gif"
+      alt="Loading..."
+      width={128}
+      height={128}
+      priority
+      className="mb-4 sm:mb-5"
+    />
     <span className="text-lg sm:text-xl text-gray-800 font-semibold">Loading package details...</span>
     <p className="text-gray-500 mt-1 text-sm sm:text-base">Please wait a moment.</p>
   </div>
@@ -177,7 +188,8 @@ function ItineraryPageContent() {
     }
   }, [status, fetchedPackageData]);
 
-  if (status === 'loading' || status === 'idle') {
+  // Show loading while fetching OR while processing the successful response
+  if (status === 'loading' || status === 'idle' || (status === 'success' && packageData === null && fetchedPackageData !== null)) {
     return <LoadingSpinner />;
   }
 
@@ -185,7 +197,8 @@ function ItineraryPageContent() {
     return <ErrorDisplay title="Error Loading Package" message={error?.message || 'Could not fetch package details.'} isError={true} />;
   }
 
-  if (status === 'success' && !packageData) {
+  // Only show "not found" if API returned success but with no data (null or undefined)
+  if (status === 'success' && !packageData && !fetchedPackageData) {
     return <ErrorDisplay title="Package Not Found" message={`The package (ID: ${packageId}) does not exist or is currently unavailable.`} isError={true} />;
   }
 

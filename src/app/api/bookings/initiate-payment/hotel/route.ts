@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
     let serviceId: number;
     let holdPrice: number;
     let targetHold: any = null;
+    let newBookingId: number | null = null;
 
     if (hasHoldData && body.holdId) {
       // Get the hold details to extract booking information
@@ -112,10 +113,32 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
       }
     } else {
-      // Use direct booking data
+      // Direct booking: create booking immediately so we have bookingId
       roomTypeId = body.roomTypeId!;
       serviceId = body.hotelId!;
       holdPrice = body.totalAmount!;
+
+      // Create initial hotel booking record
+      const bookingResult = await dbService.createInitialHotelBooking({
+        service_id: serviceId,
+        hotel_room_type_id: roomTypeId,
+        user_id: body.userId ? parseInt(body.userId) : null,
+        total_amount: holdPrice,
+        guest_name: body.guestDetails?.name || null,
+        guest_email: body.guestDetails?.email || null,
+        guest_phone: body.guestDetails?.mobileNumber || null,
+        start_date: body.checkInDate!,
+        end_date: body.checkOutDate!,
+        total_people: body.numberOfGuests,
+        number_of_rooms: body.numberOfRooms,
+        special_requests: body.specialRequests || null,
+      });
+
+      if (!bookingResult.success) {
+        return NextResponse.json({ success:false, message:'Failed to create booking.'},{status:500});
+      }
+
+      newBookingId = bookingResult.meta.last_row_id;
     }
 
     // Get room type details for validation
@@ -132,16 +155,24 @@ export async function POST(request: NextRequest) {
 
       const merchantUserId = body.userId || `GUEST_${crypto.randomUUID()}`;
       
-      // Use hold ID or fallback for merchant transaction ID
-      const merchantTransactionId = hasHoldData && body.holdId 
-        ? `HOLD_${body.holdId}_${Date.now()}`
-        : `DIRECT_${serviceId}_${roomTypeId}_${Date.now()}`;
-      console.log(`INFO: Using merchant transaction ID: ${merchantTransactionId}`);
+      // Use completely unique merchant transaction id (UUID)
+      const merchantTransactionId = crypto.randomUUID();
+
+      // Persist payment attempt row (bookingId will be linked later if hold converts)
+      try {
+        await dbService.createPaymentAttempt(
+          hasHoldData ? null : newBookingId,
+          merchantTransactionId,
+          totalAmountInPaise,
+          'INITIATED',
+          hasHoldData ? body.holdId! : null
+        );
+      } catch (attemptErr) {
+        console.error('Failed to write payment_attempt for hotel booking:', attemptErr);
+      }
 
       // PhonePe Payment Setup
-      const clientRedirectUrl = hasHoldData && body.holdId 
-        ? `${process.env.NGROK_PUBLIC_URL}/api/bookings/booking-payment-status?mtid=${merchantTransactionId}&holdId=${body.holdId}`
-        : `${process.env.NGROK_PUBLIC_URL}/api/bookings/booking-payment-status?mtid=${merchantTransactionId}`;
+      const clientRedirectUrl = `${process.env.NGROK_PUBLIC_URL}/api/bookings/booking-payment-status?mtid=${merchantTransactionId}`;
       console.log("DEBUG: Sending this redirectUrl to PhonePe (clientRedirectUrl):", clientRedirectUrl);
 
       const siteUrl = process.env.NGROK_PUBLIC_URL?.trim() || process.env.SITE_URL;

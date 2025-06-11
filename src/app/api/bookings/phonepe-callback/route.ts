@@ -202,6 +202,7 @@ export async function POST(request: NextRequest) {
                 phonepeInternalTxId
               );
               await dbService.updatePaymentAttemptStatus(merchantTransactionId, 'SUCCESS', confirmedPaymentCode, phonepeInternalTxId);
+              await dbService.linkAttemptToBooking(merchantTransactionId, conversionResult.booking_id);
               console.log(`LOG Info: Hold ${holdId} converted to booking ${conversionResult.booking_id} and marked as CONFIRMED/PAID`);
             } else {
               console.error(`LOG Error: Failed to convert hold ${holdId} to booking`);
@@ -215,6 +216,7 @@ export async function POST(request: NextRequest) {
           // Regular booking flow
           await dbService.updateBookingStatusAndPaymentStatus(actualBookingId.toString(), 'CONFIRMED', 'PAID', phonepeInternalTxId);
           await dbService.updatePaymentAttemptStatus(merchantTransactionId, 'SUCCESS', confirmedPaymentCode, phonepeInternalTxId);
+          await dbService.linkAttemptToBooking(merchantTransactionId, actualBookingId);
           console.log(`LOG Info: Booking ${actualBookingId} CONFIRMED and payment PAID via D1.`);
         }
       } else if (['PAYMENT_ERROR', 'TRANSACTION_NOT_FOUND', 'PAYMENT_FAILURE', 'TIMED_OUT', 'CARD_NOT_SUPPORTED', 'BANK_OFFLINE', 'PAYMENT_DECLINED'].includes(confirmedPaymentCode)) {

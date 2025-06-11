@@ -9,7 +9,6 @@ import { useFetch } from "@/hooks/useFetch";
 // import type { Activity } from "@/types/activity"; 
 import type { ActivityService, SingleServiceResponse } from "@/types/transport_rental";
 import {
-  Loader2,
   AlertTriangle,
   MapPin,
   Clock,
@@ -73,11 +72,18 @@ interface ExtendedActivityService extends ActivityService {
 
 
 // --- Helper Components (Styled with Imported Theme) ---
-const LoadingState = () => (
-  <div className={`container mx-auto px-4 ${sectionPadding} text-center ${neutralBgLight} rounded-2xl border ${neutralBorderLight}`}>
-    <Loader2 className={`h-12 w-12 animate-spin ${neutralIconColor} mx-auto mb-4`} />
-    <p className={`text-xl font-semibold ${neutralText}`}>Loading Activity Details...</p>
-    <p className={`${neutralTextLight}`}>Please wait a moment.</p>
+const LoadingSpinner = ({ message = "Loading activity details..." }: { message?: string }) => (
+  <div className={`min-h-screen flex flex-col items-center justify-center ${neutralBgLight} ${sectionPadding}`}>
+    <Image
+      src="/images/loading.gif"
+      alt="Loading..."
+      width={128}
+      height={128}
+      priority
+      className="mb-4"
+    />
+    <span className={`text-lg ${neutralText} font-semibold text-center`}>{message}</span>
+    <p className={`${neutralTextLight} mt-1 text-center`}>Please wait a moment.</p>
   </div>
 );
 
@@ -152,7 +158,7 @@ const ActivityDetailsPage = () => {
 
   console.log("🔍 ActivityDetailPage: Processed Activity:", activity ? "Valid" : "Invalid or non-activity service");
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading) return <LoadingSpinner message="Loading activity details..." />;
   if (fetchError || !activity) return <ErrorState message={fetchError?.message || (apiResponse as any)?.message || "Activity not found or invalid type."} />;
 
   const getGeneralAmenities = (currentActivity: ExtendedActivityService): string[] => {

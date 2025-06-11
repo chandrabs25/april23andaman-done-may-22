@@ -57,14 +57,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Missing or invalid booking details." }, { status: 400 });
     }
 
-    // Mock Package Price Fetching - TODO: Replace with actual logic
-    let pricePerPersonInPaise: number;
+    // NOTE: All prices fetched from DB/API are expected to be in Indian Rupees.
+    // Convert them to paise (×100) before sending to PhonePe.
+    let pricePerPersonInRupees: number;
     switch (body.categoryId) {
-      // Ensure these category IDs match what you expect (string vs number)
-      case '1': pricePerPersonInPaise = 100000; break; // Example if categoryId from body is string
-      case '2': pricePerPersonInPaise = 200000; break;
-      default: pricePerPersonInPaise = 100; // Default for safety, ensure this is handled
+      // mock prices in *rupees*
+      case '1': pricePerPersonInRupees = 1000; break;  // ₹1 000 per pax
+      case '2': pricePerPersonInRupees = 2000; break;  // ₹2 000 per pax
+      default:  pricePerPersonInRupees = 1;    break;  // Fallback ₹1
     }
+
+    const pricePerPersonInPaise = pricePerPersonInRupees * 100;
+
     console.log(`INFO: Using mock price. Actual price fetching for packageId: ${body.packageId}, categoryId: ${body.categoryId} is a TODO.`);
     const totalAmountInPaise = pricePerPersonInPaise * body.totalPeople;
 

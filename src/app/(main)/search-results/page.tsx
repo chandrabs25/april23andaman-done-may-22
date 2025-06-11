@@ -5,7 +5,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Loader2, AlertTriangle, Search as SearchIcon } from 'lucide-react'; // Added SearchIcon
+import { AlertTriangle, Search as SearchIcon } from 'lucide-react'; // Added SearchIcon
 import { useFetch } from '@/hooks/useFetch';
 
 // --- Interfaces (Keep as they are) ---
@@ -27,9 +27,17 @@ function isApiSearchSuccessResponse(response: any): response is ApiSearchRespons
 
 // --- Loading Spinner Component (Keep as is) ---
 const LoadingSpinner = () => (
-  <div className="flex justify-center items-center py-20">
-    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-    <span className="ml-2 text-lg">Loading search results...</span>
+  <div className="flex flex-col justify-center items-center py-20">
+    <Image
+      src="/images/loading.gif"
+      alt="Loading..."
+      width={96}
+      height={96}
+      priority
+      className="mb-4"
+    />
+    <span className="text-lg text-gray-800 font-semibold">Loading search results...</span>
+    <p className="text-gray-500 mt-1 text-sm">Please wait a moment.</p>
   </div>
 );
 

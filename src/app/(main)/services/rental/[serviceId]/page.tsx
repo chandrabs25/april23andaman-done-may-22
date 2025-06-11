@@ -8,7 +8,6 @@ import Image from "next/image";
 import { useFetch } from "@/hooks/useFetch"; // Assuming this hook exists
 import type { RentalService, SingleServiceResponse } from "@/types/transport_rental"; // Assuming these types exist
 import {
-  Loader2,
   AlertTriangle,
   MapPin,
   Clock, // Keep for potential future use if needed
@@ -54,10 +53,17 @@ import {
 
 
 // --- Helper Components (Styled with Imported Theme) ---
-const LoadingState = () => (
+const LoadingSpinner = ({ message = "Loading service details..." }: { message?: string }) => (
   <div className={`min-h-screen flex flex-col items-center justify-center ${neutralBgLight} ${sectionPadding}`}>
-    <Loader2 className={`h-16 w-16 animate-spin ${infoIconColor} mb-5`} />
-    <p className={`text-xl font-semibold ${infoText}`}>Loading Rental Service Details...</p>
+    <Image
+      src="/images/loading.gif"
+      alt="Loading..."
+      width={128}
+      height={128}
+      priority
+      className="mb-5"
+    />
+    <span className={`text-xl ${infoText} font-semibold`}>{message}</span>
     <p className={`${neutralTextLight} mt-1`}>Please wait a moment.</p>
   </div>
 );
@@ -166,7 +172,7 @@ const RentalServiceDetailPage = () => {
   console.log("🔍 RentalServiceDetailPage: Processed Service:", service ? "Valid rental service" : "Invalid or non-rental service");
 
   // Handle Loading and Error States
-  if (isLoading) return <LoadingState />;
+  if (isLoading) return <LoadingSpinner message="Loading Rental Service Details..." />;
   if (fetchError || !service) {
     return <ErrorState message={fetchError?.message || (apiResponse as any)?.message || "Rental service not found or invalid type."} />;
   }

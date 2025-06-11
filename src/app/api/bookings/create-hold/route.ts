@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (body.hold_type === 'hotel_room' && (!body.room_type_id || !body.service_id)) {
+    if (body.hold_type === 'hotel_room' && !body.room_type_id) {
       return NextResponse.json(
-        { success: false, message: 'Room type ID and service ID required for hotel room holds' },
+        { success: false, message: 'Room type ID required for hotel room holds' },
         { status: 400 }
       );
     }
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       user_id: body.user_id || undefined,
       hold_type: body.hold_type,
       room_type_id: body.room_type_id,
-      service_id: body.service_id,
+      service_id: body.hold_type === 'hotel_room' ? undefined : body.service_id,
       hold_date: body.hold_date,
       quantity: body.quantity,
       hold_price: body.hold_price,

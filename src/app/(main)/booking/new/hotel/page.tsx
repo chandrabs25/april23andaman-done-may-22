@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, AlertTriangle, ArrowLeft, HotelIcon, Bed, CalendarDaysIcon, UsersIcon, CreditCardIcon, InfoIcon } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, HotelIcon, Bed, CalendarDaysIcon, UsersIcon, CreditCardIcon, InfoIcon } from 'lucide-react';
 import { useFetch } from '@/hooks/useFetch';
 import { HotelBookingForm } from '@/components/hotels/HotelBookingForm';
 
@@ -50,9 +50,16 @@ interface HotelData {
 }
 
 // --- Components ---
-const LoadingSpinner = ({ message = "Loading booking details..." }: { message?: string }) => (
+const LoadingSpinner = ({ message = "Loading hotel details..." }: { message?: string }) => (
   <div className={`min-h-screen flex flex-col items-center justify-center ${neutralBgLight} ${sectionPadding}`}>
-    <Loader2 className={`h-16 w-16 animate-spin ${infoIconColor} mb-5`} />
+    <Image
+      src="/images/loading.gif"
+      alt="Loading..."
+      width={128}
+      height={128}
+      priority
+      className="mb-5"
+    />
     <span className={`text-xl ${infoText} font-semibold`}>{message}</span>
     <p className={`${neutralTextLight} mt-1`}>Please wait a moment.</p>
   </div>

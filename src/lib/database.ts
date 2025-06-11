@@ -2374,14 +2374,12 @@ export class DatabaseService {
       // Create the main booking record
       const bookingResult = await db.prepare(`
         INSERT INTO bookings (
-          user_id, service_id, total_people, start_date, end_date,
-          status, total_amount, payment_status, guest_name, 
-          guest_email, guest_phone, special_requests, 
-          number_of_rooms, booking_type
-        ) VALUES (?, ?, ?, ?, ?, 'PENDING_PAYMENT', ?, 'INITIATED', ?, ?, ?, ?, ?, 'hotel')
+          user_id, total_people, start_date, end_date,
+          status, total_amount, payment_status, guest_name,
+          guest_email, guest_phone, special_requests
+        ) VALUES (?, ?, ?, ?, 'PENDING_PAYMENT', ?, 'INITIATED', ?, ?, ?, ?)
       `).bind(
         bookingData.user_id,
-        bookingData.service_id,
         bookingData.total_people,
         bookingData.start_date,
         bookingData.end_date,
@@ -2389,8 +2387,7 @@ export class DatabaseService {
         bookingData.guest_name,
         bookingData.guest_email,
         bookingData.guest_phone,
-        bookingData.special_requests,
-        bookingData.number_of_rooms
+        bookingData.special_requests
       ).run();
 
       if (!bookingResult.success) {
@@ -2438,33 +2435,40 @@ export class DatabaseService {
    * Records a new payment attempt for a booking. Returns the attempted row meta.
    */
   async createPaymentAttempt(
-    bookingId: number,
+    bookingId: number | null,
     mtid: string,
     amountPaise: number,
-    status: string = 'INITIATED'
+    status: string = 'INITIATED',
+    holdId: number | null = null
   ) {
     const db = await getDatabase();
 
-    // Determine next attempt number for this booking
-    const attemptCountRes = await db
-      .prepare('SELECT COUNT(*) as cnt FROM payment_attempts WHERE booking_id = ?')
-      .bind(bookingId)
-      .first<{ cnt: number }>();
-
-    const attemptNo = (attemptCountRes?.cnt ?? 0) + 1;
+    let attemptNo = 1;
+    if (bookingId) {
+      const attemptCountRes = await db
+        .prepare('SELECT COUNT(*) as cnt FROM payment_attempts WHERE booking_id = ?')
+        .bind(bookingId)
+        .first<{ cnt: number }>();
+      attemptNo = (attemptCountRes?.cnt ?? 0) + 1;
+    } else if (holdId) {
+      const attemptCountRes = await db
+        .prepare('SELECT COUNT(*) as cnt FROM payment_attempts WHERE hold_id = ?')
+        .bind(holdId)
+        .first<{ cnt: number }>();
+      attemptNo = (attemptCountRes?.cnt ?? 0) + 1;
+    }
 
     return db
       .prepare(`
         INSERT INTO payment_attempts (
           booking_id,
+          hold_id,
           attempt_no,
           mtid,
           status,
-          amount_paise,
-          created_at,
-          updated_at
-        ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`)
-      .bind(bookingId, attemptNo, mtid, status, amountPaise)
+          amount_paise
+        ) VALUES (?, ?, ?, ?, ?, ?)`)
+      .bind(bookingId, holdId, attemptNo, mtid, status, amountPaise)
       .run();
   }
 
@@ -2500,5 +2504,13 @@ export class DatabaseService {
         WHERE mtid = ?`)
       .bind(status, phonePeStatus, providerReferenceId, mtid)
       .run();
+  }
+
+  /** Attach a now-known bookingId to a previously inserted attempt. */
+  async linkAttemptToBooking(mtid: string, bookingId: number) {
+    const db = await getDatabase();
+    return db.prepare(`UPDATE payment_attempts SET booking_id = ?, updated_at = CURRENT_TIMESTAMP WHERE mtid = ?`)
+             .bind(bookingId, mtid)
+             .run();
   }
 }

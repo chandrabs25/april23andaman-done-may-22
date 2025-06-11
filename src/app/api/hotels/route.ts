@@ -50,14 +50,23 @@ export async function GET(request: NextRequest) {
       };
     });
     
+    // Build paginated response object
     const responseData: PaginatedHotelsResponse = {
-        data: processedHotels as Hotel[], // Cast here after ensuring parsing in DB service
-        total: totalHotelsResult.total,
-        page: page,
-        limit: limit,
+      data: processedHotels as Hotel[],
+      total: totalHotelsResult.total,
+      page: page,
+      limit: limit,
     };
 
-    return NextResponse.json({ success: true, ...responseData }, { status: 200 });
+    // Return with the common { success, message?, data } envelope expected by useFetch
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Hotels retrieved successfully",
+        data: responseData,
+      },
+      { status: 200 }
+    );
 
   } catch (error) {
     console.error("Error fetching hotels:", error);

@@ -160,17 +160,44 @@ const HotelDetailPage = () => {
     return <ErrorState message={"Hotel data is unavailable."} onRetry={() => setRetryToken(c => c + 1)} />;
   }
 
+  // -----------------------------------------------------------------------
+  // Normalize API differences
+  // The /api/hotels/:id endpoint returns `room_types`, `images_parsed` etc.,
+  // whereas the admin-preview (and older) endpoint returns the canonical
+  // `rooms`, `images` arrays.  To keep the UI logic simple we derive
+  // fall-back arrays here that always exist regardless of the endpoint.
+  // -----------------------------------------------------------------------
+  const hotelRooms: Room[] = (selectedHotel as any).rooms ?? (selectedHotel as any).room_types ?? [];
+  const hotelImages: string[] = (selectedHotel.images && selectedHotel.images.length > 0)
+    ? selectedHotel.images
+    : ((selectedHotel as any).images_parsed ?? []);
+
+  // Amenities / Facilities / Meal Plans
+  const hotelAmenities: string[] =
+    (selectedHotel.facilities && Array.isArray(selectedHotel.facilities) && selectedHotel.facilities.length > 0)
+      ? (selectedHotel as any).facilities
+      : ((selectedHotel as any).amenities ?? (selectedHotel as any).amenities_parsed ?? (selectedHotel as any).facilities_parsed ?? []);
+
+  const hotelMealPlans: string[] =
+    (selectedHotel.meal_plans && Array.isArray(selectedHotel.meal_plans) && selectedHotel.meal_plans.length > 0)
+      ? (selectedHotel as any).meal_plans
+      : ((selectedHotel as any).meal_plans_parsed ?? []);
+
+  // Coordinates
+  const latitude: number | null = (selectedHotel as any).geo_lat ?? (selectedHotel as any).latitude ?? null;
+  const longitude: number | null = (selectedHotel as any).geo_lng ?? (selectedHotel as any).longitude ?? null;
+
   let calculatedMinPrice: number | null = null;
-  if (selectedHotel.rooms && selectedHotel.rooms.length > 0) {
-    calculatedMinPrice = selectedHotel.rooms.reduce((min, room) => {
+  if (hotelRooms.length > 0) {
+    calculatedMinPrice = hotelRooms.reduce((min, room: any) => {
       const price = Number(room.base_price);
       return !isNaN(price) && (min === null || price < min) ? price : min;
     }, null as number | null);
   }
 
-  const mainPrice = calculatedMinPrice !== null ? calculatedMinPrice.toLocaleString("en-IN") : 'N/A';
-  const mainImageUrl = normalizeImageUrl(selectedHotel.images?.[0]);
-  const galleryImages = (selectedHotel.images ?? []).slice(1, 5).map(normalizeImageUrl);
+  const mainPrice = calculatedMinPrice !== null ? calculatedMinPrice.toLocaleString('en-IN') : 'N/A';
+  const mainImageUrl = normalizeImageUrl(hotelImages[0]);
+  const galleryImages = hotelImages.slice(1, 5).map(normalizeImageUrl);
 
   return (
     <div className={`${neutralBgLight} min-h-screen`}>
@@ -300,9 +327,9 @@ const HotelDetailPage = () => {
               </DetailSection>
 
               <DetailSection id="hotel-rooms" title="Available Rooms" icon={BedDouble}>
-                {selectedHotel.rooms && selectedHotel.rooms.length > 0 ? (
+                {hotelRooms.length > 0 ? (
                   <div className="space-y-6">
-                    {selectedHotel.rooms.map((room: Room) => {
+                    {hotelRooms.map((room: Room) => {
                       const roomPrice = typeof room.base_price === 'number' ? room.base_price.toLocaleString("en-IN") : 'N/A';
                       const roomMainImage = normalizeImageUrl(room.images?.[0]);
                       return (
@@ -375,9 +402,9 @@ const HotelDetailPage = () => {
               </DetailSection>
 
               <DetailSection id="hotel-amenities" title="Hotel Amenities" icon={ListChecks}>
-                {(selectedHotel.facilities && selectedHotel.facilities.length > 0) || ((selectedHotel as any).amenities && (selectedHotel as any).amenities.length > 0) ? (
+                {hotelAmenities.length > 0 ? (
                   <ul className={`list-none grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-2.5`}>
-                    {(selectedHotel.facilities && selectedHotel.facilities.length > 0 ? selectedHotel.facilities : (selectedHotel as any).amenities || []).map((item: string, i: number) =>
+                    {hotelAmenities.map((item: string, i: number) =>
                       <li key={i} className={`flex items-center ${neutralTextLight}`}>
                         <div className={`${listIconWrapperStyle} mr-2.5 p-1.5 border-0 ${neutralBgLight}`}>
                           {getAmenityIcon(item, "h-4 w-4")}
@@ -390,8 +417,6 @@ const HotelDetailPage = () => {
                 )}
               </DetailSection>
 
-
-
               <DetailSection id="hotel-policies" title="Hotel Policies" icon={ShieldCheck} className="border-b-0 pb-0">
                 <div className={`space-y-2 ${neutralTextLight}`}>
                   <p><strong className={neutralText}>Check-in:</strong> {selectedHotel.check_in_time || 'From 2:00 PM (14:00)'}</p>
@@ -403,11 +428,11 @@ const HotelDetailPage = () => {
                     <p><strong className={neutralText}>Accessibility:</strong> {selectedHotel.accessibility}</p>
                   )}
                 </div>
-                {selectedHotel.meal_plans && selectedHotel.meal_plans.length > 0 && (
+                {hotelMealPlans.length > 0 && (
                   <div className="mt-4">
                     <h4 className={`text-sm font-semibold ${neutralText} mb-1.5`}>Meal Plans:</h4>
                     <ul className={`list-disc list-inside space-y-1 ${neutralTextLight} marker:${neutralIconColor}`}>
-                      {selectedHotel.meal_plans.map((plan: string) => <li key={plan}>{plan}</li>)}
+                      {hotelMealPlans.map((plan: string) => <li key={plan}>{plan}</li>)}
                     </ul>
                   </div>
                 )}
@@ -426,11 +451,11 @@ const HotelDetailPage = () => {
 
               <DetailSection id="hotel-location" title="Location" icon={MapPin} className="border-b-0 pb-0">
                 <p className={`mb-3 ${neutralTextLight}`}>{selectedHotel.address || (selectedHotel as any).street_address || 'Andaman & Nicobar Islands'}</p>
-                {((selectedHotel as any).geo_lat && (selectedHotel as any).geo_lng) ? (
+                {(latitude !== null && longitude !== null) ? (
                   <div className={`h-72 md:h-80 rounded-xl overflow-hidden border ${neutralBorder} shadow-sm`}>
                     <HotelDetailMap
-                      latitude={(selectedHotel as any).geo_lat}
-                      longitude={(selectedHotel as any).geo_lng}
+                      latitude={latitude}
+                      longitude={longitude}
                       name={selectedHotel.name}
                       themeNeutralBorderLight={neutralBorderLight}
                     />
@@ -482,16 +507,16 @@ const HotelDetailPage = () => {
                       </div>
                     </div>
                   )}
-                  {selectedHotel.total_rooms && (
+                  {((selectedHotel as any).total_rooms ?? null) && (
                     <div className="flex items-center justify-between">
                       <span>Total Rooms:</span>
-                      <span>{selectedHotel.total_rooms}</span>
+                      <span>{(selectedHotel as any).total_rooms}</span>
                     </div>
                   )}
-                  {selectedHotel.rooms?.length && (
+                  {hotelRooms.length > 0 && (
                     <div className="flex items-center justify-between">
                       <span>Room Types:</span>
-                      <span>{selectedHotel.rooms.length}</span>
+                      <span>{hotelRooms.length}</span>
                     </div>
                   )}
                   {selectedHotel.pets_allowed !== undefined && (

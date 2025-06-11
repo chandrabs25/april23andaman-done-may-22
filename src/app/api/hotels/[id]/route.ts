@@ -155,7 +155,11 @@ export async function GET(
 
     console.log(`[API GET /api/hotels/${hotelId}] Processed room types for client:`, JSON.stringify(processedRoomTypes));
 
-    // Build response
+    // Parse additional JSON fields that the public site needs
+    const parsedFacilities = safeJsonParseArray((hotel as any).facilities, 'hotel.facilities');
+    const parsedMealPlans = safeJsonParseArray((hotel as any).meal_plans, 'hotel.meal_plans');
+
+    // Build response with richer data
     const enrichedHotel: ApiHotelResponse = {
       id: hotel.id,
       name: hotel.name,
@@ -163,14 +167,22 @@ export async function GET(
       star_rating: hotel.star_rating,
       images_parsed: parsedImages,
       amenities_parsed: parsedAmenities,
+      facilities_parsed: parsedFacilities,
+      meal_plans_parsed: parsedMealPlans,
       address: hotel.address,
       island_name: hotel.island_name,
+      geo_lat: (hotel as any).geo_lat ?? (hotel as any).latitude ?? null,
+      geo_lng: (hotel as any).geo_lng ?? (hotel as any).longitude ?? null,
+      total_rooms: (hotel as any).total_rooms ?? null,
+      pets_allowed: (hotel as any).pets_allowed ?? null,
+      children_allowed: (hotel as any).children_allowed ?? null,
+      accessibility: (hotel as any).accessibility ?? null,
       room_types: processedRoomTypes,
       check_in_time: hotel.check_in_time,
       check_out_time: hotel.check_out_time,
       cancellation_policy: hotel.cancellation_policy,
       policies: hotel.policies,
-    };
+    } as any;
 
     return NextResponse.json({ success: true, data: enrichedHotel });
 

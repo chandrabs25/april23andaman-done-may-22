@@ -76,21 +76,23 @@ export async function POST(request: NextRequest) {
     console.log("LOG 8: Parsed decodedResponse object from PhonePe callback:", JSON.stringify(decodedResponse, null, 2));
 
     const merchantTransactionId = decodedResponse.data?.merchantTransactionId || decodedResponse.merchantTransactionId || decodedResponse.MerchantTransactionId || decodedResponse.merchant_transaction_id || decodedResponse.data?.MerchantTransactionId || decodedResponse.data?.merchant_transaction_id;
-    const phonepeMainTransactionId = decodedResponse.data?.transactionId || decodedResponse.transactionId || decodedResponse.TransactionId || decodedResponse.transaction_id || decodedResponse.data?.TransactionId || decodedResponse.data?.transaction_id || decodedResponse.data?.providerReferenceId;
     const callbackPaymentStatusCode = decodedResponse.code || decodedResponse.data?.code || decodedResponse.Code || decodedResponse.data?.Code || decodedResponse.status || decodedResponse.data?.status || decodedResponse.Status || decodedResponse.data?.State;
 
-    console.log(`LOG 9: Values after resilient access - MTID: ${merchantTransactionId}, PhonePeTID: ${phonepeMainTransactionId}, CallbackStatusCode: ${callbackPaymentStatusCode}`);
+    console.log(`LOG 9: Values after resilient access - MTID: ${merchantTransactionId}, CallbackStatusCode: ${callbackPaymentStatusCode}`);
 
     if (!merchantTransactionId) {
         console.warn("LOG Error: merchantTransactionId is undefined after attempting all access patterns from decodedResponse. Critical: Check LOG 8 output.");
         return NextResponse.json({ success: false, message: "Could not extract merchantTransactionId from callback. Check server logs for LOG 8." }, { status: 400 });
     }
 
-    const bookingId = parseInt(merchantTransactionId, 10);
-    if (isNaN(bookingId)) {
-      console.warn(`LOG Error: Invalid merchantTransactionId after parsing: '${merchantTransactionId}' resulted in NaN.`);
-      return NextResponse.json({ success: false, message: "Invalid transaction ID format after parsing." }, { status: 400 });
+    // Map MTID to booking via payment_attempts table
+    const paymentAttempt = await dbService.getPaymentAttemptByMtid(merchantTransactionId);
+    if (!paymentAttempt) {
+      console.warn(`LOG Error: No payment_attempt found for mtid ${merchantTransactionId}`);
+      return NextResponse.json({ success: true, message: "Callback acknowledged, but transaction reference not found." });
     }
+
+    const bookingId = paymentAttempt.booking_id;
 
     // Check if this is a hold-based transaction
     const isHoldTransaction = merchantTransactionId.startsWith('HOLD_');
@@ -156,7 +158,7 @@ export async function POST(request: NextRequest) {
 
     if (statusResponse && statusResponse.success) {
       const confirmedPaymentCode = statusResponse.code;
-      const phonepeInternalTxId = statusResponse.data?.transactionId || phonepeMainTransactionId;
+      const phonepeInternalTxId = statusResponse.data?.transactionId || merchantTransactionId;
       console.log(`LOG 14: Status API for MTID ${merchantTransactionId} successful. Code: ${confirmedPaymentCode}, PhonePeInternalTID: ${phonepeInternalTxId}`);
 
       if (confirmedPaymentCode === 'PAYMENT_SUCCESS') {
@@ -199,6 +201,7 @@ export async function POST(request: NextRequest) {
                 'PAID', 
                 phonepeInternalTxId
               );
+              await dbService.updatePaymentAttemptStatus(merchantTransactionId, 'SUCCESS', confirmedPaymentCode, phonepeInternalTxId);
               console.log(`LOG Info: Hold ${holdId} converted to booking ${conversionResult.booking_id} and marked as CONFIRMED/PAID`);
             } else {
               console.error(`LOG Error: Failed to convert hold ${holdId} to booking`);
@@ -211,6 +214,7 @@ export async function POST(request: NextRequest) {
         } else {
           // Regular booking flow
           await dbService.updateBookingStatusAndPaymentStatus(actualBookingId.toString(), 'CONFIRMED', 'PAID', phonepeInternalTxId);
+          await dbService.updatePaymentAttemptStatus(merchantTransactionId, 'SUCCESS', confirmedPaymentCode, phonepeInternalTxId);
           console.log(`LOG Info: Booking ${actualBookingId} CONFIRMED and payment PAID via D1.`);
         }
       } else if (['PAYMENT_ERROR', 'TRANSACTION_NOT_FOUND', 'PAYMENT_FAILURE', 'TIMED_OUT', 'CARD_NOT_SUPPORTED', 'BANK_OFFLINE', 'PAYMENT_DECLINED'].includes(confirmedPaymentCode)) {
@@ -221,6 +225,7 @@ export async function POST(request: NextRequest) {
         } else {
           // Regular booking flow
           await dbService.updateBookingStatusAndPaymentStatus(actualBookingId.toString(), 'FAILED', 'FAILED', phonepeInternalTxId);
+          await dbService.updatePaymentAttemptStatus(merchantTransactionId, 'FAILURE', confirmedPaymentCode, phonepeInternalTxId);
           console.log(`LOG Info: Booking ${actualBookingId} FAILED via D1. Status from API: ${confirmedPaymentCode}`);
         }
       } else if (confirmedPaymentCode === 'PAYMENT_PENDING') {

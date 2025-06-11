@@ -26,16 +26,22 @@ interface PhonePeCheckStatusApiResponse {
 const dbService = new DatabaseService();
 
 export async function GET(request: NextRequest) {
-  const mtidString = request.nextUrl.searchParams.get('mtid');
+  const mtid = request.nextUrl.searchParams.get('mtid');
 
-  if (!mtidString) {
+  if (!mtid) {
     return NextResponse.json({ success: false, message: "Merchant transaction ID (mtid) is required." }, { status: 400 });
   }
 
-  const bookingIdInt = parseInt(mtidString, 10);
-  if (isNaN(bookingIdInt)) {
-    return NextResponse.json({ success: false, message: "Invalid Merchant Transaction ID format." }, { status: 400 });
+  // -------------------------------------------------------------------
+  // Retrieve payment_attempt to map MTID → booking_id
+  // -------------------------------------------------------------------
+  const attempt = await dbService.getPaymentAttemptByMtid(mtid);
+
+  if (!attempt) {
+    return NextResponse.json({ success: false, message: "Unknown or expired transaction reference." }, { status: 404 });
   }
+
+  const bookingIdInt = attempt.booking_id;
 
   try {
     const merchantId = process.env.PHONEPE_MERCHANT_ID;
@@ -49,9 +55,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Path for constructing the full fetch URL (appended to prefix)
-    const fetchUrlPathSegment = `/${merchantId}/${mtidString}`;
+    const fetchUrlPathSegment = `/${merchantId}/${mtid}`;
     // Path used specifically for generating the X-VERIFY hash
-    const pathForHashing = `/pg/v1/status/${merchantId}/${mtidString}`;
+    const pathForHashing = `/pg/v1/status/${merchantId}/${mtid}`;
 
     const stringToHash = pathForHashing + saltKey;
     const sha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
@@ -96,7 +102,7 @@ export async function GET(request: NextRequest) {
         }
         
         const errorMessage = errorResponse.message || `PhonePe Status API request failed: ${apiResponse.statusText}`;
-        console.error(`LOG Error: PhonePe Status API request failed for ${mtidString} with status: ${apiResponse.status}`, errorResponse);
+        console.error(`LOG Error: PhonePe Status API request failed for ${mtid} with status: ${apiResponse.status}`, errorResponse);
         
         return NextResponse.json(
           { 
@@ -108,15 +114,15 @@ export async function GET(request: NextRequest) {
         );
       }
       phonePeStatusResponse = await apiResponse.json() as PhonePeCheckStatusApiResponse;
-      console.log(`DEBUG: PhonePe Check Status API response for ${mtidString}:`, JSON.stringify(phonePeStatusResponse, null, 2));
+      console.log(`DEBUG: PhonePe Check Status API response for ${mtid}:`, JSON.stringify(phonePeStatusResponse, null, 2));
 
     } catch (fetchError) {
-      console.error(`LOG Error: Fetch error calling PhonePe Status API for ${mtidString}:`, fetchError);
+      console.error(`LOG Error: Fetch error calling PhonePe Status API for ${mtid}:`, fetchError);
       return NextResponse.json({ success: false, message: "Could not connect to payment provider to check status." }, { status: 503 });
     }
 
     if (!phonePeStatusResponse.success) {
-      console.warn(`LOG Warn: PhonePe Status API returned success:false for ${mtidString}:`, phonePeStatusResponse.message, `Code: ${phonePeStatusResponse.code}`);
+      console.warn(`LOG Warn: PhonePe Status API returned success:false for ${mtid}:`, phonePeStatusResponse.message, `Code: ${phonePeStatusResponse.code}`);
       // Even if PhonePe says success:false, we return a 200 from our API but indicate the failure from PhonePe's perspective.
       // The client page will decide how to handle this (e.g. if it's PAYMENT_ERROR or TRANSACTION_NOT_FOUND)
       // We pass along PhonePe's assessment.
@@ -125,7 +131,7 @@ export async function GET(request: NextRequest) {
         message: phonePeStatusResponse.message || "Failed to get a successful status from PhonePe.",
         phonePePaymentStatus: phonePeStatusResponse.code, // Pass along PhonePe's code
         phonePeCode: phonePeStatusResponse.code,
-        merchantTransactionId: mtidString,
+        merchantTransactionId: mtid,
       });
     }
 
@@ -146,30 +152,35 @@ export async function GET(request: NextRequest) {
     if (booking.status !== 'CONFIRMED' && booking.status !== 'FAILED') {
       if (phonePePaymentCode === 'PAYMENT_SUCCESS') {
         await dbService.updateBookingStatusAndPaymentStatus(String(bookingIdInt), 'CONFIRMED', 'PAID', phonePeApiTransactionId);
+        await dbService.updatePaymentAttemptStatus(mtid, 'SUCCESS', phonePePaymentCode, phonePeApiTransactionId);
         updatedBookingStatus = 'CONFIRMED';
         updatedPaymentStatus = 'PAID';
         console.log(`LOG Info: Booking ${bookingIdInt} updated to CONFIRMED/PAID via check-payment-status.`);
       } else if (['PAYMENT_ERROR', 'TRANSACTION_NOT_FOUND', 'PAYMENT_FAILURE', 'TIMED_OUT'].includes(phonePePaymentCode)) {
         await dbService.updateBookingStatusAndPaymentStatus(String(bookingIdInt), 'FAILED', 'FAILED', phonePeApiTransactionId);
+        await dbService.updatePaymentAttemptStatus(mtid, 'FAILURE', phonePePaymentCode, phonePeApiTransactionId);
         updatedBookingStatus = 'FAILED';
         updatedPaymentStatus = 'FAILED';
         console.log(`LOG Info: Booking ${bookingIdInt} updated to FAILED/FAILED via check-payment-status.`);
+      } else if (phonePePaymentCode === 'PAYMENT_PENDING') {
+        await dbService.updatePaymentAttemptStatus(mtid, 'PENDING', phonePePaymentCode, phonePeApiTransactionId);
       }
     }
 
     return NextResponse.json({
       success: true,
       message: "Status successfully retrieved.",
-      merchantTransactionId: mtidString,
+      merchantTransactionId: mtid,
       phonePePaymentStatus: phonePePaymentCode,
       phonePeTransactionState: phonePeTransactionState,
       phonePeAmount: phonePeAmount,
       bookingStatus: updatedBookingStatus,
       paymentStatus: updatedPaymentStatus,
+      bookingId: bookingIdInt,
     });
 
   } catch (error) {
-    console.error(`LOG Error: Outer try-catch in check-payment-status for ${mtidString}:`, error);
+    console.error(`LOG Error: Outer try-catch in check-payment-status for ${mtid}:`, error);
     const errorMessage = error instanceof Error ? error.message : "Unknown server error.";
     return NextResponse.json({ success: false, message: "Error checking payment status.", errorDetail: errorMessage }, { status: 500 });
   }

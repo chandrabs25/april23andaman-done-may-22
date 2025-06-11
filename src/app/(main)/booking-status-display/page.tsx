@@ -33,6 +33,7 @@ interface CheckStatusResponse {
     // Fields present on error response from /api/bookings/check-payment-status
     phonePeCode?: string; // e.g., when PhonePe API itself returns success: false
     // errorDetail?: string; // If your general error responses include this
+    bookingId?: string;
 }
 // --- End Interface Definition ---
 
@@ -46,7 +47,14 @@ function PaymentStatusContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [errorDetails, setErrorDetails] = useState<string | null>(null);
     const [currentPollAttempt, setCurrentPollAttempt] = useState(0);
-    const maxPolls = 5; // Max 5 retries for pending status
+    // PhonePe recommended polling schedule
+    const pollingSchedule = [
+      { delay: 25000, repeat: 1 },   // first check after ~25s
+      { delay: 3000, repeat: 10 },   // next 30s (3s × 10)
+      { delay: 6000, repeat: 10 },   // next 60s (6s × 10)
+    ];
+
+    const totalAllowedAttempts = pollingSchedule.reduce((acc, cur) => acc + cur.repeat, 0);
 
     const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -89,14 +97,23 @@ function PaymentStatusContent() {
                         setErrorDetails(null); // Clear any previous errors on success
                         setIsLoading(false);
                         if (pollingTimeoutRef.current) clearTimeout(pollingTimeoutRef.current);
-                        pollingTimeoutRef.current = setTimeout(() => router.push(`/booking/confirmation/${mtid}`), 2000);
+                        const destBookingId = data.bookingId || mtid;
+                        pollingTimeoutRef.current = setTimeout(() => router.push(`/booking/confirmation/${destBookingId}`), 2000);
                     } else if (data.phonePePaymentStatus === 'PAYMENT_PENDING' || data.bookingStatus === 'PENDING_PAYMENT') {
-                        if (attempt < maxPolls) {
-                            setStatusMessage(`Payment is pending. Checking again soon... (Attempt ${attempt + 1}/${maxPolls})`);
-                            // Keep previous errorDetails if any, or set to null if none now
-                            // setErrorDetails(null); // Or some info message about polling.
+                        if (attempt < totalAllowedAttempts - 1) {
+                            setStatusMessage(`Payment is pending. Checking again soon... (Attempt ${attempt + 1}/${totalAllowedAttempts})`);
+                            // Determine next delay based on schedule
+                            let accumulated = 0;
+                            let chosenDelay = 6000;
+                            for (const slot of pollingSchedule) {
+                                if (attempt - accumulated < slot.repeat) {
+                                    chosenDelay = slot.delay;
+                                    break;
+                                }
+                                accumulated += slot.repeat;
+                            }
                             if (pollingTimeoutRef.current) clearTimeout(pollingTimeoutRef.current);
-                            pollingTimeoutRef.current = setTimeout(() => checkStatus(attempt + 1), 5000); // Poll every 5 seconds
+                            pollingTimeoutRef.current = setTimeout(() => checkStatus(attempt + 1), chosenDelay);
                         } else {
                             setStatusMessage('Payment is still pending. We will update you once confirmed.');
                             setErrorDetails('Your payment is taking longer than usual to confirm. Please check your email or "My Bookings" section later for updates.');

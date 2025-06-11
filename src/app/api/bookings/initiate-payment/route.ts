@@ -92,14 +92,35 @@ export async function POST(request: NextRequest) {
       }
       newBookingIdAsNumber = createBookingResult.meta.last_row_id;
       newBookingIdAsString = String(newBookingIdAsNumber);
-      console.log(`INFO: Booking created with ID (merchantTransactionId): ${newBookingIdAsString}`);
+      console.log(`INFO: Booking created with ID: ${newBookingIdAsString}`);
     } catch (dbError) {
       console.error("Database error creating booking with D1:", dbError);
       return NextResponse.json({ success: false, message: "Failed to save booking details." }, { status: 500 });
     }
 
+    // ----------------------------------------------------------------
+    // Generate a UNIQUE merchantTransactionId (mtid) for this payment
+    // attempt instead of re-using the booking primary-key.
+    // ----------------------------------------------------------------
 
-    const clientRedirectUrl = `${process.env.NGROK_PUBLIC_URL}/api/bookings/booking-payment-status?mtid=${newBookingIdAsString}`;
+    const mtid = crypto.randomUUID(); // Universally unique and satisfies PhonePe length (36 chars)
+
+    // Persist this attempt for audit & retries
+    try {
+      await dbService.createPaymentAttempt(
+        newBookingIdAsNumber!,
+        mtid,
+        totalAmountInPaise,
+        'INITIATED'
+      );
+    } catch (attemptErr) {
+      console.error('Failed creating payment_attempt row:', attemptErr);
+    }
+
+    // ---------------------------------------------------------------------------------
+    // Use the freshly generated `mtid` everywhere we previously used bookingIdAsString
+    // ---------------------------------------------------------------------------------
+    const clientRedirectUrl = `${process.env.NGROK_PUBLIC_URL}/api/bookings/booking-payment-status?mtid=${mtid}`;
     // THIS IS THE CRUCIAL LOG:
     console.log("DEBUG: Sending this redirectUrl to PhonePe (clientRedirectUrl):", clientRedirectUrl);
 
@@ -109,7 +130,7 @@ export async function POST(request: NextRequest) {
 
     const payload = {
       merchantId: process.env.PHONEPE_MERCHANT_ID,
-      merchantTransactionId: newBookingIdAsString,
+      merchantTransactionId: mtid,
       merchantUserId: merchantUserId,
       amount: totalAmountInPaise,
       redirectUrl: clientRedirectUrl,
@@ -151,7 +172,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         redirectUrl: phonePeResponse.data.instrumentResponse.redirectInfo.url,
-        merchantTransactionId: newBookingIdAsString,
+        merchantTransactionId: mtid,
+        bookingId: newBookingIdAsNumber,
       });
     } else {
       console.error("PhonePe API call failed or returned unexpected response:", phonePeResponse);

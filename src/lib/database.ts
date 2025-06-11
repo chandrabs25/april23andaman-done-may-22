@@ -2432,4 +2432,73 @@ export class DatabaseService {
       };
     }
   }
+
+  // --- Payment Attempt Methods ---
+  /**
+   * Records a new payment attempt for a booking. Returns the attempted row meta.
+   */
+  async createPaymentAttempt(
+    bookingId: number,
+    mtid: string,
+    amountPaise: number,
+    status: string = 'INITIATED'
+  ) {
+    const db = await getDatabase();
+
+    // Determine next attempt number for this booking
+    const attemptCountRes = await db
+      .prepare('SELECT COUNT(*) as cnt FROM payment_attempts WHERE booking_id = ?')
+      .bind(bookingId)
+      .first<{ cnt: number }>();
+
+    const attemptNo = (attemptCountRes?.cnt ?? 0) + 1;
+
+    return db
+      .prepare(`
+        INSERT INTO payment_attempts (
+          booking_id,
+          attempt_no,
+          mtid,
+          status,
+          amount_paise,
+          created_at,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`)
+      .bind(bookingId, attemptNo, mtid, status, amountPaise)
+      .run();
+  }
+
+  /**
+   * Fetch a payment attempt row by its merchantTransactionId (mtid).
+   */
+  async getPaymentAttemptByMtid(mtid: string) {
+    const db = await getDatabase();
+    return db
+      .prepare('SELECT * FROM payment_attempts WHERE mtid = ?')
+      .bind(mtid)
+      .first();
+  }
+
+  /**
+   * Updates status / provider reference for a payment attempt.
+   */
+  async updatePaymentAttemptStatus(
+    mtid: string,
+    status: string,
+    phonePeStatus: string | null = null,
+    providerReferenceId: string | null = null
+  ) {
+    const db = await getDatabase();
+
+    return db
+      .prepare(`
+        UPDATE payment_attempts
+        SET status = ?,
+            phonepe_status = ?,
+            phonepe_transaction_id = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE mtid = ?`)
+      .bind(status, phonePeStatus, providerReferenceId, mtid)
+      .run();
+  }
 }

@@ -1,6 +1,4 @@
 // Path: src/app/destinations/little-andaman/page.tsx
-// Theme: Neutral with Contextual Background Colors (Applied based on Baratang sample)
-
 'use client';
 
 import { useState } from 'react';
@@ -13,24 +11,34 @@ import {
     Calendar,
     Bed,
     Utensils,
-    Compass,    // Use for Attractions/Exploration
-    Users,      // Keep for cultural/tribal context
-    Shield,     // Consistent Safety icon
+    Compass,
+    Users,
+    Shield,
     Leaf,
     ChevronRight,
     Star,
-    Navigation, // Consistent Travel icon
+    Navigation,
     ArrowRight,
     MessageCircle,
     Camera,
-    Ship,       // Keep for Ferry access
-    Bike,       // Keep for Scooter rental
-    Waves,      // Specific for Surfing/Beaches
-    Droplets,   // Representing Waterfalls
-    LifeBuoy    // Consistent Safety icon
+    Plane, // Added for consistency
+    Ship,
+    Landmark, // Added for consistency
+    Waves,
+    LifeBuoy,
+    Bike,
+    Droplets
 } from 'lucide-react';
 
-// --- Define Common Styles (Copied from Baratang Sample - Neutral Theme with Contextual Colors) ---
+/* NOTE FOR FONT STYLING:
+  For the font "Plus Jakarta Sans" to apply correctly, please add the following link to your root layout file (e.g., app/layout.tsx):
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?display=swap&family=Plus+Jakarta+Sans:wght@400;500;700;800"
+  />
+*/
+
+// --- Define Common Styles (Copied from Port Blair Sample) ---
 const primaryButtonBg = 'bg-gray-800';
 const primaryButtonHoverBg = 'hover:bg-gray-900';
 const primaryButtonText = 'text-white';
@@ -65,16 +73,21 @@ const errorBorder = 'border-red-200';
 const errorText = 'text-red-700';
 const errorIconColor = 'text-red-500';
 
+// Unchanged Light Theme elements
 const neutralBgLight = 'bg-gray-50';
 const neutralBorderLight = 'border-gray-100';
 const neutralBg = 'bg-gray-100';
 const neutralBorder = 'border-gray-200';
-const neutralText = 'text-gray-800';
-const neutralTextLight = 'text-gray-600';
-const neutralIconColor = 'text-gray-600';
 
-const sectionPadding = "py-10 md:py-12"; // Consistent padding
-const sectionHeadingStyle = `text-2xl font-bold ${neutralText} mb-6 flex items-center`;
+// --- START: Updated Font Styles based on Inspiration ---
+const primaryTextColor = 'text-[#0e151b]'; // Dark text color from inspiration
+const secondaryTextColor = 'text-gray-600'; // Kept for consistency in detailed descriptions
+const inactiveTextColor = 'text-[#4e7997]'; // Lighter, bluish text for inactive elements
+
+// Updated section heading to match text-[22px] font-bold
+const sectionHeadingStyle = `text-[22px] font-bold ${primaryTextColor} mb-6 flex items-center leading-tight tracking-[-0.015em]`;
+// --- END: Updated Font Styles based on Inspiration ---
+
 const cardBaseStyle = `bg-white rounded-2xl shadow-sm border ${neutralBorderLight} p-6 transition-shadow hover:shadow-md`;
 const buttonPrimaryStyle = `inline-flex items-center justify-center ${primaryButtonBg} ${primaryButtonHoverBg} ${primaryButtonText} px-6 py-3 rounded-full font-medium transition-all duration-300 shadow-md`;
 const buttonSecondaryStyleHero = `inline-flex items-center justify-center ${secondaryButtonBg} ${secondaryButtonHoverBg} ${secondaryButtonText} ${secondaryButtonBorder} px-6 py-3 rounded-full font-medium transition-all duration-300`;
@@ -82,47 +95,49 @@ const buttonSecondaryStyleHero = `inline-flex items-center justify-center ${seco
 
 export default function LittleAndamanPage() {
     const [showComprehensive, setShowComprehensive] = useState(false);
-    const [activeImage, setActiveImage] = useState(0);
 
-    const handleToggle = () => {
-        setShowComprehensive(!showComprehensive);
+    const handleToggle = (isComprehensive: boolean) => {
+        setShowComprehensive(isComprehensive);
     };
 
-    // Gallery images specific to Little Andaman
+    // Gallery images specific to Little Andaman - captions shortened
     const galleryImages = [
         {
-            src: "/images/little-andaman/butler-bay-beach.jpg", // Use specific paths
+            src: "/images/little-andaman/butler-bay-beach.jpg",
             alt: "Butler Bay Beach, Little Andaman",
-            caption: "The famous crescent-shaped Butler Bay Beach, known for surfing"
+            caption: "Butler Bay Beach"
         },
         {
-            src: "/images/little-andaman/white-surf-waterfall.jpg", // Use specific paths
+            src: "/images/little-andaman/white-surf-waterfall.jpg",
             alt: "White Surf Waterfall, Little Andaman",
-            caption: "The easily accessible and picturesque White Surf Waterfall"
+            caption: "White Surf Waterfall"
         },
         {
-            src: "/images/little-andaman/whisper-wave-waterfall.jpg", // Use specific paths
+            src: "/images/little-andaman/whisper-wave-waterfall.jpg",
             alt: "Whisper Wave Waterfall trek, Little Andaman",
-            caption: "Trekking through the jungle to reach Whisper Wave Waterfall"
+            caption: "Whisper Wave Waterfall"
         },
         {
-            src: "/images/little-andaman/oil-palm-plantation.jpg", // Use specific paths
+            src: "/images/little-andaman/oil-palm-plantation.jpg",
             alt: "Oil Palm Plantation, Little Andaman",
-            caption: "Vast oil palm plantations are a unique feature of the island"
+            caption: "Oil Palm Plantation"
         },
         {
-            src: "/images/little-andaman/hut-bay.jpg", // Use specific paths
+            src: "/images/little-andaman/hut-bay.jpg",
             alt: "Hut Bay area, Little Andaman",
-            caption: "View of the Hut Bay area, the main entry point"
+            caption: "Hut Bay Jetty"
         }
     ];
 
     return (
-        <main className={`bg-white ${neutralText}`}>
-            {/* Hero Section - Matches Baratang Structure */}
+        <main
+            className="bg-slate-50"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        >
+            {/* Hero Section */}
             <div className="relative h-[70vh] w-full">
                 <Image
-                    src="/images/little-andaman/hero.webp" // Use specific Little Andaman hero image
+                    src="/images/little-andaman/hero.webp"
                     alt="Scenic beach view of Little Andaman"
                     fill
                     priority
@@ -149,10 +164,10 @@ export default function LittleAndamanPage() {
                         <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-md">Little Andaman</h1>
                         <p className="text-xl md:text-2xl max-w-3xl mb-6 text-white/90">Explore India's surfing capital, pristine beaches, lush waterfalls, and offbeat adventures.</p>
                         <div className="flex flex-wrap gap-4 items-center">
-                            <button className={buttonPrimaryStyle}>
+                            <Link href="#overview" className={buttonPrimaryStyle}>
                                 Discover Little Andaman <ArrowRight size={18} className="ml-2" />
-                            </button>
-                            <button className={buttonSecondaryStyleHero}>
+                            </Link>
+                            <button className={buttonSecondaryStyleHero} onClick={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}>
                                 <Camera size={18} className="mr-2" /> View Gallery
                             </button>
                         </div>
@@ -161,9 +176,9 @@ export default function LittleAndamanPage() {
             </div>
 
             {/* Main Content Container */}
-            <div className={`container mx-auto px-4 ${sectionPadding}`}>
+            <div className="container mx-auto px-4 py-10 md:py-12">
 
-                {/* Quick Facts Card - Contextual Color (Informational Blue) */}
+                {/* Quick Facts Card */}
                 <div className={`${infoBg} rounded-2xl p-6 mb-12 shadow-sm border ${infoBorder}`}>
                     <h2 className={`text-xl font-semibold ${infoText} mb-4 flex items-center`}>
                         <Info className={`mr-2 ${infoIconColor}`} size={20} />
@@ -175,8 +190,8 @@ export default function LittleAndamanPage() {
                                 <MapPin className={infoIconColor} size={18} />
                             </div>
                             <div>
-                                <h3 className={`font-medium ${neutralText}`}>Location</h3>
-                                <p className={`text-sm ${neutralTextLight}`}>South Andaman group, ~120 km south of Port Blair</p>
+                                <h3 className={`font-medium ${primaryTextColor}`}>Location</h3>
+                                <p className={`text-sm ${secondaryTextColor}`}>South Andaman group, ~120 km south of Port Blair</p>
                             </div>
                         </div>
                         <div className="flex items-start">
@@ -184,94 +199,94 @@ export default function LittleAndamanPage() {
                                 <Star className={infoIconColor} size={18} />
                             </div>
                             <div>
-                                <h3 className={`font-medium ${neutralText}`}>Known For</h3>
-                                <p className={`text-sm ${neutralTextLight}`}>Surfing (Butler Bay), Waterfalls (White Surf, Whisper Wave), Pristine Beaches</p>
+                                <h3 className={`font-medium ${primaryTextColor}`}>Known For</h3>
+                                <p className={`text-sm ${secondaryTextColor}`}>Surfing (Butler Bay), Waterfalls (White Surf, Whisper Wave), Pristine Beaches</p>
                             </div>
                         </div>
                         <div className="flex items-start">
                             <div className={`bg-white p-2 rounded-full shadow-sm mr-3 border ${neutralBorderLight}`}>
-                                <Ship className={infoIconColor} size={18} /> {/* Main access */}
+                                <Ship className={infoIconColor} size={18} />
                             </div>
                             <div>
-                                <h3 className={`font-medium ${neutralText}`}>Access</h3>
-                                <p className={`text-sm ${neutralTextLight}`}>Mainly via Ferry (6-8 hrs) from Port Blair to Hut Bay</p>
+                                <h3 className={`font-medium ${primaryTextColor}`}>Access</h3>
+                                <p className={`text-sm ${secondaryTextColor}`}>Mainly via Ferry (6-8 hrs) from Port Blair to Hut Bay</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Toggle Switch - Neutral Theme */}
-                <div className="flex flex-col items-center mb-10">
-                    <h2 className={`text-2xl font-bold ${neutralText} mb-4`}>Choose Your Guide Style</h2>
-                    <p className={`${neutralTextLight} mb-6 text-center max-w-2xl`}>Select between a quick overview or an in-depth exploration of Little Andaman.</p>
-                    <div className={`${neutralBg} p-1 rounded-full inline-flex border ${neutralBorder}`}>
-                        <button
-                            onClick={() => setShowComprehensive(false)}
-                            className={`px-6 py-2 rounded-full font-medium transition-all duration-300 ${!showComprehensive ? `${primaryButtonBg} ${primaryButtonText} shadow-sm` : `bg-transparent text-gray-700 hover:${neutralBg}`}`}
-                        >
-                            Brief Guide
-                        </button>
-                        <button
-                            onClick={() => setShowComprehensive(true)}
-                            className={`px-6 py-2 rounded-full font-medium transition-all duration-300 ${showComprehensive ? `${primaryButtonBg} ${primaryButtonText} shadow-sm` : `bg-transparent text-gray-700 hover:${neutralBg}`}`}
-                        >
-                            Comprehensive Guide
-                        </button>
-                    </div>
-                </div>
-
-                {/* Image Gallery - Neutral Theme */}
-                <div className="mb-16">
-                    <div className={`relative h-[50vh] w-full rounded-2xl overflow-hidden shadow-lg mb-4 border ${neutralBorderLight}`}>
-                        <Image src={galleryImages[activeImage].src} alt={galleryImages[activeImage].alt} fill style={{ objectFit: 'cover' }} />
-                        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/70 to-transparent">
-                            <p className="text-white text-lg drop-shadow">{galleryImages[activeImage].caption}</p>
+                {/* --- START: Redesigned Image Gallery --- */}
+                <div id="gallery" className="mb-10 scroll-mt-20">
+                    <h2 className={`${sectionHeadingStyle} px-4`}>Gallery</h2>
+                    <div className="flex overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        <div className="flex items-stretch p-4 gap-3">
+                            {galleryImages.map((image, index) => (
+                                <div key={index} className="flex h-full flex-1 flex-col gap-3 rounded-lg min-w-40">
+                                    <div className="w-full aspect-square rounded-xl overflow-hidden">
+                                        <Image
+                                            src={image.src}
+                                            alt={image.alt}
+                                            width={160}
+                                            height={160}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <p className={`${primaryTextColor} text-base font-medium leading-normal`}>{image.caption}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2">
-                        {galleryImages.map((image, index) => (
-                            <div
-                                key={index}
-                                className={`relative h-20 w-32 rounded-lg overflow-hidden cursor-pointer transition-all ${activeImage === index ? `ring-4 ${primaryButtonBg}` : 'opacity-70 hover:opacity-100'}`}
-                                onClick={() => setActiveImage(index)}
-                            >
-                                <Image src={image.src} alt={image.alt} fill style={{ objectFit: 'cover' }} />
-                            </div>
-                        ))}
+                </div>
+                {/* --- END: Redesigned Image Gallery --- */}
+
+                {/* --- START: Redesigned Toggle/Tabbed Navigation --- */}
+                <div className="flex px-4 py-3 mb-10">
+                    <div className="flex h-10 flex-1 items-center justify-center rounded-xl bg-[#e7eef3] p-1">
+                        <label
+                            onClick={() => handleToggle(false)}
+                            className={`flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 text-sm font-medium leading-normal transition-all duration-300 ${!showComprehensive ? `bg-slate-50 shadow-[0_0_4px_rgba(0,0,0,0.1)] ${primaryTextColor}` : `${inactiveTextColor}`}`}
+                        >
+                            <span className="truncate">Brief Guide</span>
+                            <input type="radio" name="guide-toggle" className="invisible w-0" value="Brief Guide" checked={!showComprehensive} readOnly />
+                        </label>
+                        <label
+                            onClick={() => handleToggle(true)}
+                            className={`flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 text-sm font-medium leading-normal transition-all duration-300 ${showComprehensive ? `bg-slate-50 shadow-[0_0_4px_rgba(0,0,0,0.1)] ${primaryTextColor}` : `${inactiveTextColor}`}`}
+                        >
+                            <span className="truncate">Comprehensive Guide</span>
+                            <input type="radio" name="guide-toggle" className="invisible w-0" value="Comprehensive Guide" checked={showComprehensive} readOnly />
+                        </label>
                     </div>
                 </div>
+                {/* --- END: Redesigned Toggle/Tabbed Navigation --- */}
 
                 {/* Content Based on Toggle */}
                 {!showComprehensive ? (
-                    // Brief Guide Content - Neutral Theme with Contextual Colors
+                    // Brief Guide Content
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-10">
-                            <section>
+                            <section id="overview">
                                 <h2 className={sectionHeadingStyle}>
-                                    <Info className={`mr-3 ${neutralIconColor}`} size={24} /> Overview
+                                    <Info className={`mr-3 ${inactiveTextColor}`} size={24} /> Overview
                                 </h2>
                                 <div className={cardBaseStyle}>
-                                    <p className={`text-base leading-relaxed ${neutralTextLight}`}>Little Andaman, the southernmost accessible island, is India's surfing capital. Known for pristine beaches (Butler Bay), waterfalls (White Surf, Whisper Wave), and rainforests. Offers a remote, rustic, offbeat experience for adventurers and surfers seeking tranquility. Features Onge tribal reserve (restricted).</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Little Andaman, located south of Port Blair, is an off-the-beaten-path paradise renowned for its stunning beaches, waterfalls, and as India's premier surfing destination. The island offers a laid-back vibe with attractions like the crescent-shaped Butler Bay Beach, the easily accessible White Surf Waterfall, and the more secluded Whisper Wave Waterfall. It is an ideal destination for backpackers, surfers, and travelers seeking raw natural beauty away from the crowds.</p>
                                 </div>
                             </section>
 
                             <section>
                                 <h2 className={sectionHeadingStyle}>
-                                    <Navigation className={`mr-3 ${neutralIconColor}`} size={24} /> Getting There & Around
+                                    <Navigation className={`mr-3 ${inactiveTextColor}`} size={24} /> Getting There & Around
                                 </h2>
                                 <div className={cardBaseStyle}>
                                     <ul className="space-y-4">
                                         <li className="flex items-start">
-                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Ship className={neutralIconColor} size={16} /></div>
-                                            <div><span className={`font-medium ${neutralText}`}>Ferry:</span><span className={neutralTextLight}> Main access from Port Blair to Hut Bay (6-8 hrs). Day/overnight options. Book ahead.</span></div>
+                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Ship className={inactiveTextColor} size={16} /></div>
+                                            <div><span className={`font-medium ${primaryTextColor}`}>Sea Ferry:</span><span className={secondaryTextColor}> The primary mode of access. Government ferries run from Port Blair to Hut Bay, taking 6-8 hours.</span></div>
                                         </li>
                                         <li className="flex items-start">
-                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Bike className={neutralIconColor} size={16} /></div>
-                                            <div><span className={`font-medium ${neutralText}`}>On Island:</span><span className={neutralTextLight}> Scooter/bike rental (~₹400/day) recommended. Limited buses, autos, shared jeeps available.</span></div>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Shield className={neutralIconColor} size={16} /></div>
-                                            <div><span className={`font-medium ${neutralText}`}>Restricted Areas:</span><span className={neutralTextLight}> Onge Reserve (NW) and Nicobarese areas (South Bay) are off-limits.</span></div>
+                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Bike className={inactiveTextColor} size={16} /></div>
+                                            <div><span className={`font-medium ${primaryTextColor}`}>Getting Around:</span><span className={secondaryTextColor}> Scooter/motorbike rental is the best way to explore the island's spread-out attractions.</span></div>
                                         </li>
                                     </ul>
                                 </div>
@@ -279,22 +294,17 @@ export default function LittleAndamanPage() {
 
                             <section>
                                 <h2 className={sectionHeadingStyle}>
-                                    <Calendar className={`mr-3 ${neutralIconColor}`} size={24} /> Best Time to Visit
+                                    <Calendar className={`mr-3 ${inactiveTextColor}`} size={24} /> Best Time to Visit
                                 </h2>
                                 <div className={cardBaseStyle}>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        {/* Contextual seasonal cards */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className={`${infoBg} rounded-xl p-4 border ${infoBorder}`}>
-                                            <h3 className={`font-semibold ${infoText} mb-2`}>Nov–Feb</h3>
-                                            <p className={`text-sm ${neutralTextLight}`}>Ideal weather, calm seas, good waterfall flow.</p>
-                                        </div>
-                                        <div className={`${warningBg} rounded-xl p-4 border ${warningBorder}`}>
-                                            <h3 className={`font-semibold ${warningText} mb-2`}>Mar–May</h3>
-                                            <p className={`text-sm ${neutralTextLight}`}>Hotter, best surf swells, sea generally calm.</p>
+                                            <h3 className={`font-semibold ${infoText} mb-2`}>Nov–Apr</h3>
+                                            <p className={`text-sm ${secondaryTextColor}`}>Dry season, ideal for beach-hopping and exploration.</p>
                                         </div>
                                         <div className={`${successBg} rounded-xl p-4 border ${successBorder}`}>
-                                            <h3 className={`font-semibold ${successText} mb-2`}>Jun–Oct</h3>
-                                            <p className={`text-sm ${neutralTextLight}`}>Monsoon/post-monsoon, travel difficult, best avoided.</p>
+                                            <h3 className={`font-semibold ${successText} mb-2`}>Feb-Apr</h3>
+                                            <p className={`text-sm ${secondaryTextColor}`}>Best season for surfing with good swells.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -302,260 +312,172 @@ export default function LittleAndamanPage() {
 
                             <section>
                                 <h2 className={sectionHeadingStyle}>
-                                    <Compass className={`mr-3 ${neutralIconColor}`} size={24} /> Key Attractions
+                                    <Compass className={`mr-3 ${inactiveTextColor}`} size={24} /> Key Attractions
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Attraction Cards - Remain Neutral */}
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2 flex items-center`}><Waves size={18} className="mr-2 text-blue-600" /> Butler Bay Beach</h3>
-                                        <p className={`text-sm ${neutralTextLight}`}>Famous crescent beach, ideal for surfing, swimming, and sunsets.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Waves size={18} className={`mr-2 ${inactiveTextColor}`} /> Butler Bay Beach</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>A stunning crescent-shaped beach famous for its powerful waves, making it a hotspot for surfing.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2 flex items-center`}><Droplets size={18} className="mr-2 text-cyan-600" /> White Surf Waterfall</h3>
-                                        <p className={`text-sm ${neutralTextLight}`}>Picturesque cascade reached by a short, easy jungle trek. Refreshing pool.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Droplets size={18} className={`mr-2 ${inactiveTextColor}`} /> White Surf Waterfall</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>A beautiful and easily accessible waterfall located amidst a lush evergreen forest.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2 flex items-center`}><Droplets size={18} className="mr-2 text-cyan-600" /> Whisper Wave Waterfall</h3>
-                                        <p className={`text-sm ${neutralTextLight}`}>Larger, remote waterfall requiring a guided jungle trek (3-4 km).</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Droplets size={18} className={`mr-2 ${inactiveTextColor}`} /> Whisper Wave Waterfall</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>A more secluded waterfall requiring a 4 km trek through the jungle, offering a rewarding experience.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Hut Bay (Netaji Nagar) Beach</h3>
-                                        <p className={`text-sm ${neutralTextLight}`}>Long, calm beach near the main town, good for walks and local life.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Landmark size={18} className={`mr-2 ${inactiveTextColor}`} /> Oil Palm Plantation</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>Vast, picturesque plantations that are a unique feature of Little Andaman's landscape.</p>
                                     </div>
                                 </div>
                             </section>
                         </div>
 
-                        {/* Sidebar - Contextual Colors */}
                         <aside className="lg:col-span-1 space-y-8">
-                            {/* Accommodation Brief */}
                             <div className={cardBaseStyle}>
-                                <h3 className={`text-lg font-semibold ${neutralText} mb-4 flex items-center`}>
-                                    <Bed className={`mr-2 ${neutralIconColor}`} size={20} /> Accommodation
+                                <h3 className={`text-lg font-semibold ${primaryTextColor} mb-4 flex items-center`}>
+                                    <Bed className={`mr-2 ${inactiveTextColor}`} size={20} /> Accommodation
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${neutralIconColor} flex-shrink-0`} size={16} /><span>Basic options: Bamboo huts near Butler Bay, simple guesthouses in Hut Bay, Govt. guest houses. No luxury.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${neutralIconColor} flex-shrink-0`} size={16} /><span>Expect power cuts, limited internet. Booking ahead advised for first night.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${inactiveTextColor} flex-shrink-0`} size={16} /><span>Accommodation is basic, consisting of small guesthouses and simple resorts near Hut Bay and Butler Bay. No luxury options available.</span></li>
                                 </ul>
                             </div>
-                            {/* Food Brief */}
                             <div className={cardBaseStyle}>
-                                <h3 className={`text-lg font-semibold ${neutralText} mb-4 flex items-center`}>
-                                    <Utensils className={`mr-2 ${neutralIconColor}`} size={20} /> Food Highlights
+                                <h3 className={`text-lg font-semibold ${primaryTextColor} mb-4 flex items-center`}>
+                                    <Utensils className={`mr-2 ${inactiveTextColor}`} size={20} /> Food Highlights
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${neutralIconColor} flex-shrink-0`} size={16} /><span>Simple 'dhabas' in Hut Bay (Bengali/South Indian thalis, fish curry).</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${neutralIconColor} flex-shrink-0`} size={16} /><span>Guesthouse kitchens offer cook-to-order meals (ask for fresh seafood). Limited options outside main areas.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${inactiveTextColor} flex-shrink-0`} size={16} /><span>Dining is limited to small local eateries serving fresh seafood and basic Indian dishes.</span></li>
                                 </ul>
                             </div>
-
-                            {/* Safety & Rules - Warning Orange */}
                             <div className={`${warningBg} rounded-2xl p-6 shadow-sm border ${warningBorder}`}>
                                 <h3 className={`text-lg font-semibold ${warningText} mb-4 flex items-center`}>
-                                    <Shield className={`mr-2 ${warningIconColor}`} size={20} /> Safety & Rules
+                                    <Shield className={`mr-2 ${warningIconColor}`} size={20} /> Traveler Tips
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Restricted Areas:** Onge and Nicobarese tribal reserves are strictly off-limits. Respect boundaries.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Be cautious swimming (currents). Avoid creek mouths (rare crocodile risk).</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Ride scooters carefully. Carry first-aid, repellent. Basic health clinic exists.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Allow buffer days for ferry travel. Carry cash. Poor connectivity.</span></li>
-                                </ul>
-                            </div>
-
-                            {/* Eco-Tourism - Success Green */}
-                            <div className={`${successBg} rounded-2xl p-6 shadow-sm border ${successBorder}`}>
-                                <h3 className={`text-lg font-semibold ${successText} mb-4 flex items-center`}>
-                                    <Leaf className={`mr-2 ${successIconColor}`} size={20} /> Sustainability Tips
-                                </h3>
-                                <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Pack out all trash; minimize plastic use.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Respect wildlife and tribal reserves. Stay on marked trails.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Conserve water/electricity. Support local businesses responsibly.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Ideal for backpackers and independent travelers.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Book ferry tickets and accommodation in advance.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Carry cash and a first-aid kit. Network connectivity is poor.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Be cautious of crocodiles in creeks and some coastal areas.</span></li>
                                 </ul>
                             </div>
                         </aside>
                     </div>
                 ) : (
-                    // Comprehensive Guide Content - Neutral Theme with Contextual Colors
+                    // Comprehensive Guide Content
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-12">
-                            <section>
+                            <section id="overview-comprehensive">
                                 <h2 className={sectionHeadingStyle}>
-                                    <Info className={`mr-3 ${neutralIconColor}`} size={24} /> Detailed Overview
+                                    <Info className={`mr-3 ${inactiveTextColor}`} size={24} /> Detailed Overview
                                 </h2>
                                 <div className={`${cardBaseStyle} space-y-4`}>
-                                    <p className={`text-base leading-relaxed ${neutralTextLight}`}>Little Andaman, located about 120 km south of Port Blair across the Duncan Passage, is a sizable island (734 sq km) that feels worlds away from the main Andaman tourist circuit. Renowned primarily as India's premier surfing destination, particularly around Butler Bay, it offers much more than just waves. This island is a haven for nature lovers and adventurers seeking raw, unspoiled beauty. It features vast stretches of pristine beaches, dense tropical rainforests, captivating waterfalls like White Surf and Whisper Wave, and extensive red oil palm plantations.</p>
-                                    <p className={`text-base leading-relaxed ${neutralTextLight}`}>The island's atmosphere is distinctly laid-back and rustic. Tourist infrastructure is minimal, contributing to its offbeat charm. Life revolves around the main settlement of Hut Bay and surrounding villages, populated mainly by Bengali and Tamil settlers. Little Andaman is also home to the indigenous Onge tribe, who reside in a protected reserve in the northwest (Dugong Creek), which is strictly off-limits to visitors. Similarly, the southern tip around South Bay, inhabited by Nicobarese communities, is also restricted. Visitors primarily explore the eastern coastline and accessible interior regions. The island bore significant impact from the 2004 tsunami, but has shown remarkable resilience. Visiting Little Andaman requires a sense of adventure, flexibility, and a willingness to embrace basic amenities in exchange for experiencing one of the Andaman's most serene and naturally rich environments.</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Little Andaman, situated about 120 km south of Port Blair, is the fourth largest island in the archipelago and a true gem for offbeat travelers. Known as the 'vegetable bowl' of the islands due to its extensive red oil palm plantations and vegetable cultivation, the island offers a landscape quite distinct from its northern counterparts. It is renowned as India's surfing capital, with the magnificent crescent-shaped Butler Bay Beach attracting surfers from around the world with its impressive swells.</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Beyond surfing, Little Andaman is a treasure trove of natural wonders. It boasts pristine white sandy beaches, crystal-clear blue waters, and two spectacular waterfalls—the easily accessible White Surf Waterfall and the more remote Whisper Wave Waterfall, which requires a jungle trek. The island's relaxed, laid-back atmosphere makes it a haven for backpackers and those seeking solitude and a deep connection with nature. With its unique attractions and limited tourist infrastructure, Little Andaman offers an authentic, adventurous, and unforgettable experience.</p>
                                 </div>
                             </section>
 
                             <section>
                                 <h2 className={sectionHeadingStyle}>
-                                    <Navigation className={`mr-3 ${neutralIconColor}`} size={24} /> Comprehensive Travel Guide
+                                    <Navigation className={`mr-3 ${inactiveTextColor}`} size={24} /> Comprehensive Travel Guide
                                 </h2>
                                 <div className={`${cardBaseStyle} space-y-6`}>
                                     <div>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Reaching Little Andaman:</h3>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2`}>Reaching Little Andaman:</h3>
                                         <ul className="space-y-3 pl-4 list-disc list-outside marker:text-gray-400">
-                                            <li className={neutralTextLight}><strong className={neutralText}>By Sea (Ferry):</strong> This is the standard and most reliable method. Government ferries operate regularly between Port Blair (Haddo Wharf or Phoenix Bay Jetty) and Hut Bay (Little Andaman's port).
-                                                <ul className="list-['-_'] list-inside pl-4 mt-1 space-y-1">
-                                                    <li><strong className="text-gray-700">Duration & Frequency:</strong> The journey takes 6-8 hours, depending on the vessel type (older ships are slower). Ferries usually run daily or several times a week. Check the latest DSS schedule.</li>
-                                                    <li><strong className="text-gray-700">Booking:</strong> Tickets must be booked 1-2 days in advance at the DSS ticket counter in Port Blair. Online booking is sometimes available but can be unreliable.</li>
-                                                    <li><strong className="text-gray-700">Classes:</strong> Options typically include deck seats (cheapest, open seating) and cabins (2-berth or 4-berth, recommended for overnight journeys or comfort).</li>
-                                                    <li><strong className="text-gray-700">Conditions:</strong> The sea crossing can be rough, especially outside the peak dry season. Take seasickness precautions if needed. Basic canteen facilities are available onboard.</li>
-                                                </ul>
-                                            </li>
-                                            <li className={neutralTextLight}><strong className={neutralText}>By Air (Helicopter):</strong> Pawan Hans operates limited helicopter services. Seats are scarce, expensive, and prioritize locals/officials/medical cases. Not a practical option for most tourist planning.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>By Sea:</strong> This is the primary and most reliable way to reach the island. Government ferries ply from Haddo Wharf in Port Blair to Hut Bay Jetty in Little Andaman. The journey takes about 6 to 8 hours, depending on the vessel and sea conditions. Both day and overnight ferries are available, but schedules are infrequent, so booking tickets well in advance is crucial.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>By Air:</strong> A small airstrip exists for helicopter services, but these are infrequent and generally reserved for official or emergency use, not for regular tourist travel.</li>
                                         </ul>
                                     </div>
                                     <div>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Getting Around Little Andaman:</h3>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2`}>Getting Around the Island:</h3>
                                         <ul className="space-y-3 pl-4 list-disc list-outside marker:text-gray-400">
-                                            <li className={neutralTextLight}><strong className={neutralText}>Scooter/Motorbike Rental:</strong> Highly recommended for flexibility (~₹300-400 per day). Available widely in Hut Bay; arrange through guesthouses or local shops. Check bike condition and fuel up early (limited petrol pumps, early closing times).</li>
-                                            <li className={neutralTextLight}><strong className={neutralText}>Public Buses:</strong> Connect Hut Bay with key villages and points near attractions like Butler Bay and White Surf Falls. Services are infrequent (3-4 times daily on main routes). Very economical.</li>
-                                            <li className={neutralTextLight}><strong className={neutralText}>Auto-Rickshaws & Shared Jeeps:</strong> Available in Hut Bay for local travel and trips to nearby beaches/waterfalls. Negotiate fares for private hire. Shared jeeps run on fixed routes, cheaper but less frequent.</li>
-                                            <li className={neutralTextLight}><strong className={neutralText}>Walking/Cycling:</strong> Hut Bay town is walkable. Cycling is feasible for shorter distances (e.g., to White Surf Falls) but can be hot and humid. Bicycle rentals are uncommon.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Scooter/Motorbike Rental:</strong> The most popular and convenient way to explore. Scooters can be rented from Hut Bay for a reasonable daily rate, giving you the freedom to visit beaches and waterfalls at your own pace.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Buses & Jeeps:</strong> Local buses and shared jeeps connect Hut Bay with other parts of the island, but they run on fixed schedules and can be infrequent.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Auto-Rickshaws:</strong> Available for shorter distances around the main town area.</li>
                                         </ul>
-                                        {/* Warning Box for Restricted Areas */}
-                                        <div className={`mt-6 p-4 ${warningBg} border-l-4 ${warningBorder} text-orange-800 rounded-r-lg shadow-sm`}>
-                                            <h4 className={`font-semibold mb-2 ${warningText} flex items-center`}><Shield className="w-5 h-5 mr-2" /> Restricted Area Advisory</h4>
-                                            <p className="text-sm md:text-base">
-                                                Tourists are restricted from entering the Onge Tribal Reserve (Dugong Creek area) and the Nicobarese settlement areas near South Bay. Please respect these boundaries and do not attempt unauthorized entry.
-                                            </p>
-                                        </div>
                                     </div>
                                 </div>
                             </section>
 
                             <section>
                                 <h2 className={sectionHeadingStyle}>
-                                    <Compass className={`mr-3 ${neutralIconColor}`} size={24} /> Exploring Attractions & Activities
+                                    <Compass className={`mr-3 ${inactiveTextColor}`} size={24} /> Exploring Attractions & Activities
                                 </h2>
                                 <div className="space-y-6">
-                                    {/* Attraction Cards - Remain Neutral */}
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2 flex items-center`}><Waves size={18} className="mr-2 text-blue-600" /> Butler Bay Beach</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>Located about 14 km north of Hut Bay, Butler Bay is the island's most famous attraction. This stunning, long crescent-shaped beach features golden sands, clear waters, and is renowned for its excellent surfing conditions (especially from March to May). The southern end offers calmer waters suitable for swimming. Coconut plantations fringe the beach, providing shade. Basic huts and a small cafe sometimes operate seasonally. Ideal for surfing, swimming (check conditions), sunbathing, and watching sunsets.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Waves size={18} className={`mr-2 ${inactiveTextColor}`} /> Butler Bay Beach</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Located 14 km from Hut Bay Jetty, this is the most famous beach in Little Andaman. It's a stunning, long, crescent-shaped beach with yellow sand and clear blue water. It's renowned for its excellent surfing breaks, attracting both beginners and experienced surfers. The beach is also great for sunbathing and swimming (be mindful of the strong currents). Elephant training and bathing used to be an attraction here but have since been discontinued.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2 flex items-center`}><Droplets size={18} className="mr-2 text-cyan-600" /> White Surf Waterfall</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>Easily accessible, located about 6.5 km from Hut Bay. A short, pleasant walk (10-15 minutes) through the forest leads to this beautiful waterfall cascading into a clear pool. It's a popular spot for picnics and a refreshing dip in the natural pool. The flow is best during and just after the monsoon (October to February).</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Droplets size={18} className={`mr-2 ${inactiveTextColor}`} /> White Surf Waterfall</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>A beautiful and easily accessible waterfall located about 6.5 km from Hut Bay. A short walk from the main road through lush forest leads you to this picturesque spot where you can take a refreshing dip in the natural pool at its base. It's a popular spot for picnics and relaxing in nature.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2 flex items-center`}><Droplets size={18} className="mr-2 text-cyan-600" /> Whisper Wave Waterfall</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>A more adventurous destination, this larger waterfall requires a trek of about 3-4 km through dense rainforest, usually beyond White Surf falls area. The trail involves navigating jungle paths and possibly stream crossings. Hiring a local guide is essential. The reward is a secluded, powerful waterfall in a pristine setting. Allow ample time (4-5 hours round trip) and carry water/snacks.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Droplets size={18} className={`mr-2 ${inactiveTextColor}`} /> Whisper Wave Waterfall</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>For the more adventurous, this waterfall requires a 4 km trek through the dense jungle. The trail can be challenging and involves crossing streams. The reward is a serene and secluded waterfall, offering a truly immersive natural experience. It's advisable to hire a local guide for this trek.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Hut Bay (Netaji Nagar) Beach</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>This long stretch of beach runs adjacent to the main settlement area, starting near the jetty. It has calm, shallow waters, making it suitable for safe wading and evening strolls. Popular with locals. Offers views of fishing boats and the harbor.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Landmark size={18} className={`mr-2 ${inactiveTextColor}`} /> Oil Palm Plantations</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>A unique feature of Little Andaman is the vast expanse of Red Oil Palm Plantations, managed by the Andaman and Nicobar Islands Forest and Plantation Development Corporation. Driving through these plantations offers a unique and scenic experience, showcasing the agricultural side of the island.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Surfing</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>Little Andaman is India's top surfing destination. Butler Bay offers consistent breaks suitable for various levels. Other breaks like Kumari Point and Jahaji Beach exist but are more remote and suited for experienced surfers, often requiring local guidance or boat access. Surf schools or board rentals are sometimes available seasonally near Butler Bay, primarily catering to visiting surfers.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Waves size={18} className={`mr-2 ${inactiveTextColor}`} /> Netaji Nagar Beach</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>A long, sandy beach located about 11 km from Hut Bay. It's a quieter alternative to Butler Bay, ideal for long walks, sunbathing, and enjoying serene sunsets. The beach is fringed with coconut palms, adding to its picturesque beauty.</p>
                                     </div>
-                                    <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Oil Palm Plantations</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>Driving through the island reveals vast plantations of red oil palms, managed by the Andaman and Nicobar Islands Forest and Plantation Development Corporation (ANIFPDCL). It's a unique agricultural landscape to observe. A factory processing palm oil is also located on the island.</p>
-                                    </div>
-                                    <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Other Activities</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>Possibilities include bird watching in the forests, exploring tide pools at low tide, arranging fishing trips with local fishermen, or simply enjoying the tranquility and stargazing due to minimal light pollution. Snorkeling opportunities exist but are less organized than in Havelock/Neil; finding good spots might require local advice or boat trips.</p>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <section>
-                                <h2 className={sectionHeadingStyle}>
-                                    <Bed className={`mr-3 ${neutralIconColor}`} size={24} /> Accommodation & Food
-                                </h2>
-                                <div className={`${cardBaseStyle} space-y-4`}>
-                                    <p className={`text-base leading-relaxed ${neutralTextLight}`}><strong>Accommodation:</strong> Options are basic and limited, catering mainly to budget and mid-range travelers. Expect simple guesthouses in Hut Bay town (e.g., near the market/jetty) and bamboo/wooden huts near Butler Bay Beach. Popular choices often include family-run guesthouses providing rooms with attached baths (~₹1500-3000) or more basic huts (~₹500-1500). Government guesthouses (APWD, Tourism) exist but booking is difficult for tourists. There are no luxury resorts. Amenities like reliable electricity (generator timings), hot water (bucket), and Wi-Fi are scarce.</p>
-                                    <p className={`text-base leading-relaxed ${neutralTextLight}`}><strong>Food:</strong> Dining is simple and localized. Hut Bay market has small eateries ('dhabas') serving affordable Bengali and South Indian thalis, fish curry, rice, roti, and basic breakfast items. Guesthouses often have kitchens preparing meals on order (inform in advance), typically simple Indian dishes and fresh seafood when available. Options are very limited outside Hut Bay and the immediate Butler Bay area. Carry snacks and water for day trips. Alcohol availability is restricted to one basic licensed bar in Hut Bay.</p>
                                 </div>
                             </section>
                         </div>
 
-                        {/* Sidebar - Contextual Colors */}
                         <aside className="lg:col-span-1 space-y-8">
-                            {/* Best Time to Visit - Contextual */}
                             <div className={cardBaseStyle}>
-                                <h3 className={`text-lg font-semibold ${neutralText} mb-4 flex items-center`}>
-                                    <Calendar className={`mr-2 ${neutralIconColor}`} size={20} /> Best Time to Visit
+                                <h3 className={`text-lg font-semibold ${primaryTextColor} mb-4 flex items-center`}>
+                                    <Bed className={`mr-2 ${inactiveTextColor}`} size={20} /> Accommodation & Food
                                 </h3>
-                                <div className="space-y-3">
-                                    <div className={`${infoBg} rounded-lg p-3 border ${infoBorder}`}>
-                                        <h4 className={`font-medium ${infoText} text-sm`}>Nov–Feb (Peak Tourist)</h4>
-                                        <p className={`text-xs ${neutralTextLight}`}>Pleasant weather, calm seas, good waterfall flow. Ideal for general tourism.</p>
-                                    </div>
-                                    <div className={`${warningBg} rounded-lg p-3 border ${warningBorder}`}>
-                                        <h4 className={`font-medium ${warningText} text-sm`}>Mar–May (Surf Season)</h4>
-                                        <p className={`text-xs ${neutralTextLight}`}>Hotter but prime time for surfing swells. Sea generally calm until late May.</p>
-                                    </div>
-                                    <div className={`${errorBg} rounded-lg p-3 border ${errorBorder}`}>
-                                        <h4 className={`font-medium ${errorText} text-sm`}>Jun–Oct (Monsoon/Off)</h4>
-                                        <p className={`text-xs ${neutralTextLight}`}>Heavy rain, rough seas, ferry disruptions likely. Not recommended unless for expert surfing.</p>
-                                    </div>
+                                <div className="space-y-4">
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}><strong>Accommodation:</strong> Options are limited and very basic, catering primarily to backpackers. Expect simple guesthouses and small, family-run resorts with minimal amenities. There are no luxury or mid-range hotels. Most accommodation is located near Hut Bay or along the main road towards Butler Bay. Booking in advance is highly recommended.</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}><strong>Food:</strong> Dining is also basic, with small local eateries and dhabas in Hut Bay serving simple Indian thalis, rice, dal, and fresh seafood. Don't expect a wide variety of cuisines. It's a good idea to carry some snacks and food items with you.</p>
                                 </div>
                             </div>
-
-                            {/* Safety & Rules - Warning Orange */}
                             <div className={`${warningBg} rounded-2xl p-6 shadow-sm border ${warningBorder}`}>
                                 <h3 className={`text-lg font-semibold ${warningText} mb-4 flex items-center`}>
-                                    <LifeBuoy className={`mr-2 ${warningIconColor}`} size={20} /> Safety & Rules
+                                    <LifeBuoy className={`mr-2 ${warningIconColor}`} size={20} /> Safety & Practicalities
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Tribal Reserves:** Onge (NW) and Nicobarese (S) areas are strictly off-limits. Do not attempt entry or interaction.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Ocean Safety:** Check local advice on swimming conditions/currents, especially at Butler Bay. Avoid creek mouths (crocodile risk, though low).</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Travel:** Allow buffer days for ferry travel due to potential delays/cancellations.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Health:** Carry comprehensive first-aid kit, insect repellent. Basic medical facilities in Hut Bay.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Connectivity & Cash:** Mobile network (BSNL best) and internet are very poor. Carry sufficient cash.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Jungle Treks:** Use guides for remote treks like Whisper Wave Falls. Wear appropriate gear.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Be aware of crocodiles, which inhabit the creeks and have been sighted in some coastal areas. Heed local warnings.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Medical facilities are very basic. Carry a comprehensive first-aid kit.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Carry sufficient cash, as there are very few ATMs and they are often unreliable.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Mobile connectivity is extremely poor. Inform your family of your itinerary in advance.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>A permit (RAP) may be required for foreign nationals. Check the latest regulations before travel.</span></li>
                                 </ul>
                             </div>
-
-                            {/* Responsible Tourism - Success Green */}
-                            <div className={`${successBg} rounded-2xl p-6 shadow-sm border ${successBorder}`}>
-                                <h3 className={`text-lg font-semibold ${successText} mb-4 flex items-center`}>
-                                    <Leaf className={`mr-2 ${successIconColor}`} size={20} /> Responsible Tourism
-                                </h3>
-                                <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Respect tribal reserves and local culture; dress modestly in villages.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Minimize environmental impact: Avoid plastic, pack out trash, don't disturb wildlife or corals.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Conserve resources like water and electricity, which are limited.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Support the local community by using local services (guesthouses, eateries, rentals) fairly.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Be mindful of the island's recovery from the 2004 tsunami.</span></li>
-                                </ul>
-                            </div>
-
-                            {/* Traveler Tips - Tip Yellow */}
                             <div className={`${tipBg} rounded-2xl p-6 shadow-sm border ${tipBorder}`}>
                                 <h3 className={`text-lg font-semibold ${tipText} mb-4 flex items-center`}>
                                     <MessageCircle className={`mr-2 ${tipIconColor}`} size={20} /> Traveler Tips
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Book ferry tickets at least 1-2 days in advance. Check return schedule upon arrival.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Rent a scooter/bike upon arrival for maximum flexibility.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Carry sufficient cash; ATMs are unreliable.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Be prepared for basic amenities and limited connectivity. Download offline maps/entertainment.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Pack light clothing, swimwear, strong insect repellent, sunscreen, hat, basic first-aid, torch/headlamp.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Inform your guesthouse in advance if you require meals, especially dinner.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Embrace the slow pace and enjoy the tranquility and natural beauty.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Best suited for adventurous, independent travelers and backpackers who are comfortable with basic facilities.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Book ferry tickets and accommodation well in advance, as options are limited.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Rent a scooter to have the freedom to explore the island thoroughly.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>If you plan to surf, you may need to bring your own board, though some basic boards might be available for rent.</span></li>
                                 </ul>
                             </div>
                         </aside>
                     </div>
                 )}
 
-                {/* CTA Section - Contextual Color (Informational Blue) */}
+                {/* CTA Section */}
                 <section className={`mt-16 ${infoBg} rounded-2xl p-8 border ${infoBorder} text-center`}>
-                    <h2 className={`text-2xl font-bold ${infoText} mb-4`}>Ready for an Offbeat Adventure?</h2>
-                    <p className={`${neutralTextLight} max-w-xl mx-auto mb-6`}>Plan your escape to the serene beaches, lush waterfalls, and surfing waves of Little Andaman. Contact us for tailored itineraries.</p>
+                    <h2 className={`text-2xl font-bold ${infoText} mb-4`}>Catch the Wave to Little Andaman</h2>
+                    <p className={`${secondaryTextColor} max-w-xl mx-auto mb-6`}>Ready to explore India's surfing paradise? Plan your offbeat adventure to the pristine beaches and waterfalls of Little Andaman.</p>
                     <div className="flex flex-wrap justify-center gap-4">
                         <Link href="/packages?destination=little-andaman" className={buttonPrimaryStyle}>
-                            Explore Little Andaman Tours <ArrowRight className="ml-2" size={18} />
+                            View Little Andaman Tours <ArrowRight className="ml-2" size={18} />
                         </Link>
-                        <Link href="/contact" className={`inline-flex items-center justify-center bg-white text-gray-700 border ${neutralBorder} hover:bg-gray-50 font-semibold px-6 py-3 rounded-full transition-all duration-300`}>
-                            Enquire Now
+                        <Link href="/contact" className={`inline-flex items-center justify-center bg-white text-gray-700 border ${neutralBorder} hover:bg-gray-50 font-semibold px-6 py-3 rounded-full transition-all duration-300 shadow-sm hover:shadow-md`}>
+                            Get Travel Assistance
                         </Link>
                     </div>
                 </section>

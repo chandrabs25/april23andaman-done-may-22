@@ -23,6 +23,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?display=swap&family=Plus+Jakarta+Sans:wght@400;500;700;800"
+        />
+      </head>
       {/* Apply font class to body (optional) */}
       <body className={inter.className}>
         {/* Use the Providers component to wrap children */}

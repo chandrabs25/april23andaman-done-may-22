@@ -1,6 +1,4 @@
 // Path: src/app/destinations/diglipur/page.tsx
-// Theme: Neutral with Contextual Background Colors (Applied based on Baratang sample)
-
 'use client';
 
 import { useState } from 'react';
@@ -13,24 +11,35 @@ import {
     Calendar,
     Bed,
     Utensils,
-    Compass,    // Use for Attractions/Exploration
-    Users,      // Keep for cultural aspects if needed, or general info
-    Shield,     // Consistent Safety icon
+    Compass,
+    Users,
+    Shield,
     Leaf,
     ChevronRight,
     Star,
-    Navigation, // Consistent Travel icon
+    Navigation,
     ArrowRight,
     MessageCircle,
     Camera,
-    Ship,       // Keep for Ferry access
-    Car,        // Keep for Road access
-    Turtle,     // Keep for Turtle Nesting
-    Mountain,   // Specific for Saddle Peak
-    LifeBuoy    // Consistent Safety icon
+    Plane,
+    Ship,
+    Landmark,
+    Waves,
+    LifeBuoy,
+    Car,
+    Turtle,
+    Mountain
 } from 'lucide-react';
 
-// --- Define Common Styles (Copied from Baratang Sample - Neutral Theme with Contextual Colors) ---
+/* NOTE FOR FONT STYLING:
+  For the font "Plus Jakarta Sans" to apply correctly, please add the following link to your root layout file (e.g., app/layout.tsx):
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?display=swap&family=Plus+Jakarta+Sans:wght@400;500;700;800"
+  />
+*/
+
+// --- Define Common Styles (Copied from Port Blair Sample) ---
 const primaryButtonBg = 'bg-gray-800';
 const primaryButtonHoverBg = 'hover:bg-gray-900';
 const primaryButtonText = 'text-white';
@@ -65,16 +74,21 @@ const errorBorder = 'border-red-200';
 const errorText = 'text-red-700';
 const errorIconColor = 'text-red-500';
 
+// Unchanged Light Theme elements
 const neutralBgLight = 'bg-gray-50';
 const neutralBorderLight = 'border-gray-100';
 const neutralBg = 'bg-gray-100';
 const neutralBorder = 'border-gray-200';
-const neutralText = 'text-gray-800';
-const neutralTextLight = 'text-gray-600';
-const neutralIconColor = 'text-gray-600';
 
-const sectionPadding = "py-10 md:py-12"; // Consistent padding
-const sectionHeadingStyle = `text-2xl font-bold ${neutralText} mb-6 flex items-center`;
+// --- START: Updated Font Styles based on Inspiration ---
+const primaryTextColor = 'text-[#0e151b]'; // Dark text color from inspiration
+const secondaryTextColor = 'text-gray-600'; // Kept for consistency in detailed descriptions
+const inactiveTextColor = 'text-[#4e7997]'; // Lighter, bluish text for inactive elements
+
+// Updated section heading to match text-[22px] font-bold
+const sectionHeadingStyle = `text-[22px] font-bold ${primaryTextColor} mb-6 flex items-center leading-tight tracking-[-0.015em]`;
+// --- END: Updated Font Styles based on Inspiration ---
+
 const cardBaseStyle = `bg-white rounded-2xl shadow-sm border ${neutralBorderLight} p-6 transition-shadow hover:shadow-md`;
 const buttonPrimaryStyle = `inline-flex items-center justify-center ${primaryButtonBg} ${primaryButtonHoverBg} ${primaryButtonText} px-6 py-3 rounded-full font-medium transition-all duration-300 shadow-md`;
 const buttonSecondaryStyleHero = `inline-flex items-center justify-center ${secondaryButtonBg} ${secondaryButtonHoverBg} ${secondaryButtonText} ${secondaryButtonBorder} px-6 py-3 rounded-full font-medium transition-all duration-300`;
@@ -82,47 +96,49 @@ const buttonSecondaryStyleHero = `inline-flex items-center justify-center ${seco
 
 export default function DiglipurPage() {
     const [showComprehensive, setShowComprehensive] = useState(false);
-    const [activeImage, setActiveImage] = useState(0);
 
-    const handleToggle = () => {
-        setShowComprehensive(!showComprehensive);
+    const handleToggle = (isComprehensive: boolean) => {
+        setShowComprehensive(isComprehensive);
     };
 
-    // Gallery images specific to Diglipur
+    // Gallery images specific to Diglipur - captions shortened
     const galleryImages = [
         {
-            src: "/images/diglipur/ross-smith-island.jpg", // Use specific paths
+            src: "/images/diglipur/ross-smith-island.jpg",
             alt: "Ross and Smith Islands connected by sandbar",
-            caption: "The stunning twin islands of Ross & Smith, joined by a natural sandbar"
+            caption: "Ross & Smith Islands"
         },
         {
-            src: "/images/diglipur/saddle-peak-view.jpg", // Use specific paths
+            src: "/images/diglipur/saddle-peak-view.jpg",
             alt: "View from Saddle Peak, Diglipur",
-            caption: "Panoramic vistas from Saddle Peak, the highest point in the Andamans"
+            caption: "Saddle Peak View"
         },
         {
-            src: "/images/diglipur/kalipur-beach-turtle.jpg", // Use specific paths
+            src: "/images/diglipur/kalipur-beach-turtle.jpg",
             alt: "Turtle tracks on Kalipur Beach, Diglipur",
-            caption: "Kalipur Beach, a vital nesting ground for sea turtles"
+            caption: "Kalipur Beach"
         },
         {
-            src: "/images/diglipur/alfred-caves.jpg", // Use specific paths
+            src: "/images/diglipur/alfred-caves.jpg",
             alt: "Entrance to Alfred Caves near Diglipur",
-            caption: "Exploring the limestone formations of Alfred Caves"
+            caption: "Alfred Caves"
         },
         {
-            src: "/images/diglipur/diglipur-landscape.jpg", // Use specific paths
+            src: "/images/diglipur/diglipur-landscape.jpg",
             alt: "Rural landscape near Diglipur town",
-            caption: "Lush green scenery typical of the Diglipur region"
+            caption: "Diglipur Landscape"
         }
     ];
 
     return (
-        <main className={`bg-white ${neutralText}`}>
-            {/* Hero Section - Matches Baratang Structure */}
+        <main
+            className="bg-slate-50"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        >
+            {/* Hero Section */}
             <div className="relative h-[70vh] w-full">
                 <Image
-                    src="/images/diglipur/hero.webp" // Use specific Diglipur hero image
+                    src="/images/diglipur/hero.webp"
                     alt="Scenic coastline near Diglipur, North Andaman"
                     fill
                     priority
@@ -149,10 +165,10 @@ export default function DiglipurPage() {
                         <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-md">Diglipur</h1>
                         <p className="text-xl md:text-2xl max-w-3xl mb-6 text-white/90">Discover North Andaman's adventure capital: Saddle Peak, Ross & Smith Islands, and pristine nature.</p>
                         <div className="flex flex-wrap gap-4 items-center">
-                            <button className={buttonPrimaryStyle}>
+                            <Link href="#overview" className={buttonPrimaryStyle}>
                                 Explore Diglipur <ArrowRight size={18} className="ml-2" />
-                            </button>
-                            <button className={buttonSecondaryStyleHero}>
+                            </Link>
+                            <button className={buttonSecondaryStyleHero} onClick={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}>
                                 <Camera size={18} className="mr-2" /> View Gallery
                             </button>
                         </div>
@@ -161,9 +177,9 @@ export default function DiglipurPage() {
             </div>
 
             {/* Main Content Container */}
-            <div className={`container mx-auto px-4 ${sectionPadding}`}>
+            <div className="container mx-auto px-4 py-10 md:py-12">
 
-                {/* Quick Facts Card - Contextual Color (Informational Blue) */}
+                {/* Quick Facts Card */}
                 <div className={`${infoBg} rounded-2xl p-6 mb-12 shadow-sm border ${infoBorder}`}>
                     <h2 className={`text-xl font-semibold ${infoText} mb-4 flex items-center`}>
                         <Info className={`mr-2 ${infoIconColor}`} size={20} />
@@ -175,8 +191,8 @@ export default function DiglipurPage() {
                                 <MapPin className={infoIconColor} size={18} />
                             </div>
                             <div>
-                                <h3 className={`font-medium ${neutralText}`}>Location</h3>
-                                <p className={`text-sm ${neutralTextLight}`}>North Andaman Island, ~300 km north of Port Blair</p>
+                                <h3 className={`font-medium ${primaryTextColor}`}>Location</h3>
+                                <p className={`text-sm ${secondaryTextColor}`}>North Andaman Island, ~300 km north of Port Blair</p>
                             </div>
                         </div>
                         <div className="flex items-start">
@@ -184,94 +200,94 @@ export default function DiglipurPage() {
                                 <Star className={infoIconColor} size={18} />
                             </div>
                             <div>
-                                <h3 className={`font-medium ${neutralText}`}>Known For</h3>
-                                <p className={`text-sm ${neutralTextLight}`}>Ross & Smith Islands, Saddle Peak, Turtle Nesting, Alfred Caves</p>
+                                <h3 className={`font-medium ${primaryTextColor}`}>Known For</h3>
+                                <p className={`text-sm ${secondaryTextColor}`}>Ross & Smith Islands, Saddle Peak, Turtle Nesting, Alfred Caves</p>
                             </div>
                         </div>
                         <div className="flex items-start">
                             <div className={`bg-white p-2 rounded-full shadow-sm mr-3 border ${neutralBorderLight}`}>
-                                <Mountain className={infoIconColor} size={18} /> {/* Highlighting adventure */}
+                                <Mountain className={infoIconColor} size={18} />
                             </div>
                             <div>
-                                <h3 className={`font-medium ${neutralText}`}>Vibe</h3>
-                                <p className={`text-sm ${neutralTextLight}`}>Offbeat, adventurous, gateway to North Andaman's natural wonders</p>
+                                <h3 className={`font-medium ${primaryTextColor}`}>Vibe</h3>
+                                <p className={`text-sm ${secondaryTextColor}`}>Offbeat, adventurous, gateway to North Andaman's natural wonders</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Toggle Switch - Neutral Theme */}
-                <div className="flex flex-col items-center mb-10">
-                    <h2 className={`text-2xl font-bold ${neutralText} mb-4`}>Choose Your Guide Style</h2>
-                    <p className={`${neutralTextLight} mb-6 text-center max-w-2xl`}>Select between a quick overview or an in-depth exploration of Diglipur.</p>
-                    <div className={`${neutralBg} p-1 rounded-full inline-flex border ${neutralBorder}`}>
-                        <button
-                            onClick={() => setShowComprehensive(false)}
-                            className={`px-6 py-2 rounded-full font-medium transition-all duration-300 ${!showComprehensive ? `${primaryButtonBg} ${primaryButtonText} shadow-sm` : `bg-transparent text-gray-700 hover:${neutralBg}`}`}
-                        >
-                            Brief Guide
-                        </button>
-                        <button
-                            onClick={() => setShowComprehensive(true)}
-                            className={`px-6 py-2 rounded-full font-medium transition-all duration-300 ${showComprehensive ? `${primaryButtonBg} ${primaryButtonText} shadow-sm` : `bg-transparent text-gray-700 hover:${neutralBg}`}`}
-                        >
-                            Comprehensive Guide
-                        </button>
-                    </div>
-                </div>
-
-                {/* Image Gallery - Neutral Theme */}
-                <div className="mb-16">
-                    <div className={`relative h-[50vh] w-full rounded-2xl overflow-hidden shadow-lg mb-4 border ${neutralBorderLight}`}>
-                        <Image src={galleryImages[activeImage].src} alt={galleryImages[activeImage].alt} fill style={{ objectFit: 'cover' }} />
-                        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/70 to-transparent">
-                            <p className="text-white text-lg drop-shadow">{galleryImages[activeImage].caption}</p>
+                {/* --- START: Redesigned Image Gallery --- */}
+                <div id="gallery" className="mb-10 scroll-mt-20">
+                    <h2 className={`${sectionHeadingStyle} px-4`}>Gallery</h2>
+                    <div className="flex overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        <div className="flex items-stretch p-4 gap-3">
+                            {galleryImages.map((image, index) => (
+                                <div key={index} className="flex h-full flex-1 flex-col gap-3 rounded-lg min-w-40">
+                                    <div className="w-full aspect-square rounded-xl overflow-hidden">
+                                        <Image
+                                            src={image.src}
+                                            alt={image.alt}
+                                            width={160}
+                                            height={160}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <p className={`${primaryTextColor} text-base font-medium leading-normal`}>{image.caption}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2">
-                        {galleryImages.map((image, index) => (
-                            <div
-                                key={index}
-                                className={`relative h-20 w-32 rounded-lg overflow-hidden cursor-pointer transition-all ${activeImage === index ? `ring-4 ${primaryButtonBg}` : 'opacity-70 hover:opacity-100'}`}
-                                onClick={() => setActiveImage(index)}
-                            >
-                                <Image src={image.src} alt={image.alt} fill style={{ objectFit: 'cover' }} />
-                            </div>
-                        ))}
+                </div>
+                {/* --- END: Redesigned Image Gallery --- */}
+
+                {/* --- START: Redesigned Toggle/Tabbed Navigation --- */}
+                <div className="flex px-4 py-3 mb-10">
+                    <div className="flex h-10 flex-1 items-center justify-center rounded-xl bg-[#e7eef3] p-1">
+                        <label
+                            onClick={() => handleToggle(false)}
+                            className={`flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 text-sm font-medium leading-normal transition-all duration-300 ${!showComprehensive ? `bg-slate-50 shadow-[0_0_4px_rgba(0,0,0,0.1)] ${primaryTextColor}` : `${inactiveTextColor}`}`}
+                        >
+                            <span className="truncate">Brief Guide</span>
+                            <input type="radio" name="guide-toggle" className="invisible w-0" value="Brief Guide" checked={!showComprehensive} readOnly />
+                        </label>
+                        <label
+                            onClick={() => handleToggle(true)}
+                            className={`flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 text-sm font-medium leading-normal transition-all duration-300 ${showComprehensive ? `bg-slate-50 shadow-[0_0_4px_rgba(0,0,0,0.1)] ${primaryTextColor}` : `${inactiveTextColor}`}`}
+                        >
+                            <span className="truncate">Comprehensive Guide</span>
+                            <input type="radio" name="guide-toggle" className="invisible w-0" value="Comprehensive Guide" checked={showComprehensive} readOnly />
+                        </label>
                     </div>
                 </div>
+                {/* --- END: Redesigned Toggle/Tabbed Navigation --- */}
 
                 {/* Content Based on Toggle */}
                 {!showComprehensive ? (
-                    // Brief Guide Content - Neutral Theme with Contextual Colors
+                    // Brief Guide Content
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-10">
-                            <section>
+                            <section id="overview">
                                 <h2 className={sectionHeadingStyle}>
-                                    <Info className={`mr-3 ${neutralIconColor}`} size={24} /> Overview
+                                    <Info className={`mr-3 ${inactiveTextColor}`} size={24} /> Overview
                                 </h2>
                                 <div className={cardBaseStyle}>
-                                    <p className={`text-base leading-relaxed ${neutralTextLight}`}>Diglipur, the largest town in North Andaman, is an adventure hub known for Saddle Peak (Andamans' highest point), the stunning Ross & Smith twin islands connected by a sandbar, turtle nesting beaches (Kalipur), limestone caves (Alfred Caves), and mud volcanoes. Offers an offbeat, nature-focused experience.</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Diglipur is the northernmost town in the Andamans, an adventurer's paradise far from the usual tourist trail. It's renowned for its rich biodiversity, pristine natural beauty, and rugged landscapes. The region is home to Saddle Peak, the highest point in the Andaman & Nicobar archipelago, the stunning twin islands of Ross & Smith, and important turtle nesting sites. Diglipur offers an authentic, offbeat experience for travelers seeking trekking, nature, and raw beauty.</p>
                                 </div>
                             </section>
 
                             <section>
                                 <h2 className={sectionHeadingStyle}>
-                                    <Navigation className={`mr-3 ${neutralIconColor}`} size={24} /> Getting There & Around
+                                    <Navigation className={`mr-3 ${inactiveTextColor}`} size={24} /> Getting There
                                 </h2>
                                 <div className={cardBaseStyle}>
                                     <ul className="space-y-4">
                                         <li className="flex items-start">
-                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Car className={neutralIconColor} size={16} /></div>
-                                            <div><span className={`font-medium ${neutralText}`}>Road (ATR):</span><span className={neutralTextLight}> 12-14 hrs from Port Blair via bus/taxi (long, scenic, involves ferries & Jarawa reserve passage).</span></div>
+                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Car className={inactiveTextColor} size={16} /></div>
+                                            <div><span className={`font-medium ${primaryTextColor}`}>Road (ATR):</span><span className={secondaryTextColor}> The most common route is a long 10-12 hour drive from Port Blair via bus or private car, crossing the Andaman Trunk Road.</span></div>
                                         </li>
                                         <li className="flex items-start">
-                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Ship className={neutralIconColor} size={16} /></div>
-                                            <div><span className={`font-medium ${neutralText}`}>Sea:</span><span className={neutralTextLight}> Govt. ferry from Port Blair (10+ hrs, often overnight, 3-4 times/week). Book ahead.</span></div>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Check className={neutralIconColor} size={16} /></div>
-                                            <div><span className={`font-medium ${neutralText}`}>Local Transport:</span><span className={neutralTextLight}> Best option is scooter/motorbike rental (~₹500/day) or hired car (~₹2500+/day). Limited buses/jeeps. Autos for town rides.</span></div>
+                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Ship className={inactiveTextColor} size={16} /></div>
+                                            <div><span className={`font-medium ${primaryTextColor}`}>Sea Ferry:</span><span className={secondaryTextColor}> Government ferries from Port Blair offer an overnight journey, taking around 10-14 hours.</span></div>
                                         </li>
                                     </ul>
                                 </div>
@@ -279,22 +295,17 @@ export default function DiglipurPage() {
 
                             <section>
                                 <h2 className={sectionHeadingStyle}>
-                                    <Calendar className={`mr-3 ${neutralIconColor}`} size={24} /> Best Time to Visit
+                                    <Calendar className={`mr-3 ${inactiveTextColor}`} size={24} /> Best Time to Visit
                                 </h2>
                                 <div className={cardBaseStyle}>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        {/* Contextual seasonal cards */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className={`${infoBg} rounded-xl p-4 border ${infoBorder}`}>
-                                            <h3 className={`font-semibold ${infoText} mb-2`}>Dec–Mar</h3>
-                                            <p className={`text-sm ${neutralTextLight}`}>Ideal weather, peak turtle nesting, best for treks/beaches.</p>
-                                        </div>
-                                        <div className={`${warningBg} rounded-xl p-4 border ${warningBorder}`}>
-                                            <h3 className={`font-semibold ${warningText} mb-2`}>Nov & Apr</h3>
-                                            <p className={`text-sm ${neutralTextLight}`}>Good shoulder season months, pleasant weather.</p>
+                                            <h3 className={`font-semibold ${infoText} mb-2`}>Oct–May</h3>
+                                            <p className={`text-sm ${secondaryTextColor}`}>Best for trekking and beach activities.</p>
                                         </div>
                                         <div className={`${successBg} rounded-xl p-4 border ${successBorder}`}>
-                                            <h3 className={`font-semibold ${successText} mb-2`}>Jun–Oct</h3>
-                                            <p className={`text-sm ${neutralTextLight}`}>Monsoon/post-monsoon, travel difficult, activities limited.</p>
+                                            <h3 className={`font-semibold ${successText} mb-2`}>Dec–Mar</h3>
+                                            <p className={`text-sm ${secondaryTextColor}`}>Prime turtle nesting season.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -302,252 +313,167 @@ export default function DiglipurPage() {
 
                             <section>
                                 <h2 className={sectionHeadingStyle}>
-                                    <Compass className={`mr-3 ${neutralIconColor}`} size={24} /> Key Attractions
+                                    <Compass className={`mr-3 ${inactiveTextColor}`} size={24} /> Key Attractions
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Attraction Cards - Remain Neutral */}
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Ross & Smith Islands</h3>
-                                        <p className={`text-sm ${neutralTextLight}`}>Iconic twin islands joined by a sandbar (low tide). Stunning beach, clear water. Permit/boat needed.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Landmark size={18} className={`mr-2 ${inactiveTextColor}`} /> Ross & Smith Islands</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>Twin islands connected by a natural sandbar, offering stunning turquoise waters and pristine beaches.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2 flex items-center`}><Mountain size={18} className="mr-2 text-green-600" />Saddle Peak</h3>
-                                        <p className={`text-sm ${neutralTextLight}`}>Highest peak (732m). Challenging 8km trek through national park for panoramic views.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Mountain size={18} className={`mr-2 ${inactiveTextColor}`} /> Saddle Peak Trek</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>Hike to the highest point in the Andamans (732m) for panoramic views of the archipelago.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2 flex items-center`}><Turtle size={18} className="mr-2 text-green-600" />Kalipur Beach</h3>
-                                        <p className={`text-sm ${neutralTextLight}`}>Famous turtle nesting site (Dec-Apr). Grey sand, Forest Dept. hatchery.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Turtle size={18} className={`mr-2 ${inactiveTextColor}`} /> Kalipur & Ramnagar Beaches</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>Key nesting sites for Olive Ridley, Hawksbill, Green, and Leatherback turtles.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Alfred Caves</h3>
-                                        <p className={`text-sm ${neutralTextLight}`}>Limestone caves near Ramnagar, home to swiftlets. Requires forest trek and guide.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Landmark size={18} className={`mr-2 ${inactiveTextColor}`} /> Alfred Caves</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>A network of limestone caves requiring a trek through the forest to explore. Best visited post-monsoon.</p>
                                     </div>
                                 </div>
                             </section>
                         </div>
 
-                        {/* Sidebar - Contextual Colors */}
                         <aside className="lg:col-span-1 space-y-8">
-                            {/* Accommodation Brief */}
                             <div className={cardBaseStyle}>
-                                <h3 className={`text-lg font-semibold ${neutralText} mb-4 flex items-center`}>
-                                    <Bed className={`mr-2 ${neutralIconColor}`} size={20} /> Accommodation
+                                <h3 className={`text-lg font-semibold ${primaryTextColor} mb-4 flex items-center`}>
+                                    <Bed className={`mr-2 ${inactiveTextColor}`} size={20} /> Accommodation
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${neutralIconColor} flex-shrink-0`} size={16} /><span>Limited options. Budget lodges in town. Best value: Pristine Beach Resort or Turtle Nest Resort (Govt.) near Kalipur Beach.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${neutralIconColor} flex-shrink-0`} size={16} /><span>No luxury resorts. Booking ahead essential in peak season.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${inactiveTextColor} flex-shrink-0`} size={16} /><span>Primarily basic government guesthouses and a few private resorts like the Turtle Resort at Kalipur. Advance booking is essential.</span></li>
                                 </ul>
                             </div>
-                            {/* Food Brief */}
                             <div className={cardBaseStyle}>
-                                <h3 className={`text-lg font-semibold ${neutralText} mb-4 flex items-center`}>
-                                    <Utensils className={`mr-2 ${neutralIconColor}`} size={20} /> Food Highlights
+                                <h3 className={`text-lg font-semibold ${primaryTextColor} mb-4 flex items-center`}>
+                                    <Utensils className={`mr-2 ${inactiveTextColor}`} size={20} /> Food Highlights
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${neutralIconColor} flex-shrink-0`} size={16} /><span>Simple town eateries (dhabas) serving Bengali/Tamil thalis, fish curry.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${neutralIconColor} flex-shrink-0`} size={16} /><span>Pristine Beach Resort restaurant offers the most variety (multi-cuisine, seafood focus).</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${inactiveTextColor} flex-shrink-0`} size={16} /><span>Limited to small local eateries and hotel restaurants. Expect simple Indian cuisine and fresh seafood.</span></li>
                                 </ul>
                             </div>
-
-                            {/* Safety & Rules - Warning Orange */}
                             <div className={`${warningBg} rounded-2xl p-6 shadow-sm border ${warningBorder}`}>
                                 <h3 className={`text-lg font-semibold ${warningText} mb-4 flex items-center`}>
-                                    <Shield className={`mr-2 ${warningIconColor}`} size={20} /> Safety & Rules
+                                    <Shield className={`mr-2 ${warningIconColor}`} size={20} /> Traveler Tips
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Adhere strictly to Jarawa reserve convoy rules on ATR.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Trek Saddle Peak safely (guide, water, start early). Swim cautiously (check currents).</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Carry cash, first-aid kit, repellent. Basic medical facilities. Poor connectivity.</span></li>
-                                </ul>
-                            </div>
-
-                            {/* Eco-Tourism - Success Green */}
-                            <div className={`${successBg} rounded-2xl p-6 shadow-sm border ${successBorder}`}>
-                                <h3 className={`text-lg font-semibold ${successText} mb-4 flex items-center`}>
-                                    <Leaf className={`mr-2 ${successIconColor}`} size={20} /> Sustainability Tips
-                                </h3>
-                                <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Pack out all trash. Avoid single-use plastics.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Respect turtle nesting sites (follow guidelines, no lights/noise).</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Do not collect corals/shells. Support local businesses.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Diglipur is for travelers who are well-prepared and enjoy rugged, offbeat destinations.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Plan for at least 3-4 days to properly explore the main attractions due to travel times.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Pack appropriate gear for trekking: sturdy shoes, rain gear, insect repellent, and a first-aid kit.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Respect the fragile ecosystem and wildlife, especially at turtle nesting sites.</span></li>
                                 </ul>
                             </div>
                         </aside>
                     </div>
                 ) : (
-                    // Comprehensive Guide Content - Neutral Theme with Contextual Colors
+                    // Comprehensive Guide Content
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-12">
-                            <section>
+                            <section id="overview-comprehensive">
                                 <h2 className={sectionHeadingStyle}>
-                                    <Info className={`mr-3 ${neutralIconColor}`} size={24} /> Detailed Overview
+                                    <Info className={`mr-3 ${inactiveTextColor}`} size={24} /> Detailed Overview
                                 </h2>
                                 <div className={`${cardBaseStyle} space-y-4`}>
-                                    <p className={`text-base leading-relaxed ${neutralTextLight}`}>Diglipur, situated at the northernmost tip of the Andaman Islands (approximately 300 km from Port Blair), is the administrative center and largest town of North Andaman. Often considered the final frontier for tourism in the archipelago, it offers a raw, adventurous, and less commercialized experience compared to the southern islands. Diglipur serves as the gateway to some of the most spectacular natural wonders of the Andamans, including the archipelago's highest point, Saddle Peak (732m), the breathtaking twin islands of Ross and Smith connected by a natural sandbar, and crucial turtle nesting beaches like Kalipur and Ramnagar.</p>
-                                    <p className={`text-base leading-relaxed ${neutralTextLight}`}>The town itself is relatively small and primarily functional, catering to the local population engaged in agriculture (rice, coconuts, areca nuts) and fishing. However, the surrounding region is a paradise for nature enthusiasts and adventure seekers. Visitors can explore dense tropical rainforests within Saddle Peak National Park, discover hidden limestone caves like Alfred Caves, witness the unique phenomenon of mud volcanoes, and enjoy pristine, often deserted beaches. The remoteness of Diglipur contributes to its untouched beauty and makes it an ideal destination for those looking to escape the crowds and immerse themselves in nature.</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Diglipur, located in the far north of the Andaman archipelago, is the ultimate destination for travelers seeking adventure and untouched nature. As the largest town in North Andaman, it serves as a base for exploring some of the most spectacular natural wonders the islands have to offer. The region is a mosaic of lush green paddy fields, dense tropical forests, and a rugged coastline, defined by its key attractions: the iconic twin islands of Ross and Smith, connected by a shimmering sandbar, and Saddle Peak, the highest point in the Andamans at 732 meters.</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Unlike the more commercialized tourist spots, Diglipur retains a rustic, authentic charm. It is a land of exploration, attracting trekkers, nature lovers, and those looking to escape the crowds. The area is also ecologically significant, with Kalipur and Ramnagar beaches serving as major nesting grounds for four different species of sea turtles. With challenging treks to limestone caves and the peak, and serene boat trips to stunning islands, Diglipur promises a raw, rewarding, and unforgettable Andaman experience.</p>
                                 </div>
                             </section>
 
                             <section>
                                 <h2 className={sectionHeadingStyle}>
-                                    <Navigation className={`mr-3 ${neutralIconColor}`} size={24} /> Comprehensive Travel Guide
+                                    <Navigation className={`mr-3 ${inactiveTextColor}`} size={24} /> Comprehensive Travel Guide
                                 </h2>
                                 <div className={`${cardBaseStyle} space-y-6`}>
                                     <div>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Reaching Diglipur:</h3>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2`}>Reaching Diglipur:</h3>
                                         <ul className="space-y-3 pl-4 list-disc list-outside marker:text-gray-400">
-                                            <li className={neutralTextLight}><strong className={neutralText}>By Road (ATR):</strong> The most common route, though long (12-14 hours). Daily government and private buses operate from Port Blair, typically starting very early (4-6 AM). Private taxis offer more comfort but are expensive. The journey involves crossing three vehicle ferries and passing through the Jarawa Tribal Reserve under strict convoy rules (no stopping, photos, or interaction).</li>
-                                            <li className={neutralTextLight}><strong className={neutralText}>By Sea (Ferry):</strong> Government ferries run from Port Blair (Phoenix Bay Jetty) to Diglipur (Aerial Bay Jetty) about 3-4 times a week. The journey takes 10+ hours, often overnight. Offers a more relaxed travel experience compared to the road journey. Booking tickets well in advance at DSS counters is essential.</li>
-                                            <li className={neutralTextLight}><strong className={neutralText}>By Air (Helicopter):</strong> Infrequent Pawan Hans helicopter service exists, primarily for official/medical use. Tourist seats are limited, expensive, and booking is difficult. Not a reliable option for planning.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>By Road:</strong> The most common route. It is a long and arduous 10-12 hour journey from Port Blair via the Andaman Trunk Road (ATR). Both government buses and private cars/taxis are available. The journey involves passing through the Jarawa Tribal Reserve.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>By Sea:</strong> Government ferries operate from Port Blair to Aerial Bay Jetty near Diglipur. The journey is typically overnight, taking 10-14 hours. It is a more comfortable but slower option. Tickets must be booked in advance.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>By Air (Future):</strong> A small airstrip is being developed, which may offer limited commercial flights in the future, significantly reducing travel time.</li>
                                         </ul>
                                     </div>
                                     <div>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Getting Around Diglipur:</h3>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2`}>Getting Around Diglipur:</h3>
                                         <ul className="space-y-3 pl-4 list-disc list-outside marker:text-gray-400">
-                                            <li className={neutralTextLight}><strong className={neutralText}>Scooter/Motorbike Rental:</strong> The best option for flexibility (~₹500 per day). Available in Diglipur town; ask hotels or locals. Essential for reaching spread-out attractions independently. Ensure fuel availability.</li>
-                                            <li className={neutralTextLight}><strong className={neutralText}>Hired Car/Jeep:</strong> Can be arranged through hotels for sightseeing (~₹2500-3500 per day). Suitable for families or groups covering multiple sites like Ross & Smith jetty, Saddle Peak base, etc.</li>
-                                            <li className={neutralTextLight}><strong className={neutralText}>Auto-Rickshaws:</strong> Available for short distances within Diglipur town and nearby areas. Negotiate fares.</li>
-                                            <li className={neutralTextLight}><strong className={neutralText}>Local Buses/Shared Jeeps:</strong> Connect the town with villages but are infrequent and follow fixed routes. Not ideal for efficient sightseeing.</li>
-                                            <li className={neutralTextLight}><strong className={neutralText}>Boat Hire:</strong> Necessary for Ross & Smith Islands (from Aerial Bay Jetty) and potentially for accessing remote beaches or snorkeling spots. Negotiate prices directly with boatmen.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Auto-Rickshaws & Taxis:</strong> The best way to get around for sightseeing. You can hire them for point-to-point travel or for a full-day trip.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Local Buses:</strong> Connect Diglipur town with nearby villages and beaches like Kalipur.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Boat (Dunghi/Fibre Boat):</strong> A fibre boat is required to get to Ross & Smith Islands from Aerial Bay Jetty.</li>
                                         </ul>
-                                        {/* Warning Box for Jarawa Reserve Rules - Repeated for emphasis */}
-                                        <div className={`mt-6 p-4 ${warningBg} border-l-4 ${warningBorder} text-orange-800 rounded-r-lg shadow-sm`}>
-                                            <h4 className={`font-semibold mb-2 ${warningText} flex items-center`}><Shield className="w-5 h-5 mr-2" /> Jarawa Reserve Travel Rules</h4>
-                                            <p className="text-sm md:text-base">
-                                                Reminder: Travel via ATR requires adherence to strict convoy timings and rules within the Jarawa Tribal Reserve. No stopping, photography, or interaction permitted. Violations lead to serious penalties.
-                                            </p>
-                                        </div>
                                     </div>
                                 </div>
                             </section>
 
                             <section>
                                 <h2 className={sectionHeadingStyle}>
-                                    <Compass className={`mr-3 ${neutralIconColor}`} size={24} /> Exploring Attractions & Activities
+                                    <Compass className={`mr-3 ${inactiveTextColor}`} size={24} /> Exploring Attractions & Activities
                                 </h2>
                                 <div className="space-y-6">
-                                    {/* Attraction Cards - Remain Neutral */}
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Ross and Smith Islands</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>Undoubtedly Diglipur's star attraction. These picturesque twin islands are connected by a narrow, dazzling white sandbar that emerges during low tide, allowing you to walk between them. Surrounded by clear turquoise waters and lush forest, they offer fantastic swimming, sunbathing, and snorkeling opportunities (bring your own gear or rent basic sets). Requires a Forest Department permit (obtained easily at Aerial Bay Jetty) and a 20-30 minute boat ride from Aerial Bay Jetty (approx. ₹5000-6000 per boat for a few hours). Limited facilities on Smith Island (eco-huts, changing rooms). Check tide timings before going.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Landmark size={18} className={`mr-2 ${inactiveTextColor}`} /> Ross & Smith Islands</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>The crown jewel of Diglipur. These two stunning islands are connected by a thin, white sandbar that is visible during low tide. Visitors can walk from one island to the other. The water is crystal clear and turquoise green, perfect for swimming and snorkeling. A permit is required from the Forest Office at Diglipur, which can be obtained on the spot at Aerial Bay Jetty.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2 flex items-center`}><Mountain size={18} className="mr-2 text-green-600" /> Saddle Peak National Park & Trek</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>Home to Saddle Peak (732m), the highest point in the Andaman & Nicobar archipelago. The 8 km trek (one way, ~4-5 hours round trip) to the summit starts from Lamiya Bay, about 10 km from Diglipur town. The trail winds through dense tropical rainforest, offering chances to spot endemic birds and wildlife. The climb is moderately challenging with some steep sections. Clear weather provides breathtaking panoramic views of the North Andaman coastline and surrounding islands from the top. Start early (6-7 AM), carry plenty of water and snacks, wear good trekking shoes, and consider hiring a local guide. Entry permit required from the Forest Check Post at the trailhead.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Mountain size={18} className={`mr-2 ${inactiveTextColor}`} /> Saddle Peak National Park</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Trekking to Saddle Peak (732m), the highest point in the Andaman & Nicobar Islands, is a must-do for adventure enthusiasts. The 8 km trek is challenging and takes about 4-5 hours one way. The trail winds through lush evergreen forest, and the summit offers breathtaking panoramic views of the North Andaman coastline and nearby islands. A permit and a guide are required.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2 flex items-center`}><Turtle size={18} className="mr-2 text-green-600" /> Kalipur Beach</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>Located about 18 km from Diglipur town, Kalipur is famous as a nesting ground for four species of sea turtles (Olive Ridley, Green, Hawksbill, Leatherback), primarily between December and April. The beach has grey volcanic sand and calm waters, suitable for swimming. A Forest Department hatchery often operates during nesting season to protect eggs. Witnessing nesting (at night) or hatchling releases (early morning) requires patience and adherence to guidelines (no white lights, noise). Pristine Beach Resort and Turtle Nest Resort are located here.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Turtle size={18} className={`mr-2 ${inactiveTextColor}`} /> Kalipur & Ramnagar Beaches</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>These beaches are famous as nesting grounds for four species of sea turtles: Olive Ridley, Hawksbill, Green Sea, and the giant Leatherback. The nesting season runs from December to March. Kalipur Beach, with its volcanic grey sand, is also safe for swimming. Ramnagar Beach is another beautiful, sandy stretch.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2 flex items-center`}><Turtle size={18} className="mr-2 text-green-600" /> Ramnagar Beach</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>Another significant turtle nesting beach, located about 35 km south of Diglipur near the village of Ramnagar. It's generally quieter than Kalipur. Offers a long stretch of sandy shore suitable for walks and picnics. The nearby village provides a glimpse into local life. Can be combined with a visit to Alfred Caves.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Landmark size={18} className={`mr-2 ${inactiveTextColor}`} /> Alfred Caves (Mud Volcanoes of Diglipur)</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>This is a challenging adventure involving a trek through dense forest to reach a network of 41 limestone caves. The caves are home to Swiftlet birds, whose nests are edible. The trail can be difficult to navigate, and it's essential to hire a local guide. The best time to visit is from October to April, as the path becomes inaccessible during the monsoon.</p>
                                     </div>
-                                    <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Alfred Caves (Pathi Level Caves)</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>A network of limestone caves situated near Ramnagar village. Reaching the caves involves a trek (approx. 1 hour) through dense forest, making it an adventurous outing. The caves are known for their stalactite formations and as a habitat for edible-nest swiftlets. Exploring the dark, narrow caves requires a torch, sturdy footwear, and preferably a local guide familiar with the route. Best visited during the dry season (post-monsoon trails can be very difficult).</p>
-                                    </div>
-                                    <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Mud Volcanoes of Shyamnagar</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>Located near Shyamnagar village, about 40 km south of Diglipur (closer to the ATR route). Similar to the mud volcano near Baratang but smaller and less visited. Features several small craters emitting natural gas and bubbling mud. A short walk from the road leads to the site. An interesting geological phenomenon, though visually understated.</p>
-                                    </div>
-                                    <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${neutralText} mb-2`}>Lamiya Bay Beach</h3>
-                                        <p className={`text-base leading-relaxed ${neutralTextLight}`}>Located at the foothills of Saddle Peak (start point for the trek). This beach is known for its smooth, polished pebbles and rocks rather than sand. Offers scenic views of the coastline and Saddle Peak. Good spot for a brief stop and photography.</p>
-                                    </div>
-                                </div>
-                            </section>
-
-                            <section>
-                                <h2 className={sectionHeadingStyle}>
-                                    <Bed className={`mr-3 ${neutralIconColor}`} size={24} /> Accommodation & Food
-                                </h2>
-                                <div className={`${cardBaseStyle} space-y-4`}>
-                                    <p className={`text-base leading-relaxed ${neutralTextLight}`}><strong>Accommodation:</strong> Diglipur offers primarily budget to mid-range lodging, with no luxury resorts. The most popular options are near Kalipur Beach: Pristine Beach Resort (offers various cottage types, ~₹800-₹3000) and the government-run Turtle Nest Resort (basic but well-located, ~₹1000-₹2000, book early). In Diglipur town, find budget lodges like Hotel Laxmi Lodge or slightly better options like Hotel Landfall (~₹1500). Government guesthouses (APWD) exist but tourist availability is limited. Book accommodation well in advance, especially during peak season (Dec-Mar).</p>
-                                    <p className={`text-base leading-relaxed ${neutralTextLight}`}><strong>Food:</strong> Dining options are simple. In Diglipur town market, find local eateries ('dhabas') serving affordable Bengali or South Indian thalis, fish curry, and basic Indian dishes (e.g., New Hira Family Restaurant). The restaurant at Pristine Beach Resort offers the widest menu (Indian, basic Chinese/Continental, focus on seafood) and is open to non-guests, though pricier. Pack snacks and water for day trips, as options near attractions like Saddle Peak or Alfred Caves are non-existent.</p>
                                 </div>
                             </section>
                         </div>
 
-                        {/* Sidebar - Contextual Colors */}
                         <aside className="lg:col-span-1 space-y-8">
-                            {/* Best Time to Visit - Contextual */}
                             <div className={cardBaseStyle}>
-                                <h3 className={`text-lg font-semibold ${neutralText} mb-4 flex items-center`}>
-                                    <Calendar className={`mr-2 ${neutralIconColor}`} size={20} /> Best Time to Visit
+                                <h3 className={`text-lg font-semibold ${primaryTextColor} mb-4 flex items-center`}>
+                                    <Bed className={`mr-2 ${inactiveTextColor}`} size={20} /> Accommodation & Food
                                 </h3>
-                                <div className="space-y-3">
-                                    <div className={`${infoBg} rounded-lg p-3 border ${infoBorder}`}>
-                                        <h4 className={`font-medium ${infoText} text-sm`}>Nov–Apr (Dry Season)</h4>
-                                        <p className={`text-xs ${neutralTextLight}`}>Best period for pleasant weather, trekking, beaches, and boat trips.</p>
-                                    </div>
-                                    <div className={`${warningBg} rounded-lg p-3 border ${warningBorder}`}>
-                                        <h4 className={`font-medium ${warningText} text-sm`}>Dec–Mar (Peak & Nesting)</h4>
-                                        <p className={`text-xs ${neutralTextLight}`}>Ideal conditions; prime time for turtle nesting observation at Kalipur/Ramnagar.</p>
-                                    </div>
-                                    <div className={`${successBg} rounded-lg p-3 border ${successBorder}`}>
-                                        <h4 className={`font-medium ${successText} text-sm`}>Jun–Oct (Monsoon/Post)</h4>
-                                        <p className={`text-xs ${neutralTextLight}`}>Heavy rains, travel challenges. October sees improving conditions.</p>
-                                    </div>
+                                <div className="space-y-4">
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}><strong>Accommodation:</strong> Diglipur's accommodation options are limited and cater more to budget travelers. The main options include the government-run Turtle Resort at Kalipur Beach, which offers a prime location, and several private lodges in Diglipur town and Kalipur like Pristine Beach Resort. Do not expect luxury; facilities are basic but functional. Booking well in advance is absolutely essential, especially from December to March.</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}><strong>Food:</strong> Dining is also basic, with a few local restaurants in Diglipur market serving Indian and Bengali cuisine. The hotel restaurants offer more variety. Fresh seafood is a highlight. It is advisable to carry snacks and water, especially for long treks and day trips.</p>
                                 </div>
                             </div>
-
-                            {/* Safety & Rules - Warning Orange */}
                             <div className={`${warningBg} rounded-2xl p-6 shadow-sm border ${warningBorder}`}>
                                 <h3 className={`text-lg font-semibold ${warningText} mb-4 flex items-center`}>
-                                    <LifeBuoy className={`mr-2 ${warningIconColor}`} size={20} /> Safety & Important Rules
+                                    <LifeBuoy className={`mr-2 ${warningIconColor}`} size={20} /> Safety & Practicalities
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Jarawa Reserve:** Mandatory adherence to convoy rules and NO interaction/photography on the ATR.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Trekking:** Use a guide for Saddle Peak & Alfred Caves. Carry water, first-aid, inform someone of your plans. Start treks early.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Water Safety:** Be cautious of currents at beaches. Avoid swimming near mangrove creeks. Use life jackets on boats.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Permits:** Required for Ross & Smith Islands (obtain at Aerial Bay) and potentially for Saddle Peak trek (check at entry).</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Health & Essentials:** Carry sufficient cash, basic medicines, insect repellent. Medical facilities are basic. Poor connectivity (BSNL best).</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Permits are required for Ross & Smith Islands and Saddle Peak. These can be obtained from the Forest Office in Diglipur.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>The trek to Alfred Caves is strenuous and requires a guide.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Carry sufficient cash. ATM services are limited and often unreliable.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Mobile and internet connectivity is extremely poor. BSNL is the most likely operator to have a signal.</span></li>
                                 </ul>
                             </div>
-
-                            {/* Responsible Tourism - Success Green */}
-                            <div className={`${successBg} rounded-2xl p-6 shadow-sm border ${successBorder}`}>
-                                <h3 className={`text-lg font-semibold ${successText} mb-4 flex items-center`}>
-                                    <Leaf className={`mr-2 ${successIconColor}`} size={20} /> Responsible Tourism
-                                </h3>
-                                <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>**Turtle Nesting:** Follow guidelines strictly – use red light filters, maintain distance, avoid noise/flash photography. Never disturb nests or hatchlings.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>**Waste Management:** Minimize plastic use. Pack out all your garbage, especially from remote areas like beaches and trek trails.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>**Respect Nature:** Do not collect corals, shells, or plants. Stay on marked paths. Do not feed wildlife.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>**Support Locals:** Hire local guides, use local transport options, eat at local eateries, buy local products (responsibly).</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>**Conserve Resources:** Use water and electricity sparingly in accommodations.</span></li>
-                                </ul>
-                            </div>
-
-                            {/* Traveler Tips - Tip Yellow */}
                             <div className={`${tipBg} rounded-2xl p-6 shadow-sm border ${tipBorder}`}>
                                 <h3 className={`text-lg font-semibold ${tipText} mb-4 flex items-center`}>
                                     <MessageCircle className={`mr-2 ${tipIconColor}`} size={20} /> Traveler Tips
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Book accommodation and onward transport (ferries/buses) well in advance.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Carry enough cash; ATMs are unreliable.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Rent a scooter/motorbike for maximum flexibility in exploring spread-out attractions.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Pack for adventure: good trekking shoes, torch, rain gear (even in dry season), swimwear, first-aid kit, power bank.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Be prepared for long travel times and basic facilities. Embrace the offbeat nature of Diglipur.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Check tide timings for visiting Ross & Smith Islands sandbar.</span></li>
-                                    <li className={`flex items-start text-sm ${neutralTextLight}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Hire local guides for treks like Saddle Peak and Alfred Caves for safety and insights.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Diglipur is for travelers who are well-prepared and enjoy rugged, offbeat destinations.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Plan for at least 3-4 days to properly explore the main attractions due to travel times.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Pack appropriate gear for trekking: sturdy shoes, rain gear, insect repellent, and a first-aid kit.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Respect the fragile ecosystem and wildlife, especially at turtle nesting sites.</span></li>
                                 </ul>
                             </div>
                         </aside>
                     </div>
                 )}
 
-                {/* CTA Section - Contextual Color (Informational Blue) */}
+                {/* CTA Section */}
                 <section className={`mt-16 ${infoBg} rounded-2xl p-8 border ${infoBorder} text-center`}>
-                    <h2 className={`text-2xl font-bold ${infoText} mb-4`}>Embark on Your Diglipur Adventure</h2>
-                    <p className={`${neutralTextLight} max-w-xl mx-auto mb-6`}>Ready to trek the highest peak, walk between islands, and witness nature's wonders in Diglipur? Plan your North Andaman expedition today.</p>
+                    <h2 className={`text-2xl font-bold ${infoText} mb-4`}>Answer the Call of the Wild North</h2>
+                    <p className={`${secondaryTextColor} max-w-xl mx-auto mb-6`}>Ready for a true Andaman adventure? Explore our Diglipur itineraries and plan your trek to the top of the islands.</p>
                     <div className="flex flex-wrap justify-center gap-4">
                         <Link href="/packages?destination=diglipur" className={buttonPrimaryStyle}>
-                            View Diglipur Packages <ArrowRight className="ml-2" size={18} />
+                            View Diglipur Adventures <ArrowRight className="ml-2" size={18} />
                         </Link>
-                        <Link href="/contact" className={`inline-flex items-center justify-center bg-white text-gray-700 border ${neutralBorder} hover:bg-gray-50 font-semibold px-6 py-3 rounded-full transition-all duration-300`}>
+                        <Link href="/contact" className={`inline-flex items-center justify-center bg-white text-gray-700 border ${neutralBorder} hover:bg-gray-50 font-semibold px-6 py-3 rounded-full transition-all duration-300 shadow-sm hover:shadow-md`}>
                             Get Travel Assistance
                         </Link>
                     </div>

@@ -23,12 +23,18 @@ DELETE FROM users WHERE email NOT LIKE 'admin@%'; -- Keep admin user (ID 1)
 -- Roles are typically managed by migrations and not cleared in general seeds unless intended.
 
 -- =============================================
--- Roles (Usually seeded by migrations, shown for completeness)
+-- Ensure Roles Exist (Safety check - should already exist from migrations)
 -- =============================================
--- INSERT OR IGNORE INTO roles (id, name, description, permissions) VALUES
---   (1, 'admin', 'Administrator with full access', 'all'),
---   (2, 'user', 'Regular user/traveler', 'basic'),
---   (3, 'vendor', 'Service provider/vendor', 'vendor');
+INSERT OR IGNORE INTO roles (id, name, description, permissions) VALUES
+  (1, 'admin', 'Administrator with full access', 'all'),
+  (2, 'user', 'Regular user/traveler', 'basic'),
+  (3, 'vendor', 'Service provider/vendor', 'vendor');
+
+-- =============================================
+-- Ensure Admin User Exists (Safety check - should already exist from migrations)
+-- =============================================
+INSERT OR IGNORE INTO users (id, email, password_hash, first_name, last_name, role_id) VALUES
+  (1, 'admin@reachandaman.com', '$2b$10$/McUJV1/0CQOVf6JXppp4.zyJn0A5VkdLTtADPQm8hw9NHHWCaZ0S', 'Admin', 'User', 1);
 
 -- =============================================
 -- Users (Admin user 'admin@reachandaman.com' should already exist from migration 0001_initial.sql)

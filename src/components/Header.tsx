@@ -128,7 +128,7 @@ const Header = () => {
             <Link href="/" className="inline-block align-middle" onClick={closeMenu}>
               <div className="relative h-8 w-auto">
                 <Image
-                  src="/images/logoresized.webp" // Reverted src
+                  src="/images/logo.jpg" // Reverted src
                   alt="Reach Andaman Logo"
                   height={32}
                   width={0}

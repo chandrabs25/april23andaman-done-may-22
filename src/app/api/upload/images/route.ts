@@ -103,9 +103,9 @@ export async function POST(request: NextRequest) {
           });
           
           // IMPORTANT: Define your R2 public custom domain here
-          const R2_PUBLIC_DOMAIN = "pub-861b68dd53c047e0a06b7164e95ccc43.r2.dev"; // REPLACE THIS WITH YOUR ACTUAL DOMAIN
+          const R2_PUBLIC_DOMAIN = "media.reachandaman.com"; // REPLACE THIS WITH YOUR ACTUAL DOMAIN
 
-          if (R2_PUBLIC_DOMAIN === "pub-861b68dd53c047e0a06b7164e95ccc43.r2.dev") {
+          if (R2_PUBLIC_DOMAIN === "media.reachandaman.com") {
             console.warn("R2_PUBLIC_DOMAIN is set to a custom domain");
             // Optionally, you could fall back to relative paths or return an error during development if not set
           }

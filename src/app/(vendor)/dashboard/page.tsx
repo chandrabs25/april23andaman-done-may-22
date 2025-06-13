@@ -285,11 +285,20 @@ function VendorDashboardContent() {
                         </Link>
                         <Link href={isHotelVendor ? "/my-hotels" : "/my-services"}
                             className="block bg-green-50 hover:bg-green-100 p-4 transition-colors duration-150 text-green-700 font-medium"
-                            style={{ borderRadius: '0.5rem' }} // Added inline style for rounded-lg (8px)
+                            style={{ borderRadius: '0.5rem' }}
                         >
                             <div className="flex items-center">
                                 <Settings size={20} className="mr-2" />
                                 Manage All {isHotelVendor ? 'Hotels' : 'Services'}
+                            </div>
+                        </Link>
+                        <Link href="/inventory"
+                            className="block bg-indigo-50 hover:bg-indigo-100 p-4 transition-colors duration-150 text-indigo-700 font-medium"
+                            style={{ borderRadius: '0.5rem' }}
+                        >
+                            <div className="flex items-center">
+                                <Calendar size={20} className="mr-2" />
+                                Inventory Calendar
                             </div>
                         </Link>
                     </div>

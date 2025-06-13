@@ -1257,39 +1257,43 @@ export class DatabaseService {
       .first<{ count: number }>();
     const totalServices = servicesCountResult?.count ?? 0;
 
-    // 3. Get Active Bookings (Requires joining through services/packages)
-    // This query assumes bookings are linked via packages created by the user OR services linked to the provider
-    // Adjust join logic based on your exact schema relationship (package vs service booking)
-    // Using 'confirmed' or 'pending' as active statuses.
+    // 3. Get Active Bookings
+    // Definition: Payment PAID (confirmed) AND today is within booking period OR booking starts in future
     const activeBookingsResult = await db
       .prepare(`
-        SELECT COUNT(b.id) as count
-        FROM bookings b
-        LEFT JOIN packages p ON b.package_id = p.id
-        LEFT JOIN booking_services bs ON b.id = bs.booking_id -- If bookings can contain individual services
-        LEFT JOIN services s ON bs.service_id = s.id
-        WHERE (p.created_by = ? OR s.provider_id = ?)
-          AND b.status IN ('pending', 'confirmed')
-      `)
-      .bind(userId, providerId) // Check package creator OR service provider
-      .first<{ count: number }>();
-    const activeBookings = activeBookingsResult?.count ?? 0;
-
-
-    // 4. Get Total Earnings (Sum net amount from completed/confirmed bookings)
-    // Adjust status and amount field (total_amount vs net_amount) as needed
-    const totalEarningsResult = await db
-      .prepare(`
-        SELECT SUM(b.total_amount) as total -- Use total_amount or a calculated net_amount if available
+        SELECT COUNT(DISTINCT b.id) as count
         FROM bookings b
         LEFT JOIN packages p ON b.package_id = p.id
         LEFT JOIN booking_services bs ON b.id = bs.booking_id
         LEFT JOIN services s ON bs.service_id = s.id
         WHERE (p.created_by = ? OR s.provider_id = ?)
-          AND b.status IN ('completed', 'confirmed') -- Consider which statuses count towards earnings
-          AND b.payment_status = 'paid' -- Ensure payment was successful
+          AND b.payment_status = 'PAID'
+          AND b.status NOT IN ('cancelled', 'CANCELLED')
+          AND (
+            date('now') BETWEEN b.start_date AND COALESCE(b.end_date, b.start_date)
+            OR date('now') < b.start_date
+          )
       `)
-      .bind(userId, providerId)
+      .bind(providerId, providerId)
+      .first<{ count: number }>();
+    const activeBookings = activeBookingsResult?.count ?? 0;
+
+
+    // 4. Get Total Earnings (Sum net amount from completed bookings)
+    // Only count bookings that have already completed (end date is in the past)
+    const totalEarningsResult = await db
+      .prepare(`
+        SELECT SUM(b.total_amount) as total
+        FROM bookings b
+        LEFT JOIN packages p ON b.package_id = p.id
+        LEFT JOIN booking_services bs ON b.id = bs.booking_id
+        LEFT JOIN services s ON bs.service_id = s.id
+        WHERE (p.created_by = ? OR s.provider_id = ?)
+          AND b.payment_status = 'PAID'
+          AND b.status NOT IN ('cancelled', 'CANCELLED')
+          AND date('now') > COALESCE(b.end_date, b.start_date)
+      `)
+      .bind(providerId, providerId)
       .first<{ total: number | null }>();
     const totalEarnings = totalEarningsResult?.total ?? 0;
 

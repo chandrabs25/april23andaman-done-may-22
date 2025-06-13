@@ -151,7 +151,7 @@ var DOQueueHandler = class extends DurableObject {
         method: "HEAD",
         headers: {
           // This is defined during build
-          "x-prerender-revalidate": "d3597ceaf0db140ba7420fd6b3294016",
+          "x-prerender-revalidate": "fa5bb7aef6f3a2f408d0ef7acbfd34ac",
           "x-isr": "1"
         },
         signal: AbortSignal.timeout(this.revalidationTimeout)
@@ -174,7 +174,7 @@ var DOQueueHandler = class extends DurableObject {
           "INSERT OR REPLACE INTO sync (id, lastSuccess, buildId) VALUES (?, unixepoch(), ?)",
           // We cannot use the deduplication id because it's not unique per route - every time a route is revalidated, the deduplication id is different.
           `${host}${url}`,
-          "mFy0h3JhDZtwm7V2PsQ1U"
+          "e4rsJZM0mAQoUn80NcsYD"
         );
       }
       this.routeInFailedState.delete(msg.MessageDeduplicationId);
@@ -222,7 +222,7 @@ var DOQueueHandler = class extends DurableObject {
     }
     this.routeInFailedState.set(msg.MessageDeduplicationId, updatedFailedState);
     if (!this.disableSQLite) {
-      this.sql.exec("INSERT OR REPLACE INTO failed_state (id, data, buildId) VALUES (?, ?, ?)", msg.MessageDeduplicationId, JSON.stringify(updatedFailedState), "mFy0h3JhDZtwm7V2PsQ1U");
+      this.sql.exec("INSERT OR REPLACE INTO failed_state (id, data, buildId) VALUES (?, ?, ?)", msg.MessageDeduplicationId, JSON.stringify(updatedFailedState), "e4rsJZM0mAQoUn80NcsYD");
     }
     await this.addAlarm();
   }
@@ -246,8 +246,8 @@ var DOQueueHandler = class extends DurableObject {
       return;
     this.sql.exec("CREATE TABLE IF NOT EXISTS failed_state (id TEXT PRIMARY KEY, data TEXT, buildId TEXT)");
     this.sql.exec("CREATE TABLE IF NOT EXISTS sync (id TEXT PRIMARY KEY, lastSuccess INTEGER, buildId TEXT)");
-    this.sql.exec("DELETE FROM failed_state WHERE buildId != ?", "mFy0h3JhDZtwm7V2PsQ1U");
-    this.sql.exec("DELETE FROM sync WHERE buildId != ?", "mFy0h3JhDZtwm7V2PsQ1U");
+    this.sql.exec("DELETE FROM failed_state WHERE buildId != ?", "e4rsJZM0mAQoUn80NcsYD");
+    this.sql.exec("DELETE FROM sync WHERE buildId != ?", "e4rsJZM0mAQoUn80NcsYD");
     const failedStateCursor = this.sql.exec("SELECT * FROM failed_state");
     for (const row of failedStateCursor) {
       this.routeInFailedState.set(row.id, JSON.parse(row.data));

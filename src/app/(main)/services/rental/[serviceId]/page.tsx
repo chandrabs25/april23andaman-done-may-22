@@ -478,7 +478,7 @@ const RentalServiceDetailPage = () => {
               </p>
 
               <Link
-                href={`/booking/new?serviceType=rental&serviceId=${service.id}`} // Example booking link
+                href={`/booking/new/service?serviceId=${service.id}`}
                 className={`${buttonPrimaryStyle} w-full text-base py-3`}
               >
                 Book Now / Enquire

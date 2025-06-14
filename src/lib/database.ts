@@ -152,41 +152,74 @@ export class DatabaseService {
 
   // Helper function to safely parse JSON strings
   private _parseJsonString(jsonString: string | null | undefined, defaultValue: string[] = []): string[] {
-    if (jsonString === null || jsonString === undefined || typeof jsonString !== 'string' || jsonString.trim() === "") {
+    if (!jsonString) {
       return defaultValue;
     }
+
     try {
       const parsed = JSON.parse(jsonString);
-      if (Array.isArray(parsed) && parsed.every(item => typeof item === 'string')) {
-        return parsed;
-      }
-      // If parsed is a single string, wrap it in an array
-      if (typeof parsed === 'string' && parsed.trim()) {
-        return [parsed.trim()];
-      }
-      // If it's an array but not of strings, try to convert or return default
       if (Array.isArray(parsed)) {
-        const stringArray = parsed.map(String).filter(Boolean);
-        return stringArray.length > 0 ? stringArray : defaultValue;
+        return parsed;
+      } else if (typeof parsed === 'string') {
+        return [parsed];
       }
-      // If it's some other type (number, boolean), convert to string and wrap in array
-      if (parsed !== null && parsed !== undefined) {
-        const strVal = String(parsed).trim();
-        return strVal ? [strVal] : defaultValue;
-      }
-      return defaultValue;
     } catch (e) {
-      // If JSON.parse fails, treat the original string as a single item or comma-separated list
+      // If it's not valid JSON, try to handle as CSV or single URL
       if (jsonString.includes(',')) {
-        return jsonString.split(',').map(s => s.trim()).filter(Boolean);
+        return jsonString.split(',').map(url => url.trim()).filter(url => url.length > 0);
+      } else {
+        return [jsonString.trim()];
       }
-      // If not comma-separated, and not empty, treat as a single item array
-      const trimmedString = jsonString.trim();
-      if (trimmedString) {
-        return [trimmedString];
-      }
-      return defaultValue;
     }
+
+    return defaultValue;
+  }
+
+  /**
+   * Safely parses image data from various storage formats
+   * @param imageData - Can be JSON array, JSON string, plain URL, or comma-separated URLs
+   * @returns Array of image URLs
+   */
+  parseImageUrls(imageData: string | string[] | null | undefined): string[] {
+    if (!imageData) {
+      return [];
+    }
+
+    // Already an array
+    if (Array.isArray(imageData)) {
+      return imageData.filter((url): url is string => typeof url === 'string' && url.trim().length > 0);
+    }
+
+    // Handle string data
+    if (typeof imageData === 'string') {
+      const trimmed = imageData.trim();
+      if (!trimmed) {
+        return [];
+      }
+
+      // Try to parse as JSON first
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((url): url is string => typeof url === 'string' && url.trim().length > 0);
+        } else if (typeof parsed === 'string') {
+          return [parsed.trim()];
+        }
+      } catch (jsonError) {
+        // Not valid JSON, handle as plain text
+        if (trimmed.includes(',')) {
+          // Comma-separated URLs
+          return trimmed.split(',')
+            .map(url => url.trim())
+            .filter(url => url.length > 0);
+        } else {
+          // Single URL
+          return [trimmed];
+        }
+      }
+    }
+
+    return [];
   }
 
   // --- User Methods ---
@@ -1824,6 +1857,28 @@ export class DatabaseService {
   }
 
   /**
+   * Checks if a room type has any active bookings.
+   * @param roomId The ID of the room type to check.
+   * @returns Promise<boolean> - true if room has active bookings
+   */
+  async roomHasActiveBookings(roomId: number): Promise<boolean> {
+    const db = await getDatabase();
+    const result = await db
+      .prepare(`
+        SELECT COUNT(*) as count 
+        FROM booking_services bs
+        JOIN bookings b ON bs.booking_id = b.id
+        WHERE bs.hotel_room_type_id = ? 
+        AND b.status NOT IN ('cancelled', 'refunded')
+        AND b.payment_status IN ('SUCCESS', 'PENDING')
+      `)
+      .bind(roomId)
+      .first<{ count: number }>();
+    
+    return (result?.count || 0) > 0;
+  }
+
+  /**
    * Deletes a room type.
    * @param roomId The ID of the room type to delete.
    * @returns Promise<D1Result>
@@ -2117,12 +2172,49 @@ export class DatabaseService {
         pc.category_name AS packageCategoryName,
         u.first_name AS userFirstName,
         u.last_name AS userLastName,
-        u.email AS userEmail
+        u.email AS userEmail,
+        -- Hotel/Service booking details
+        s.name AS serviceName,
+        s.type AS serviceType,
+        s.description AS serviceDescription,
+        s.images AS serviceImages,
+        s.amenities AS serviceAmenities,
+        s.price AS serviceBasePrice,
+        h.star_rating AS hotelStarRating,
+        h.check_in_time AS hotelCheckInTime,
+        h.check_out_time AS hotelCheckOutTime,
+        h.facilities AS hotelFacilities,
+        h.total_rooms AS hotelTotalRooms,
+        h.street_address AS hotelAddress,
+        h.meal_plans AS hotelMealPlans,
+        h.pets_allowed AS hotelPetsAllowed,
+        h.children_allowed AS hotelChildrenAllowed,
+        h.policies AS hotelCancellationPolicy,
+        -- Room type details
+        hrt.id AS roomTypeId,
+        hrt.room_type AS roomTypeName,
+        hrt.base_price AS roomTypeBasePrice,
+        hrt.max_guests AS roomTypeMaxGuests,
+        hrt.amenities AS roomTypeAmenities,
+        hrt.extra_images AS roomTypeImages,
+        -- Booking service details
+        bs.quantity AS numberOfRooms,
+        bs.price AS bookingServicePrice,
+        bs.date AS bookingServiceDate,
+        -- Island details
+        i.name AS islandName,
+        i.description AS islandDescription
       FROM bookings b
       LEFT JOIN packages p ON b.package_id = p.id
       LEFT JOIN package_categories pc ON b.package_category_id = pc.id
       LEFT JOIN users u ON b.user_id = u.id
-      WHERE b.id = ?;
+      LEFT JOIN booking_services bs ON b.id = bs.booking_id
+      LEFT JOIN services s ON bs.service_id = s.id
+      LEFT JOIN hotels h ON s.id = h.service_id
+      LEFT JOIN hotel_room_types hrt ON bs.hotel_room_type_id = hrt.id
+      LEFT JOIN islands i ON s.island_id = i.id
+      WHERE b.id = ?
+      LIMIT 1;
     `;
     try {
       const stmt = db.prepare(query).bind(bookingId);
@@ -2516,5 +2608,89 @@ export class DatabaseService {
     return db.prepare(`UPDATE payment_attempts SET booking_id = ?, updated_at = CURRENT_TIMESTAMP WHERE mtid = ?`)
              .bind(bookingId, mtid)
              .run();
+  }
+
+  async createInitialServiceBooking(bookingData: {
+    service_id: number;
+    user_id: number | null;
+    total_amount: number;
+    quantity: number;
+    service_date: string; // Format: 'YYYY-MM-DD'
+    total_people: number;
+    guest_name: string | null;
+    guest_email: string | null;
+    guest_phone: string | null;
+    special_requests: string | null;
+  }) {
+    const db = await getDatabase();
+
+    try {
+      // 1. Insert into bookings (single-day service, so start and end date are same)
+      const bookingResult = await db.prepare(`
+        INSERT INTO bookings (
+          user_id,
+          total_people,
+          start_date,
+          end_date,
+          status,
+          total_amount,
+          payment_status,
+          guest_name,
+          guest_email,
+          guest_phone,
+          special_requests
+        ) VALUES (?, ?, ?, ?, 'PENDING_PAYMENT', ?, 'INITIATED', ?, ?, ?, ?)
+      `).bind(
+        bookingData.user_id,
+        bookingData.total_people,
+        bookingData.service_date,
+        bookingData.service_date,
+        bookingData.total_amount,
+        bookingData.guest_name,
+        bookingData.guest_email,
+        bookingData.guest_phone,
+        bookingData.special_requests
+      ).run();
+
+      if (!bookingResult.success) {
+        throw new Error('Failed to create service booking record');
+      }
+
+      const bookingId = bookingResult.meta?.last_row_id;
+      if (!bookingId) {
+        throw new Error('Failed to retrieve booking ID for service booking');
+      }
+
+      // 2. Insert into booking_services (no hotel_room_type_id)
+      await db.prepare(`
+        INSERT INTO booking_services (
+          booking_id,
+          service_id,
+          quantity,
+          price,
+          date
+        ) VALUES (?, ?, ?, ?, ?)
+      `).bind(
+        bookingId,
+        bookingData.service_id,
+        bookingData.quantity,
+        bookingData.total_amount,
+        bookingData.service_date
+      ).run();
+
+      return {
+        success: true,
+        meta: { last_row_id: bookingId },
+        error: null
+      };
+
+    } catch (error) {
+      console.error('Error creating service booking:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error creating service booking',
+        meta: {}
+      };
+    }
   }
 }

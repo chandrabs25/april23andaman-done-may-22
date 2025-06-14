@@ -8,7 +8,7 @@ import Link from 'next/link';
 import {
   AlertTriangle, ArrowLeft, CheckCircle, XCircle, PackageIcon, TagIcon, CalendarDaysIcon,
   UsersIcon, UserCircle2Icon, MailIcon, PhoneIcon, CreditCardIcon, FileTextIcon, ShoppingCartIcon, LandmarkIcon, InfoIcon,
-  ListOrdered, HomeIcon, ExternalLinkIcon, PrinterIcon
+  ListOrdered, HomeIcon, ExternalLinkIcon, PrinterIcon, HotelIcon, BedIcon, StarIcon, MapPinIcon, ClockIcon
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -40,12 +40,53 @@ interface BookingData {
   guestEmail?: string | null;
   guestPhone?: string | null;
   specialRequests?: string | null;
+  numberOfNights?: number;
+  numberOfRooms?: number;
+  bookingServicePrice?: number;
+  bookingServiceDate?: string;
+  
+  // Package booking data
   package?: {
     name: string;
   };
   packageCategory?: {
     name: string;
   };
+  
+  // Hotel/Service booking data
+  service?: {
+    name: string;
+    type: string;
+    description?: string;
+    images?: string;
+    amenities?: string;
+    basePrice?: number;
+  };
+  hotel?: {
+    starRating?: number;
+    checkInTime?: string;
+    checkOutTime?: string;
+    facilities?: string;
+    totalRooms?: number;
+    address?: string;
+    mealPlans?: string;
+    petsAllowed?: boolean;
+    childrenAllowed?: boolean;
+    cancellationPolicy?: string;
+  };
+  roomType?: {
+    id: number;
+    name: string;
+    basePrice?: number;
+    maxGuests?: number;
+    amenities?: string;
+    images?: string;
+  };
+  island?: {
+    name: string;
+    description?: string;
+  };
+  
   user?: {
     name?: string | null;
     email?: string | null;
@@ -194,55 +235,186 @@ function BookingConfirmationContent() {
               <h2 className={`${sectionHeadingStyle} text-xl md:text-2xl mb-0 sm:mb-0`}>Booking Summary</h2>
               <p className={`${neutralTextLight} text-sm`}>ID: <span className={`font-semibold ${neutralText}`}>#{booking.id}</span></p>
             </div>
-            <section>
-              <h3 className={`text-lg font-semibold ${neutralText} mb-2 flex items-center`}>
-                <PackageIcon size={20} className={`mr-2 ${infoIconColor}`} />Package Details
-              </h3>
-              <div className={`${neutralBg} p-4 rounded-lg border ${neutralBorder} text-sm`}>
-                <p className={`font-medium ${neutralText}`}>{booking.package?.name || 'Package Name Not Available'}</p>
-                <p className={`${neutralTextLight} flex items-center mt-1`}>
-                  <TagIcon size={16} className={`mr-1.5 ${infoIconColor}`} /> {booking.packageCategory?.name || 'Category Not Available'}
-                </p>
-              </div>
-            </section>
+            {/* Package Details Section - Only show for package bookings */}
+            {booking.package && (
+              <section>
+                <h3 className={`text-lg font-semibold ${neutralText} mb-2 flex items-center`}>
+                  <PackageIcon size={20} className={`mr-2 ${infoIconColor}`} />Package Details
+                </h3>
+                <div className={`${neutralBg} p-4 rounded-lg border ${neutralBorder} text-sm`}>
+                  <p className={`font-medium ${neutralText}`}>{booking.package?.name || 'Package Name Not Available'}</p>
+                  <p className={`${neutralTextLight} flex items-center mt-1`}>
+                    <TagIcon size={16} className={`mr-1.5 ${infoIconColor}`} /> {booking.packageCategory?.name || 'Category Not Available'}
+                  </p>
+                </div>
+              </section>
+            )}
 
-            {/* Key Details Grid - Replaced undefined 'neutralIconColor' with 'infoIconColor' */}
+            {/* Hotel Details Section - Only show for hotel bookings */}
+            {booking.service && (
+              <section>
+                <h3 className={`text-lg font-semibold ${neutralText} mb-2 flex items-center`}>
+                  <HotelIcon size={20} className={`mr-2 ${infoIconColor}`} />Hotel Booking Details
+                </h3>
+                <div className={`${neutralBg} p-4 rounded-lg border ${neutralBorder} text-sm space-y-3`}>
+                  {/* Hotel Name and Location */}
+                  <div>
+                    <p className={`font-medium ${neutralText} text-base`}>{booking.service.name}</p>
+                    {booking.hotel?.address && (
+                      <p className={`${neutralTextLight} flex items-center mt-1`}>
+                        <MapPinIcon size={14} className={`mr-1.5 ${infoIconColor}`} /> {booking.hotel.address}
+                      </p>
+                    )}
+                    {booking.island?.name && (
+                      <p className={`${neutralTextLight} text-xs`}>Located in {booking.island.name}</p>
+                    )}
+                  </div>
+
+                  {/* Hotel Rating */}
+                  {booking.hotel?.starRating && (
+                    <div className="flex items-center">
+                      <span className={`text-xs ${neutralTextLight} mr-2`}>Rating:</span>
+                      <div className="flex items-center">
+                        {Array.from({ length: booking.hotel.starRating }, (_, i) => (
+                          <StarIcon key={i} size={12} className="text-yellow-400 fill-current" />
+                        ))}
+                        <span className={`ml-1 text-xs ${neutralTextLight}`}>({booking.hotel.starRating} star)</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Room Details */}
+                  {booking.roomType && (
+                    <div className={`border-t ${neutralBorderLight} pt-3`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className={`font-medium ${neutralText} flex items-center`}>
+                            <BedIcon size={16} className={`mr-1.5 ${infoIconColor}`} />
+                            {booking.roomType.name}
+                          </p>
+                          <p className={`text-xs ${neutralTextLight}`}>
+                            Up to {booking.roomType.maxGuests} guests
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-medium ${successText}`}>
+                            ₹{booking.roomType.basePrice?.toLocaleString('en-IN') || 'N/A'}/night
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Check-in/Check-out Times */}
+                  {(booking.hotel?.checkInTime || booking.hotel?.checkOutTime) && (
+                    <div className={`border-t ${neutralBorderLight} pt-3 grid grid-cols-2 gap-4 text-xs`}>
+                      {booking.hotel.checkInTime && (
+                        <div className="flex items-center">
+                          <ClockIcon size={14} className={`mr-1.5 ${infoIconColor}`} />
+                          <div>
+                            <span className={`${neutralTextLight}`}>Check-in:</span>
+                            <p className={`font-medium ${neutralText}`}>{booking.hotel.checkInTime}</p>
+                          </div>
+                        </div>
+                      )}
+                      {booking.hotel.checkOutTime && (
+                        <div className="flex items-center">
+                          <ClockIcon size={14} className={`mr-1.5 ${infoIconColor}`} />
+                          <div>
+                            <span className={`${neutralTextLight}`}>Check-out:</span>
+                            <p className={`font-medium ${neutralText}`}>{booking.hotel.checkOutTime}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* Key Details Grid - Adapted for both package and hotel bookings */}
             <section className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm md:text-base">
               <div className="flex items-start">
-                <CalendarDaysIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} /> {/* Was neutralIconColor */}
-                <strong className={`${neutralText}`}>Travel Dates:</strong>
-                <span className={`ml-1.5 ${neutralTextLight}`}>{formattedDate(booking.startDate)} - {formattedDate(booking.endDate)}</span>
+                <CalendarDaysIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} />
+                <div className="flex-1">
+                  <strong className={`${neutralText}`}>
+                    {booking.service ? 'Check-in/Check-out:' : 'Travel Dates:'}
+                  </strong>
+                  <span className={`ml-1.5 ${neutralTextLight}`}>
+                    {formattedDate(booking.startDate)} - {formattedDate(booking.endDate)}
+                  </span>
+                  {booking.numberOfNights && booking.numberOfNights > 0 && (
+                    <p className={`text-xs ${neutralTextLight} mt-0.5`}>
+                      {booking.numberOfNights} night{booking.numberOfNights !== 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
               </div>
+              
               <div className="flex items-start">
-                <UsersIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} /> {/* Was neutralIconColor */}
-                <strong className={`${neutralText}`}>Travelers:</strong>
-                <span className={`ml-1.5 ${neutralTextLight}`}>{booking.totalPeople || 'N/A'}</span>
+                <UsersIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} />
+                <div className="flex-1">
+                  <strong className={`${neutralText}`}>
+                    {booking.service ? 'Guests:' : 'Travelers:'}
+                  </strong>
+                  <span className={`ml-1.5 ${neutralTextLight}`}>{booking.totalPeople || 'N/A'}</span>
+                </div>
               </div>
-              <div className="flex items-start">
-                <LandmarkIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} /> {/* Was neutralIconColor */}
-                <strong className={`${neutralText}`}>Total Amount:</strong>
-                <span className={`ml-1.5 font-semibold ${successText}`}>{totalAmountDisplay}</span>
-              </div>
-              <div className="flex items-start">
-                <CreditCardIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} /> {/* Was neutralIconColor */}
-                <strong className={`${neutralText}`}>Payment Status:</strong>
-                <span className={`ml-1.5 font-semibold ${booking.paymentStatus === 'PAID' ? successText : warningText}`}>
-                  {booking.paymentStatus || 'N/A'}
-                </span>
-              </div>
-              {booking.phonepeTransactionId && (
-                <div className="sm:col-span-2 flex items-start">
-                  <FileTextIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} /> {/* Was neutralIconColor */}
-                  <strong className={`${neutralText}`}>Payment ID:</strong>
-                  <span className={`ml-1.5 ${neutralTextLight}`}>{booking.phonepeTransactionId}</span>
+
+              {/* Show room count for hotel bookings */}
+              {booking.numberOfRooms && (
+                <div className="flex items-start">
+                  <BedIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} />
+                  <div className="flex-1">
+                    <strong className={`${neutralText}`}>Rooms:</strong>
+                    <span className={`ml-1.5 ${neutralTextLight}`}>
+                      {booking.numberOfRooms} room{booking.numberOfRooms !== 1 ? 's' : ''}
+                    </span>
+                  </div>
                 </div>
               )}
+              
+              <div className="flex items-start">
+                <LandmarkIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} />
+                <div className="flex-1">
+                  <strong className={`${neutralText}`}>Total Amount:</strong>
+                  <span className={`ml-1.5 font-semibold ${successText}`}>{totalAmountDisplay}</span>
+                  {booking.service && booking.roomType?.basePrice && booking.numberOfRooms && booking.numberOfNights && (
+                    <p className={`text-xs ${neutralTextLight} mt-0.5`}>
+                      ₹{booking.roomType.basePrice.toLocaleString('en-IN')} × {booking.numberOfRooms} room{booking.numberOfRooms !== 1 ? 's' : ''} × {booking.numberOfNights} night{booking.numberOfNights !== 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex items-start">
+                <CreditCardIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} />
+                <div className="flex-1">
+                  <strong className={`${neutralText}`}>Payment Status:</strong>
+                  <span className={`ml-1.5 font-semibold ${booking.paymentStatus === 'PAID' ? successText : warningText}`}>
+                    {booking.paymentStatus || 'N/A'}
+                  </span>
+                </div>
+              </div>
+              
+              {booking.phonepeTransactionId && (
+                <div className="sm:col-span-2 flex items-start">
+                  <FileTextIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} />
+                  <div className="flex-1">
+                    <strong className={`${neutralText}`}>Payment ID:</strong>
+                    <span className={`ml-1.5 ${neutralTextLight}`}>{booking.phonepeTransactionId}</span>
+                  </div>
+                </div>
+              )}
+              
               <div className="sm:col-span-2 flex items-start">
-                <ShoppingCartIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} /> {/* Was neutralIconColor */}
-                <strong className={`${neutralText}`}>Booking Status:</strong>
-                <span className={`ml-1.5 font-semibold ${booking.status === 'CONFIRMED' ? successText : warningText}`}>
-                  {booking.status || 'N/A'}
-                </span>
+                <ShoppingCartIcon size={18} className={`mr-2.5 mt-0.5 ${infoIconColor}`} />
+                <div className="flex-1">
+                  <strong className={`${neutralText}`}>Booking Status:</strong>
+                  <span className={`ml-1.5 font-semibold ${booking.status === 'CONFIRMED' ? successText : warningText}`}>
+                    {booking.status || 'N/A'}
+                  </span>
+                </div>
               </div>
             </section>
 
@@ -256,6 +428,115 @@ function BookingConfirmationContent() {
                 <p><strong className={`${neutralText}`}>Phone:</strong> {booking.guestPhone || 'N/A'}</p>
               </div>
             </section>
+
+            {/* Hotel Amenities Section - Only show for hotel bookings */}
+            {booking.service && (booking.hotel?.facilities || booking.roomType?.amenities) && (
+              <section className={`pt-4 border-t ${neutralBorderLight}`}>
+                <h3 className={`text-lg font-semibold ${neutralText} mb-2 flex items-center`}>
+                  <ListOrdered size={18} className={`mr-2 ${infoIconColor}`} />Amenities & Facilities
+                </h3>
+                <div className="space-y-3">
+                  {/* Hotel Facilities */}
+                  {booking.hotel?.facilities && (
+                    <div>
+                      <h4 className={`text-sm font-medium ${neutralText} mb-1`}>Hotel Facilities:</h4>
+                      <div className={`${neutralBg} p-3 rounded-md border ${neutralBorder}`}>
+                        <p className={`text-sm ${neutralTextLight}`}>
+                          {(() => {
+                            console.log('Hotel facilities raw data:', booking.hotel.facilities, typeof booking.hotel.facilities);
+                            
+                            // If it's already an array, join it
+                            if (Array.isArray(booking.hotel.facilities)) {
+                              return booking.hotel.facilities.join(', ');
+                            }
+                            
+                            // If it's a string, try to parse it
+                            if (typeof booking.hotel.facilities === 'string') {
+                              // Check if it looks like JSON
+                              if (booking.hotel.facilities.trim().startsWith('[') && booking.hotel.facilities.trim().endsWith(']')) {
+                                try {
+                                  const parsed = JSON.parse(booking.hotel.facilities);
+                                  return Array.isArray(parsed) ? parsed.join(', ') : booking.hotel.facilities;
+                                } catch (e) {
+                                  console.log('Failed to parse facilities JSON:', e);
+                                  return booking.hotel.facilities;
+                                }
+                              } else {
+                                // It's a regular string, return as-is
+                                return booking.hotel.facilities;
+                              }
+                            }
+                            
+                            // Fallback
+                            return String(booking.hotel.facilities);
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Room Amenities */}
+                  {booking.roomType?.amenities && (
+                    <div>
+                      <h4 className={`text-sm font-medium ${neutralText} mb-1`}>Room Amenities:</h4>
+                      <div className={`${neutralBg} p-3 rounded-md border ${neutralBorder}`}>
+                        <p className={`text-sm ${neutralTextLight}`}>
+                          {(() => {
+                            console.log('Room amenities raw data:', booking.roomType.amenities, typeof booking.roomType.amenities);
+                            
+                            // If it's already an array, join it
+                            if (Array.isArray(booking.roomType.amenities)) {
+                              return booking.roomType.amenities.join(', ');
+                            }
+                            
+                            // If it's a string, try to parse it
+                            if (typeof booking.roomType.amenities === 'string') {
+                              // Check if it looks like JSON
+                              if (booking.roomType.amenities.trim().startsWith('[') && booking.roomType.amenities.trim().endsWith(']')) {
+                                try {
+                                  const parsed = JSON.parse(booking.roomType.amenities);
+                                  return Array.isArray(parsed) ? parsed.join(', ') : booking.roomType.amenities;
+                                } catch (e) {
+                                  console.log('Failed to parse amenities JSON:', e);
+                                  return booking.roomType.amenities;
+                                }
+                              } else {
+                                // It's a regular string, return as-is
+                                return booking.roomType.amenities;
+                              }
+                            }
+                            
+                            // Fallback
+                            return String(booking.roomType.amenities);
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Hotel Policies */}
+                  {booking.hotel?.cancellationPolicy && (
+                    <div>
+                      <h4 className={`text-sm font-medium ${neutralText} mb-1`}>Cancellation Policy:</h4>
+                      <div className={`${neutralBg} p-3 rounded-md border ${neutralBorder}`}>
+                        <p className={`text-sm ${neutralTextLight} whitespace-pre-line`}>
+                          {(() => {
+                            try {
+                              const policies = Array.isArray(booking.hotel.cancellationPolicy) 
+                                ? booking.hotel.cancellationPolicy 
+                                : JSON.parse(booking.hotel.cancellationPolicy);
+                              return Array.isArray(policies) ? policies.join(', ') : booking.hotel.cancellationPolicy;
+                            } catch (e) {
+                              return booking.hotel.cancellationPolicy;
+                            }
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
             {booking.specialRequests && (
               <section className={`pt-4 border-t ${neutralBorderLight}`}>
                 <h3 className={`text-lg font-semibold ${neutralText} mb-2 flex items-center`}>

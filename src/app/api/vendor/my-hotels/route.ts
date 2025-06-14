@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     const getFirstImageUrl = (imagesJsonString: string | null | undefined): string | null => {
       if (!imagesJsonString) return null;
       try {
-        const imageUrls = JSON.parse(imagesJsonString);
+                    const imageUrls = db.parseImageUrls(imagesJsonString);
         if (Array.isArray(imageUrls) && imageUrls.length > 0 && typeof imageUrls[0] === 'string') {
           return imageUrls[0];
         }

@@ -1,3 +1,4 @@
+// TEST COMMENT
 /*
 UI Enhancement Plan:
 1.  **Responsiveness:** Leverage Tailwind's responsive prefixes (sm:, md:, lg:) more effectively for spacing, typography, and layout adjustments.
@@ -25,7 +26,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image'; // Using Next.js Image
 import Head from 'next/head'; // For Google Fonts
-import { AlertTriangle, ArrowRight, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
+import { AlertTriangle, ArrowRight, ArrowLeft, ChevronRight } from 'lucide-react'; // Added ArrowLeft and ChevronRight
 import { useFetch } from '@/hooks/useFetch';
 
 // --- Interfaces (Assume these are correct and match API/DB) ---
@@ -87,6 +88,20 @@ interface PackageDataFromApi {
   howToReach?: string;
 }
 // --- End Interfaces ---
+
+// --- Define Common Styles ---
+const primaryButtonBg = 'bg-gray-800';
+const primaryButtonHoverBg = 'hover:bg-gray-900';
+const primaryButtonText = 'text-white';
+
+const secondaryButtonBg = 'bg-white/20 backdrop-blur-sm';
+const secondaryButtonHoverBg = 'hover:bg-white/30';
+const secondaryButtonText = 'text-white';
+const secondaryButtonBorder = 'border border-white/40';
+
+const buttonPrimaryStyle = `inline-flex items-center justify-center ${primaryButtonBg} ${primaryButtonHoverBg} ${primaryButtonText} px-6 py-3 rounded-full font-medium transition-all duration-300 shadow-md`;
+const buttonSecondaryStyleHero = `inline-flex items-center justify-center ${secondaryButtonBg} ${secondaryButtonHoverBg} ${secondaryButtonText} ${secondaryButtonBorder} px-6 py-3 rounded-full font-medium transition-all duration-300`;
+// --- End Common Styles ---
 
 // --- LoadingSpinner Component ---
 const LoadingSpinner = () => (
@@ -248,67 +263,97 @@ function ItineraryPageContent() {
       {/* --- Overall Page Container for Desktop --- */}
       {/* Added lg:rounded-lg to round container corners on desktop */}
       <div className="lg:max-w-7xl lg:mx-auto lg:shadow-xl lg:overflow-hidden lg:rounded-lg">
-        <div
-          className="relative flex size-full min-h-screen flex-col bg-gray-50 justify-between group/design-root overflow-hidden"
-          style={{ fontFamily: '"Plus Jakarta Sans", "Noto Sans", sans-serif' }}
-        >
           <main className="flex-grow">
-            {/* --- Hero Section (Now inside the container) --- */}
-            {/* Added overflow-hidden and lg:rounded-t-lg to round top corners on desktop */}
-            <section className="relative w-full bg-gray-800 lg:mb-0 overflow-hidden lg:rounded-t-lg">
+          <div className="relative h-[70vh] w-full">
               {/* Scrollable Image Container */}
-              <div className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory h-72 sm:h-80 md:h-96 lg:h-[550px]">
+            <div className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory h-full">
                 {displayImages.map((imgUrl, idx) => (
                   <div key={idx} className="flex-shrink-0 w-full h-full snap-center relative">
                     <Image
                       src={imgUrl}
                       alt={`${name} image ${idx + 1}`}
-                      layout="fill"
-                      objectFit="cover"
+                    fill
+                    className="object-cover"
                       priority={idx === 0}
-                      className="bg-gray-300"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent"></div>
                   </div>
                 ))}
               </div>
-
-              {/* Content Overlay: Back Link and Title */}
-              <div className="absolute inset-0 flex flex-col justify-between p-4 sm:p-6">
-                {/* Top: Back Link - Changed text color and background */}
-                <div>
-                  <Link href="/packages" className="inline-flex items-center text-sm font-medium text-blue-800 bg-white/70 hover:bg-white/90 backdrop-blur-sm rounded-full py-1.5 px-3 transition-colors duration-200 shadow-sm">
-                    <ArrowLeft size={16} className="mr-1.5" />
-                    Back to Packages
-                  </Link>
-                </div>
-
-                {/* Bottom: Title */}
-                <div>
-                  <h1 className="text-white text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight tracking-tight text-shadow-md">
-                    {name}
-                  </h1>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+            {/* Content Overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 text-white">
+              <div className="container mx-auto">
+                <nav className="text-sm text-white/80 mb-2" aria-label="Breadcrumb">
+                  <ol className="list-none p-0 inline-flex">
+                    <li className="flex items-center">
+                      <Link href="/" className="hover:text-white">Home</Link>
+                      <ChevronRight size={14} className="mx-1" />
+                    </li>
+                    <li className="flex items-center">
+                      <Link href="/packages" className="hover:text-white">Packages</Link>
+                      <ChevronRight size={14} className="mx-1" />
+                    </li>
+                    <li className="flex items-center">
+                      <span className="text-white font-medium line-clamp-1">{name}</span>
+                    </li>
+                  </ol>
+                </nav>
+                <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-md">{name}</h1>
+                <p className="text-xl md:text-2xl max-w-3xl mb-6 text-white/90">{`${packageData.duration} Tour Package`}</p>
+                <div className="flex flex-wrap gap-4 items-center">
+                  <a href="#options" className={buttonPrimaryStyle}>
+                    View Options <ArrowRight size={18} className="ml-2" />
+                  </a>
                 </div>
               </div>
-
-              {/* Image indicator dots */}
-              {displayImages.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex justify-center gap-2">
-                  {displayImages.map((_, index) => (
-                    <div
-                      key={`dot-${index}`}
-                      className={`size-2 rounded-full bg-white/50 hover:bg-white/80 transition-colors duration-300 cursor-pointer`}
-                    ></div>
-                  ))}
+            </div>
                 </div>
-              )}
-            </section>
-
             {/* --- Content Area --- */}
-            <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+          <div className="p-4 sm:p-6 lg:p-8">
+            {/* --- Sticky Nav for Itinerary and Options --- */}
+            <div className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-sm -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2 border-b border-gray-200">
+              <div className="flex justify-start items-center overflow-x-auto scrollbar-hide -mb-px">
+                <button
+                  onClick={() => {
+                    const el = document.getElementById('overview-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  className="flex-shrink-0 text-sm sm:text-base font-semibold text-gray-500 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600 px-3 sm:px-5 py-3 transition-colors duration-200"
+                >
+                  Overview
+                </button>
+                <button
+                  onClick={() => {
+                    const el = document.getElementById('itinerary-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  className="flex-shrink-0 text-sm sm:text-base font-semibold text-gray-500 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600 px-3 sm:px-5 py-3 transition-colors duration-200"
+                >
+                  Itinerary
+                </button>
+                <button
+                  onClick={() => {
+                    const el = document.getElementById('options-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  className="flex-shrink-0 text-sm sm:text-base font-semibold text-gray-500 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600 px-3 sm:px-5 py-3 transition-colors duration-200"
+                >
+                  Options & Pricing
+                </button>
+                <button
+                   onClick={() => {
+                    const el = document.getElementById('details-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  className="flex-shrink-0 text-sm sm:text-base font-semibold text-gray-500 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600 px-3 sm:px-5 py-3 transition-colors duration-200"
+                >
+                  Inclusions & Policy
+                </button>
+              </div>
+            </div>
 
-              {/* Overview Section */}
-              <section className="mb-6 sm:mb-8">
+            {/* --- Overview Section --- */}
+            <section id="overview-section" className="py-8 scroll-mt-24">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Overview</h2>
                 {description ? (
                   <p className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-line">
@@ -348,7 +393,7 @@ function ItineraryPageContent() {
 
               {/* Itinerary Section */}
               {itineraryDays && itineraryDays.length > 0 && (
-                <section className="mb-6 sm:mb-8">
+              <section id="itinerary-section" className="mb-6 sm:mb-8">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">Itinerary</h2>
                   <div className="border-b border-gray-300 mb-4 sm:mb-5">
                     <nav className="-mb-px flex space-x-6 sm:space-x-8 overflow-x-auto scrollbar-hide">
@@ -402,7 +447,7 @@ function ItineraryPageContent() {
 
               {/* Available Options Section - Changed Button Color */}
               {package_categories && package_categories.length > 0 && (
-                <section className="mb-6 sm:mb-8">
+              <section id="options-section" className="mb-6 sm:mb-8">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-5">Available Options</h2>
                   <div className="border-b border-gray-300 mb-4 sm:mb-5">
                     <nav className="-mb-px flex space-x-6 sm:space-x-8 overflow-x-auto scrollbar-hide">
@@ -539,19 +584,15 @@ function ItineraryPageContent() {
 
               {/* Cancellation Policy Section */}
               {cancellation_policy && (
-                <section className="mb-6 sm:mb-8">
+              <section id="details-section" className="mb-6 sm:mb-8">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">Cancellation Policy</h2>
                   <p className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-line">
                     {cancellation_policy}
                   </p>
                 </section>
               )}
-
             </div> {/* End Content Area Padding Wrapper */}
           </main>
-
-          
-        </div>
       </div> {/* --- End Overall Page Container --- */}
 
       {/* Utility class for text shadow */}

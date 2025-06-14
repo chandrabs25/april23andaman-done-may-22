@@ -23,19 +23,13 @@ export async function GET(request: Request, { params }: RouteParams) {
       return NextResponse.json({ message: "Booking not found" }, { status: 404 });
     }
 
-    // Attempt to fetch service name if this is a service/hotel booking (no package_id)
-    let serviceName: string | undefined;
-    if (!bookingFromDb.package_id) {
-      try {
-        const db = await getDatabase();
-        const serviceRow = await db
-          .prepare(`SELECT s.name FROM booking_services bs JOIN services s ON bs.service_id = s.id WHERE bs.booking_id = ? LIMIT 1`)
-          .bind(parsedBookingId)
-          .first<{ name: string }>();
-        serviceName = serviceRow?.name;
-      } catch (e) {
-        console.error('Error fetching service name for booking', parsedBookingId, e);
-      }
+    // Calculate number of nights for hotel bookings
+    let numberOfNights = 0;
+    if (bookingFromDb.start_date && bookingFromDb.end_date) {
+      const checkIn = new Date(bookingFromDb.start_date);
+      const checkOut = new Date(bookingFromDb.end_date);
+      const timeDiff = checkOut.getTime() - checkIn.getTime();
+      numberOfNights = Math.ceil(timeDiff / (1000 * 3600 * 24));
     }
 
     // Transform flat DB result to nested structure for frontend
@@ -60,18 +54,62 @@ export async function GET(request: Request, { params }: RouteParams) {
       userId: bookingFromDb.user_id, // Foreign key
       packageId: bookingFromDb.package_id, // Foreign key
       packageCategoryId: bookingFromDb.package_category_id, // Foreign key
-      // Add any other direct booking fields the frontend might need from b.*
+      numberOfNights: numberOfNights,
+      
+      // Hotel booking specific fields
+      numberOfRooms: bookingFromDb.numberOfRooms,
+      bookingServicePrice: bookingFromDb.bookingServicePrice,
+      bookingServiceDate: bookingFromDb.bookingServiceDate,
 
       // Nested related data based on aliased names from the SQL query
       package: bookingFromDb.packageName ? { name: bookingFromDb.packageName } : undefined,
-      service: serviceName ? { name: serviceName } : undefined,
       packageCategory: bookingFromDb.packageCategoryName ? { name: bookingFromDb.packageCategoryName } : undefined,
-      user: (bookingFromDb.userEmail || bookingFromDb.userFirstName || bookingFromDb.userLastName) // Check if any user detail is present
-        ? { 
-            name: [bookingFromDb.userFirstName, bookingFromDb.userLastName].filter(Boolean).join(' ').trim() || undefined, 
-            email: bookingFromDb.userEmail || undefined
-          } 
-        : undefined,
+      
+      // Hotel/Service information
+      service: bookingFromDb.serviceName ? {
+        name: bookingFromDb.serviceName,
+        type: bookingFromDb.serviceType,
+        description: bookingFromDb.serviceDescription,
+        images: bookingFromDb.serviceImages,
+        amenities: bookingFromDb.serviceAmenities,
+        basePrice: bookingFromDb.serviceBasePrice
+      } : undefined,
+      
+      // Hotel specific details
+      hotel: (bookingFromDb.hotelStarRating || bookingFromDb.hotelCheckInTime || bookingFromDb.hotelAddress) ? {
+        starRating: bookingFromDb.hotelStarRating,
+        checkInTime: bookingFromDb.hotelCheckInTime,
+        checkOutTime: bookingFromDb.hotelCheckOutTime,
+        facilities: bookingFromDb.hotelFacilities,
+        totalRooms: bookingFromDb.hotelTotalRooms,
+        address: bookingFromDb.hotelAddress,
+        mealPlans: bookingFromDb.hotelMealPlans,
+        petsAllowed: bookingFromDb.hotelPetsAllowed,
+        childrenAllowed: bookingFromDb.hotelChildrenAllowed,
+        cancellationPolicy: bookingFromDb.hotelCancellationPolicy
+      } : undefined,
+      
+      // Room type details
+      roomType: (bookingFromDb.roomTypeId || bookingFromDb.roomTypeName) ? {
+        id: bookingFromDb.roomTypeId,
+        name: bookingFromDb.roomTypeName,
+        basePrice: bookingFromDb.roomTypeBasePrice,
+        maxGuests: bookingFromDb.roomTypeMaxGuests,
+        amenities: bookingFromDb.roomTypeAmenities,
+        images: bookingFromDb.roomTypeImages
+      } : undefined,
+      
+      // Location details
+      island: bookingFromDb.islandName ? {
+        name: bookingFromDb.islandName,
+        description: bookingFromDb.islandDescription
+      } : undefined,
+      
+      // User details
+      user: (bookingFromDb.userEmail || bookingFromDb.userFirstName || bookingFromDb.userLastName) ? { 
+        name: [bookingFromDb.userFirstName, bookingFromDb.userLastName].filter(Boolean).join(' ').trim() || undefined, 
+        email: bookingFromDb.userEmail || undefined
+      } : undefined,
     };
 
     return NextResponse.json(responseData);

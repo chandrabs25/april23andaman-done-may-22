@@ -98,7 +98,19 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     }
 
     const roomTypes = result.results ?? [];
-    return NextResponse.json({ success: true, data: roomTypes });
+    
+    // Check booking status for each room type
+    const roomTypesWithBookingStatus = await Promise.all(
+      roomTypes.map(async (room: any) => {
+        const hasActiveBookings = await db.roomHasActiveBookings(room.id);
+        return {
+          ...room,
+          has_active_bookings: hasActiveBookings
+        };
+      })
+    );
+    
+    return NextResponse.json({ success: true, data: roomTypesWithBookingStatus });
 
   } catch (error) {
     console.error(`Error fetching room types for hotel ${serviceId}:`, error);

@@ -291,7 +291,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       let currentImageUrls: string[] = [];
       if (existingServiceForImageLogic.images) { // Use already fetched details
         try {
-          currentImageUrls = JSON.parse(existingServiceForImageLogic.images);
+          currentImageUrls = db.parseImageUrls(existingServiceForImageLogic.images);
           if (!Array.isArray(currentImageUrls)) currentImageUrls = [];
         } catch (e) {
           console.error(`[Service Update ID: ${serviceId}] Error parsing current images JSON:`, existingServiceForImageLogic.images, e);
@@ -302,7 +302,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
       let newImageUrls: string[] = [];
       if (body.images) { // body.images is a JSON string or null
         try {
-          newImageUrls = JSON.parse(body.images);
+          newImageUrls = db.parseImageUrls(body.images);
           if (!Array.isArray(newImageUrls)) newImageUrls = [];
         } catch (e) {
           console.error(`[Service Update ID: ${serviceId}] Error parsing new images JSON from body:`, body.images, e);
@@ -406,7 +406,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       const serviceToDelete = await db.getServiceById(serviceId); // Fetch the service data
       if (serviceToDelete?.images) {
         try {
-          const imageUrls: string[] = JSON.parse(serviceToDelete.images);
+          const imageUrls = db.parseImageUrls(serviceToDelete.images);
           if (Array.isArray(imageUrls) && imageUrls.length > 0) {
             console.log(`[Service Delete ID: ${serviceId}] Attempting to delete ${imageUrls.length} images from R2.`);
             for (const urlToDelete of imageUrls) {

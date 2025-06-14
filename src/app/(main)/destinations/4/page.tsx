@@ -1,4 +1,6 @@
 // Path: src/app/destinations/baratang-island/page.tsx
+// Theme: Neutral with Contextual Background Colors (Applied based on Baratang sample)
+
 'use client';
 
 import { useState } from 'react';
@@ -11,23 +13,21 @@ import {
     Calendar,
     Bed,
     Utensils,
-    Compass,
-    Users,
-    Shield,
-    Leaf,
+    Compass,    // Use for Attractions/Exploration
+    Users,      // Keep for cultural aspects if needed, or general info (Jarawa Reserve)
+    Shield,     // Consistent Safety icon
+    Leaf,       // Consistent Sustainability icon
     ChevronRight,
     Star,
-    Navigation,
+    Navigation, // Consistent Travel icon
     ArrowRight,
-    MessageCircle,
-    Camera,
-    Plane,
-    Ship,
-    Landmark,
-    Waves,
-    LifeBuoy,
-    Car,
-    TreePine,
+    MessageCircle, // Consistent Tip icon
+    Camera,     // Consistent Gallery icon
+    Ship,       // Keep for Ferry access
+    Car,        // Keep for Road access (ATR Convoy)
+    TreePine,   // Specific for Mangroves
+    Mountain,   // Using for geological features (Caves/Volcano) - generic nature icon
+    LifeBuoy    // Consistent Safety icon
 } from 'lucide-react';
 
 /* NOTE FOR FONT STYLING:
@@ -38,7 +38,7 @@ import {
   />
 */
 
-// --- Define Common Styles (Copied from Port Blair Sample) ---
+// --- Define Common Styles (Copied from Diglipur Sample - Neutral Theme with Contextual Colors) ---
 const primaryButtonBg = 'bg-gray-800';
 const primaryButtonHoverBg = 'hover:bg-gray-900';
 const primaryButtonText = 'text-white';
@@ -100,30 +100,30 @@ export default function BaratangIslandPage() {
         setShowComprehensive(isComprehensive);
     };
 
-    // Gallery images specific to Baratang Island - captions shortened
+    // Gallery images specific to Baratang Island
     const galleryImages = [
         {
-            src: "/images/baratang/limestone-caves.webp",
+            src: "/images/baratang/limestone-caves.webp", // Use specific paths
             alt: "Limestone Caves of Baratang",
             caption: "Limestone Caves"
         },
         {
-            src: "/images/baratang/mud-volcano.webp",
+            src: "/images/baratang/mud-volcano.webp", // Use specific paths
             alt: "Mud Volcano, Baratang",
             caption: "Mud Volcano"
         },
         {
-            src: "/images/baratang/mangrove-creek.webp",
+            src: "/images/baratang/mangrove-creek.webp", // Use specific paths
             alt: "Mangrove Creek boat ride, Baratang",
             caption: "Mangrove Creek"
         },
         {
-            src: "/images/baratang/parrot-island.webp",
+            src: "/images/baratang/parrot-island.webp", // Use specific paths
             alt: "Parrot Island near Baratang at sunset",
             caption: "Parrot Island"
         },
         {
-            src: "/images/baratang/baludera-beach.webp",
+            src: "/images/baratang/baludera-beach.webp", // Use specific paths
             alt: "Baludera Beach, Baratang",
             caption: "Baludera Beach"
         }
@@ -134,10 +134,10 @@ export default function BaratangIslandPage() {
             className="bg-slate-50"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
-            {/* Hero Section */}
+            {/* Hero Section - Matches Structure */}
             <div className="relative h-[70vh] w-full">
                 <Image
-                    src="/images/baratang/hero.webp"
+                    src="/images/baratang/hero.webp" // Use specific Baratang hero image
                     alt="Mangrove creek landscape in Baratang Island"
                     fill
                     priority
@@ -178,7 +178,7 @@ export default function BaratangIslandPage() {
             {/* Main Content Container */}
             <div className="container mx-auto px-4 py-10 md:py-12">
 
-                {/* Quick Facts Card */}
+                {/* Quick Facts Card - Contextual Color (Informational Blue) */}
                 <div className={`${infoBg} rounded-2xl p-6 mb-12 shadow-sm border ${infoBorder}`}>
                     <h2 className={`text-xl font-semibold ${infoText} mb-4 flex items-center`}>
                         <Info className={`mr-2 ${infoIconColor}`} size={20} />
@@ -239,6 +239,7 @@ export default function BaratangIslandPage() {
                 </div>
                 {/* --- END: Redesigned Image Gallery --- */}
 
+
                 {/* --- START: Redesigned Toggle/Tabbed Navigation --- */}
                 <div className="flex px-4 py-3 mb-10">
                     <div className="flex h-10 flex-1 items-center justify-center rounded-xl bg-[#e7eef3] p-1">
@@ -262,7 +263,7 @@ export default function BaratangIslandPage() {
 
                 {/* Content Based on Toggle */}
                 {!showComprehensive ? (
-                    // Brief Guide Content
+                    // Brief Guide Content - Neutral Theme with Contextual Colors
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-10">
                             <section id="overview">
@@ -270,29 +271,52 @@ export default function BaratangIslandPage() {
                                     <Info className={`mr-3 ${inactiveTextColor}`} size={24} /> Overview
                                 </h2>
                                 <div className={cardBaseStyle}>
-                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Baratang Island offers a unique eco-tourism experience, famous for its natural wonders. The journey itself is an adventure, passing through the protected Jarawa Tribal Reserve. Key attractions include mesmerizing Limestone Caves, the rare geological phenomenon of Mud Volcanoes, and enchanting boat rides through dense mangrove creeks.</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Baratang Island offers a unique glimpse into Andaman's geological wonders and rich mangrove ecosystems. Famous for its natural Limestone Caves and bubbling Mud Volcanoes, the journey itself involves a scenic boat ride through mangrove creeks and passing through the Jarawa Tribal Reserve via road convoy.</p>
                                 </div>
                             </section>
 
                             <section>
                                 <h2 className={sectionHeadingStyle}>
-                                    <Navigation className={`mr-3 ${inactiveTextColor}`} size={24} /> Getting There
+                                    <Navigation className={`mr-3 ${inactiveTextColor}`} size={24} /> Getting There & Around
                                 </h2>
                                 <div className={cardBaseStyle}>
                                     <ul className="space-y-4">
                                         <li className="flex items-start">
                                             <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Car className={inactiveTextColor} size={16} /></div>
-                                            <div><span className={`font-medium ${primaryTextColor}`}>Road Convoy:</span><span className={secondaryTextColor}> Primarily reached by road from Port Blair via the Andaman Trunk Road (ATR), travelling in a mandatory vehicle convoy through the Jarawa reserve.</span></div>
+                                            <div><span className={`font-medium ${primaryTextColor}`}>Road Convoy (ATR):</span><span className={secondaryTextColor}> Primarily a day trip from Port Blair (3-4 hrs one way). Requires early start (4-6 AM) to join convoys (~6:30 AM, 9:30 AM) through Jarawa Reserve. Involves vehicle ferry.</span></div>
                                         </li>
                                         <li className="flex items-start">
                                             <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Ship className={inactiveTextColor} size={16} /></div>
-                                            <div><span className={`font-medium ${primaryTextColor}`}>Vehicle Ferry:</span><span className={secondaryTextColor}> A short vehicle ferry crosses the creek to reach Baratang jetty.</span></div>
+                                            <div><span className={`font-medium ${primaryTextColor}`}>Sea (Govt. Ferry):</span><span className={secondaryTextColor}> Infrequent service from Port Blair (~2.5 hrs). Not suitable for same-day return.</span></div>
                                         </li>
                                         <li className="flex items-start">
-                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Calendar className={inactiveTextColor} size={16} /></div>
-                                            <div><span className={`font-medium ${primaryTextColor}`}>Day Trip:</span><span className={secondaryTextColor}> Most commonly done as a long day trip (3 AM to afternoon) from Port Blair. Private cabs or bus tours available.</span></div>
+                                            <div className={`${neutralBg} p-2 rounded-full mr-3 mt-1 border ${neutralBorder}`}><Check className={inactiveTextColor} size={16} /></div>
+                                            <div><span className={`font-medium ${primaryTextColor}`}>Local Transport:</span><span className={secondaryTextColor}> Speedboat required for Limestone Caves (part of tour). Hire jeep/car for Mud Volcano (~₹400-600). Limited local buses.</span></div>
                                         </li>
                                     </ul>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2 className={sectionHeadingStyle}>
+                                    <Calendar className={`mr-3 ${inactiveTextColor}`} size={24} /> Best Time to Visit
+                                </h2>
+                                <div className={cardBaseStyle}>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {/* Contextual seasonal cards */}
+                                        <div className={`${infoBg} rounded-xl p-4 border ${infoBorder}`}>
+                                            <h3 className={`font-semibold ${infoText} mb-2`}>Nov–Feb</h3>
+                                            <p className={`text-sm ${secondaryTextColor}`}>Ideal: Pleasant weather, dry trails for cave trek.</p>
+                                        </div>
+                                        <div className={`${warningBg} rounded-xl p-4 border ${warningBorder}`}>
+                                            <h3 className={`font-semibold ${warningText} mb-2`}>Mar–May</h3>
+                                            <p className={`text-sm ${secondaryTextColor}`}>Shoulder: Hotter, but generally dry and feasible.</p>
+                                        </div>
+                                        <div className={`${errorBg} rounded-xl p-4 border ${errorBorder}`}> {/* Use Error for monsoon due to potential closures */}
+                                            <h3 className={`font-semibold ${errorText} mb-2`}>Jun–Oct</h3>
+                                            <p className={`text-sm ${secondaryTextColor}`}>Monsoon: Heavy rain, muddy trails, risk of cancellations.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </section>
 
@@ -301,66 +325,86 @@ export default function BaratangIslandPage() {
                                     <Compass className={`mr-3 ${inactiveTextColor}`} size={24} /> Key Attractions
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Attraction Cards - Remain Neutral */}
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Landmark size={18} className={`mr-2 ${inactiveTextColor}`} /> Limestone Caves</h3>
-                                        <p className={`text-sm ${secondaryTextColor}`}>Reached by a thrilling boat ride through mangroves and a short trek. Features stunning stalactite and stalagmite formations.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Mountain size={18} className="mr-2 text-blue-600" />Limestone Caves</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>Natural caves with stalactites/stalagmites. Reached via mangrove boat ride + 1.5km walk.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Landmark size={18} className={`mr-2 ${inactiveTextColor}`} /> Mud Volcano</h3>
-                                        <p className={`text-sm ${secondaryTextColor}`}>India's only active mud volcano. A short drive from the jetty to see bubbling mud craters.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Mountain size={18} className="mr-2 text-orange-600" />Mud Volcano</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>Unique geological feature with small bubbling mud craters. Short walk from road.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><TreePine size={18} className={`mr-2 ${inactiveTextColor}`} /> Mangrove Safari</h3>
-                                        <p className={`text-sm ${secondaryTextColor}`}>The boat journey to the caves is an attraction in itself, passing through a natural tunnel of dense mangrove forests.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><TreePine size={18} className="mr-2 text-green-600" />Mangrove Creek Ride</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>Scenic speedboat journey through dense mangrove forests, part of the cave trip.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Users size={18} className={`mr-2 ${inactiveTextColor}`} /> Parrot Island</h3>
-                                        <p className={`text-sm ${secondaryTextColor}`}>A unique spectacle where thousands of parrots and parakeets return to roost at sunset. Requires an overnight stay.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2`}>Parrot Island</h3>
+                                        <p className={`text-sm ${secondaryTextColor}`}>Witness thousands of parrots at sunset (requires overnight stay/late return, difficult on day trip).</p>
                                     </div>
                                 </div>
                             </section>
                         </div>
 
+                        {/* Sidebar - Contextual Colors */}
                         <aside className="lg:col-span-1 space-y-8">
-                            <div className={`${warningBg} rounded-2xl p-6 shadow-sm border ${warningBorder}`}>
-                                <h3 className={`text-lg font-semibold ${warningText} mb-4 flex items-center`}>
-                                    <Shield className={`mr-2 ${warningIconColor}`} size={20} /> Safety & Rules
-                                </h3>
-                                <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Interaction with the Jarawa tribe is strictly prohibited and illegal.</span></li>
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Do not stop, take photos/videos, or offer food in the tribal reserve.</span></li>
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Start early from Port Blair to catch the morning convoy.</span></li>
-                                </ul>
-                            </div>
+                            {/* Accommodation Brief */}
                             <div className={cardBaseStyle}>
                                 <h3 className={`text-lg font-semibold ${primaryTextColor} mb-4 flex items-center`}>
                                     <Bed className={`mr-2 ${inactiveTextColor}`} size={20} /> Accommodation
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${inactiveTextColor} flex-shrink-0`} size={16} /><span>Very limited options available (a few private guesthouses and a forest guesthouse). Most tourists visit on a day trip.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${inactiveTextColor} flex-shrink-0`} size={16} /><span>Very limited & basic (Govt. guesthouses, few private lodges).</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${inactiveTextColor} flex-shrink-0`} size={16} /><span>Most visitors do a day trip from Port Blair.</span></li>
                                 </ul>
                             </div>
+                            {/* Food Brief */}
                             <div className={cardBaseStyle}>
                                 <h3 className={`text-lg font-semibold ${primaryTextColor} mb-4 flex items-center`}>
                                     <Utensils className={`mr-2 ${inactiveTextColor}`} size={20} /> Food Highlights
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${inactiveTextColor} flex-shrink-0`} size={16} /><span>Basic eateries and small restaurants near the jetty offer simple Indian meals and seafood.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${inactiveTextColor} flex-shrink-0`} size={16} /><span>Basic local eateries (dhabas) near the jetty serving simple Indian meals.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${inactiveTextColor} flex-shrink-0`} size={16} /><span>Carry own water and snacks recommended.</span></li>
+                                </ul>
+                            </div>
+
+                            {/* Safety & Rules - Warning Orange */}
+                            <div className={`${warningBg} rounded-2xl p-6 shadow-sm border ${warningBorder}`}>
+                                <h3 className={`text-lg font-semibold ${warningText} mb-4 flex items-center`}>
+                                    <Shield className={`mr-2 ${warningIconColor}`} size={20} /> Safety & Rules
+                                </h3>
+                                <ul className="space-y-3">
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Strictly follow Jarawa Reserve rules:** No stopping, photos, interaction. Use designated convoys.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Permits needed (usually handled by tour operators/checked at Jirkatang).</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Wear comfortable shoes for walking/trekking. Carry torch for caves.</span></li>
+                                </ul>
+                            </div>
+
+                            {/* Eco-Tourism - Success Green */}
+                            <div className={`${successBg} rounded-2xl p-6 shadow-sm border ${successBorder}`}>
+                                <h3 className={`text-lg font-semibold ${successText} mb-4 flex items-center`}>
+                                    <Leaf className={`mr-2 ${successIconColor}`} size={20} /> Sustainability Tips
+                                </h3>
+                                <ul className="space-y-3">
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Do not litter, especially in mangroves and caves. Pack out trash.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Avoid touching cave formations. Respect the fragile environment.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>Minimize plastic use; carry reusable water bottles.</span></li>
                                 </ul>
                             </div>
                         </aside>
                     </div>
                 ) : (
-                    // Comprehensive Guide Content
+                    // Comprehensive Guide Content - Neutral Theme with Contextual Colors
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-12">
-                            <section id="overview-comprehensive">
+                            <section>
                                 <h2 className={sectionHeadingStyle}>
                                     <Info className={`mr-3 ${inactiveTextColor}`} size={24} /> Detailed Overview
                                 </h2>
                                 <div className={`${cardBaseStyle} space-y-4`}>
-                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Baratang Island, located in the Middle Andaman administrative district, is a destination for travellers seeking raw, natural wonders over pristine beaches. Situated about 100 kilometers north of Port Blair, Baratang serves as a bridge between Middle and South Andaman. Its main draw lies in its unique geological and biological attractions, offering a glimpse into the archipelago's rich ecological diversity.</p>
-                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>The journey to Baratang is an integral part of the experience, involving a drive on the Andaman Trunk Road (ATR) that cuts through the protected Jarawa Tribal Reserve. This passage requires adherence to strict regulations to ensure the privacy and preservation of the indigenous Jarawa community. Once on the island, visitors are rewarded with fascinating sights like the natural-limestone caves, India's only active mud volcano, and a spectacular boat safari through a canopy of dense mangrove forests. Due to the logistics of the ATR convoy system, Baratang is most often experienced as a long and early-starting day trip from Port Blair.</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Baratang Island, situated roughly 100 kilometers north of Port Blair, serves as a bridge between South and Middle Andaman. It's renowned for offering a distinct experience focused on unique geological formations and rich biodiversity, particularly its dense mangrove ecosystems. The island's primary draws are the naturally formed Limestone Caves, the peculiar Mud Volcanoes (one of the few sites in India), and the captivating boat journey required to reach the caves, which winds through narrow mangrove creeks offering a tunnel-like effect in places.</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Accessing Baratang is an adventure in itself, typically undertaken as a day trip from Port Blair. The journey involves traveling north on the Andaman Trunk Road (ATR), which passes through the Jarawa Tribal Reserve. Travel through this reserve is strictly regulated, requiring vehicles to move in scheduled convoys with restrictions on stopping, photography, and interaction, underscoring the need for sensitivity towards the indigenous Jarawa community. Due to the early start required for the convoy and the travel time involved, Baratang remains less commercialized than islands closer to Port Blair, offering a rawer, more adventurous feel. Limited infrastructure means accommodation and food options are basic, reinforcing its status as primarily a day-trip destination.</p>
                                 </div>
                             </section>
 
@@ -370,20 +414,27 @@ export default function BaratangIslandPage() {
                                 </h2>
                                 <div className={`${cardBaseStyle} space-y-6`}>
                                     <div>
-                                        <h3 className={`font-semibold ${primaryTextColor} mb-2`}>Reaching Baratang Island:</h3>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2`}>Reaching Baratang:</h3>
                                         <ul className="space-y-3 pl-4 list-disc list-outside marker:text-gray-400">
-                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>ATR Convoy (Primary Method):</strong> The journey involves a 3-4 hour road trip from Port Blair. The key part is passing through the Jarawa Tribal Reserve, which is done in scheduled, police-escorted convoys. There are typically four convoys per day in each direction, starting as early as 6 AM. It's crucial to start from Port Blair by 3-4 AM to catch the first or second convoy.</li>
-                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Vehicle Ferry:</strong> After the road journey, there's a short (15-minute) vehicle ferry crossing from Middle Strait to Baratang Jetty (Nilambur Jetty).</li>
-                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Tour Options:</strong> Most visitors hire a private cab for the entire day. Alternatively, government and private bus tours are available, which are more economical but less flexible.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>By Road (ATR Convoy - Primary Method):</strong> This is the standard way for tourists. Depart Port Blair very early (4:00 AM - 5:30 AM) by private car or shared taxi/bus. Drive to Jirkatang check post (~1.5 hrs). Wait for the convoy (fixed timings, usually ~6:30 AM & 9:30 AM departures). Travel through the Jarawa Reserve (~1.5 hrs, NO stops/photos). Arrive at Middle Strait Jetty. Cross the strait via a vehicle ferry (~15-20 mins) to Nilambur Jetty on Baratang Island. Total one-way travel time: Approx. 3.5-4 hours. The return journey follows the same procedure with afternoon convoys (check timings).</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>By Government Ferry:</strong> Ferries operate from Phoenix Bay Jetty (Port Blair) to Nilambur Jetty (Baratang). Journey time is approx. 2.5 hours. However, schedules are infrequent, unreliable, and often change. This option is generally not suitable for a day trip as return timings might not align. Check the latest DSS (Directorate of Shipping Services) schedule locally if considering this.</li>
                                         </ul>
                                     </div>
                                     <div>
                                         <h3 className={`font-semibold ${primaryTextColor} mb-2`}>Getting Around Baratang:</h3>
                                         <ul className="space-y-3 pl-4 list-disc list-outside marker:text-gray-400">
-                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Fiber Boats:</strong> To reach the Limestone Caves, one must hire a fiber boat from the main jetty. This thrilling 30-minute ride winds through a dense mangrove creek.</li>
-                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Local Jeeps/Taxis:</strong> From the jetty, local jeeps or taxis can be hired to visit the Mud Volcano, which is a few kilometers away.</li>
-                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Walking:</strong> A short, 1.5 km walk through a forest and village trail is required to reach the Limestone Caves after the boat ride ends.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Speedboat (for Caves):</strong> Essential for reaching the Limestone Caves. Hired from Nilambur Jetty (usually included in tour packages). Takes approx. 25-30 minutes through mangrove creeks.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Jeep/Car Hire:</strong> Available at Nilambur Jetty to visit the Mud Volcano (a few kms away). Cost approx. ₹400-₹600 for a round trip. Can also be hired for Baludera Beach.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Walking/Trekking:</strong> A 1.5 km walk/trek is required from the boat drop-off point to the Limestone Caves entrance. A short walk is needed from the parking area to the Mud Volcano site.</li>
+                                            <li className={secondaryTextColor}><strong className={primaryTextColor}>Local Bus:</strong> Very limited government bus service connects the jetty with nearby villages and potentially the Mud Volcano road junction. Not practical for efficient sightseeing.</li>
                                         </ul>
+                                        {/* Warning Box for Jarawa Reserve Rules - Repeated for emphasis */}
+                                        <div className={`mt-6 p-4 ${warningBg} border-l-4 ${warningBorder} text-orange-800 rounded-r-lg shadow-sm`}>
+                                            <h4 className={`font-semibold mb-2 ${warningText} flex items-center`}><Shield className="w-5 h-5 mr-2" /> Jarawa Reserve Travel Rules Reminder</h4>
+                                            <p className="text-sm md:text-base">
+                                                Travel via ATR through the Jarawa Tribal Reserve requires strict adherence to convoy timings and rules. Absolutely no stopping, photography, videography, or interaction (gestures, offering food) with the Jarawa people is permitted. Violations carry severe legal consequences. Respect their privacy and protected status.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -393,63 +444,120 @@ export default function BaratangIslandPage() {
                                     <Compass className={`mr-3 ${inactiveTextColor}`} size={24} /> Exploring Attractions & Activities
                                 </h2>
                                 <div className="space-y-6">
+                                    {/* Attraction Cards - Remain Neutral */}
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Landmark size={18} className={`mr-2 ${inactiveTextColor}`} /> Limestone Caves</h3>
-                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>The highlight of Baratang. After a scenic boat ride through mangrove tunnels and a short trek, you arrive at these natural caves. Inside, you'll find impressive stalactite and stalagmite formations created over thousands of years by the deposition of limestone. The caves are dark inside, and a guide with a flashlight is essential to appreciate the various shapes and patterns.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Mountain size={18} className="mr-2 text-blue-600" />Limestone Caves</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>The primary attraction. After the scenic speedboat ride through mangrove creeks, a well-maintained pathway (approx. 1.5 km) leads through tropical forest and paddy fields to the cave entrance. Inside, discover impressive natural formations of stalactites (hanging from the ceiling) and stalagmites (rising from the floor), formed over millennia by dripping water dissolving the limestone. The caves are dark inside; carrying a torchlight is essential for proper viewing. Local guides are often available near the entrance to explain the formations. The entire activity (boat ride + walk + cave exploration) takes about 2-3 hours.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Landmark size={18} className={`mr-2 ${inactiveTextColor}`} /> Mud Volcano</h3>
-                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>A rare geological phenomenon, this is the only known active mud volcano in India. A short drive and a walk up a small flight of stairs lead to a clearing with several small, bubbling mud craters. Natural gases emitted from deep within the earth create these muddy pools. While not visually spectacular like a lava volcano, it's a unique natural wonder.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Mountain size={18} className="mr-2 text-orange-600" />Mud Volcano</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>Located a few kilometers from Nilambur Jetty. It's one of the few places in India where you can witness this geological phenomenon. Natural gases emitted from deep underground escape to the surface, pushing up mud and water to create small, gently bubbling muddy craters. While not visually dramatic like a lava volcano, it's a unique natural curiosity. A short walk from the vehicle drop-off point leads to the site, which has basic boardwalks for viewing.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><TreePine size={18} className={`mr-2 ${inactiveTextColor}`} /> Mangrove Creek Safari</h3>
-                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>The journey to the Limestone Caves is an attraction in itself. The fiber boat zips through a narrow, winding creek, surrounded on both sides by a dense canopy of mangrove trees, forming a natural tunnel. This provides a fascinating up-close look at the unique mangrove ecosystem, which serves as a critical coastal barrier and nursery for marine life.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><TreePine size={18} className="mr-2 text-green-600" />Mangrove Creek Boat Ride</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>The journey to the Limestone Caves is an experience in itself. The speedboat navigates through narrow, winding creeks flanked by towering mangrove forests. The dense canopy often forms a natural tunnel overhead. This ride offers a fantastic opportunity to observe the unique mangrove ecosystem, which serves as a vital nursery for marine life and protects the coastline. Keep an eye out for birds and other wildlife inhabiting the mangroves.</p>
                                     </div>
                                     <div className={cardBaseStyle}>
-                                        <h3 className={`font-semibold ${primaryTextColor} mb-2 flex items-center`}><Users size={18} className={`mr-2 ${inactiveTextColor}`} /> Parrot Island</h3>
-                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>A small, uninhabited island that becomes the roosting ground for thousands of parrots and parakeets every evening. Witnessing the spectacle of countless birds returning to the island at sunset is a magical experience. This tour requires a separate boat trip in the late afternoon and typically necessitates an overnight stay in Baratang, which is less common for tourists.</p>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2`}>Parrot Island</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>A small, uninhabited island near Baratang Jetty, famous for being the roosting place for thousands of parrots and parakeets. Every evening around sunset, flocks of these birds return to the island, creating a mesmerizing spectacle. Visiting requires hiring a separate boat in the late afternoon and typically necessitates an overnight stay in Baratang due to the timing, making it difficult to include in a standard day trip from Port Blair.</p>
                                     </div>
+                                    <div className={cardBaseStyle}>
+                                        <h3 className={`font-semibold ${primaryTextColor} mb-2`}>Baludera Beach</h3>
+                                        <p className={`text-base leading-relaxed ${secondaryTextColor}`}>A serene and less-visited beach located about 9 km from Nilambur Jetty. It features calm, shallow waters, making it suitable for swimming and relaxation. Its curved shoreline is fringed with coastal vegetation. Due to its relative isolation, it offers a peaceful escape but has very limited facilities. Often visited after the caves and mud volcano if time permits.</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2 className={sectionHeadingStyle}>
+                                    <Bed className={`mr-3 ${inactiveTextColor}`} size={24} /> Accommodation & Food
+                                </h2>
+                                <div className={`${cardBaseStyle} space-y-4`}>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}><strong>Accommodation:</strong> Baratang has very limited accommodation options, primarily geared towards officials or those needing an overnight halt rather than tourists seeking comfort. Options include the APWD Guesthouse (often requires prior booking/connections) and a couple of basic private lodges like Dew Dale Resorts (basic, located away from the jetty) or Folder's Inn. Facilities are minimal. The vast majority of tourists visit Baratang as a day trip from Port Blair, returning the same evening.</p>
+                                    <p className={`text-base leading-relaxed ${secondaryTextColor}`}><strong>Food:</strong> Food options are concentrated near Nilambur Jetty. Several small local eateries (dhabas) serve simple, fresh Indian food – typically thalis (rice, dal, vegetables, sometimes fish curry), roti, noodles, and tea/coffee. Choices are limited, but sufficient for a day trip meal. It's highly recommended to carry your own reusable water bottles and some snacks (like fruits, biscuits) for the journey and activities, especially considering the early start and travel time.</p>
                                 </div>
                             </section>
                         </div>
 
+                        {/* Sidebar - Contextual Colors */}
                         <aside className="lg:col-span-1 space-y-8">
+                            {/* Best Time to Visit - Contextual */}
+                            <div className={cardBaseStyle}>
+                                <h3 className={`text-lg font-semibold ${primaryTextColor} mb-4 flex items-center`}>
+                                    <Calendar className={`mr-2 ${inactiveTextColor}`} size={20} /> Best Time to Visit
+                                </h3>
+                                <div className="space-y-3">
+                                    <div className={`${infoBg} rounded-lg p-3 border ${infoBorder}`}>
+                                        <h4 className={`font-medium ${infoText} text-sm`}>November to February (Dry/Cool)</h4>
+                                        <p className={`text-xs ${secondaryTextColor}`}>Ideal conditions: Pleasant weather, minimal rain, comfortable for walking/trekking to caves.</p>
+                                    </div>
+                                    <div className={`${warningBg} rounded-lg p-3 border ${warningBorder}`}>
+                                        <h4 className={`font-medium ${warningText} text-sm`}>March to May (Dry/Hot)</h4>
+                                        <p className={`text-xs ${secondaryTextColor}`}>Shoulder season: Weather gets progressively hotter and more humid, but still manageable for visits.</p>
+                                    </div>
+                                    <div className={`${errorBg} rounded-lg p-3 border ${errorBorder}`}>
+                                        <h4 className={`font-medium ${errorText} text-sm`}>June to October (Monsoon)</h4>
+                                        <p className={`text-xs ${secondaryTextColor}`}>Least advisable: Heavy rainfall makes trails muddy and slippery. Boat services might be disrupted. Convoys may face delays.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Safety & Rules - Warning Orange */}
                             <div className={`${warningBg} rounded-2xl p-6 shadow-sm border ${warningBorder}`}>
                                 <h3 className={`text-lg font-semibold ${warningText} mb-4 flex items-center`}>
-                                    <LifeBuoy className={`mr-2 ${warningIconColor}`} size={20} /> Rules for Jarawa Reserve
+                                    <LifeBuoy className={`mr-2 ${warningIconColor}`} size={20} /> Safety & Important Rules
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Interaction, photography, videography, or even attempting to establish contact with the Jarawa tribe members is strictly illegal and punishable by law.</span></li>
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Vehicles must travel in designated convoys with windows rolled up. Do not stop or get out of the vehicle within the reserve.</span></li>
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Do not offer any food or gifts. This practice, known as "human safaris," is banned and harmful to the tribe.</span></li>
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>Respect their privacy and dignity. You are a visitor passing through their ancestral home.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Jarawa Reserve Rules:** Reiteration - Absolutely NO interaction, photos, videos, or stopping within the reserve. Adhere strictly to convoy rules and timings. Penalties are severe.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Permits:** Foreign nationals need Restricted Area Permit (RAP usually granted on arrival at Port Blair airport). Indian nationals generally don't need a separate Baratang permit if traveling on ATR, but checks occur at Jirkatang. Tour operators usually handle formalities.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Cave Exploration:** Carry a good torchlight (headlamp recommended). Watch your step on uneven surfaces. Avoid touching formations.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Hydration & Footwear:** Carry sufficient water. Wear comfortable walking/trekking shoes with good grip.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${warningIconColor} flex-shrink-0`} size={16} /><span>**Connectivity:** Mobile network coverage is extremely limited or non-existent in most parts of Baratang. Inform someone of your travel plans.</span></li>
                                 </ul>
                             </div>
+
+                            {/* Responsible Tourism - Success Green */}
+                            <div className={`${successBg} rounded-2xl p-6 shadow-sm border ${successBorder}`}>
+                                <h3 className={`text-lg font-semibold ${successText} mb-4 flex items-center`}>
+                                    <Leaf className={`mr-2 ${successIconColor}`} size={20} /> Responsible Tourism
+                                </h3>
+                                <ul className="space-y-3">
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>**Respect Jarawa Tribe:** Utmost respect and adherence to rules concerning the Jarawa Reserve is non-negotiable. Their privacy and way of life must be protected.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>**Protect Fragile Ecosystems:** Do not litter in mangrove creeks, forests, or caves. Avoid touching cave formations as oils from hands can damage them. Do not disturb wildlife.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>**Minimize Waste:** Carry reusable water bottles and containers. Pack out all your trash. Refuse single-use plastics where possible.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${successIconColor} flex-shrink-0`} size={16} /><span>**Support Locals:** Use local boat operators, guides (where available), and eateries respectfully.</span></li>
+                                </ul>
+                            </div>
+
+                            {/* Traveler Tips - Tip Yellow */}
                             <div className={`${tipBg} rounded-2xl p-6 shadow-sm border ${tipBorder}`}>
                                 <h3 className={`text-lg font-semibold ${tipText} mb-4 flex items-center`}>
                                     <MessageCircle className={`mr-2 ${tipIconColor}`} size={20} /> Traveler Tips
                                 </h3>
                                 <ul className="space-y-3">
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Start your day trip from Port Blair by 3-4 AM to ensure you make the early convoys and have enough time.</span></li>
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Carry cash for boat tickets, guide fees, food, and other expenses. Digital payments are not common.</span></li>
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Wear comfortable walking shoes, light clothing, and carry a hat, sunscreen, and insect repellent.</span></li>
-                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Accommodation is very basic and limited. It is strongly recommended to plan Baratang as a day trip from Port Blair.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Book your Baratang day trip (transport + boat) in advance from Port Blair, especially during peak season.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Start extremely early (4-5 AM) from Port Blair to ensure you make the morning convoy.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Carry sufficient cash as ATMs are unavailable or unreliable.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Pack light clothing, comfortable shoes, sunscreen, hat, insect repellent, and a torchlight.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Be prepared for a long day with significant travel time.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Confirm return convoy timings to ensure you get back to Port Blair the same day.</span></li>
+                                    <li className={`flex items-start text-sm ${secondaryTextColor}`}><Check className={`mr-2 mt-1 ${tipIconColor} flex-shrink-0`} size={16} /><span>Don't expect luxury; embrace the adventurous and basic nature of the trip.</span></li>
                                 </ul>
                             </div>
                         </aside>
                     </div>
                 )}
 
-                {/* CTA Section */}
+                {/* CTA Section - Contextual Color (Informational Blue) */}
                 <section className={`mt-16 ${infoBg} rounded-2xl p-8 border ${infoBorder} text-center`}>
-                    <h2 className={`text-2xl font-bold ${infoText} mb-4`}>Journey to the Heart of Andaman</h2>
-                    <p className={`${secondaryTextColor} max-w-xl mx-auto mb-6`}>Experience the natural wonders of Baratang. Book a tour to explore its unique caves, volcanoes, and mangroves.</p>
+                    <h2 className={`text-2xl font-bold ${infoText} mb-4`}>Ready for a Unique Andaman Adventure?</h2>
+                    <p className={`${secondaryTextColor} max-w-xl mx-auto mb-6`}>Experience the natural wonders of Baratang Island. Book a day tour or inquire about incorporating it into your Andaman itinerary.</p>
                     <div className="flex flex-wrap justify-center gap-4">
                         <Link href="/packages?destination=baratang" className={buttonPrimaryStyle}>
-                            View Baratang Tours <ArrowRight className="ml-2" size={18} />
+                            View Baratang Day Tours <ArrowRight className="ml-2" size={18} />
                         </Link>
                         <Link href="/contact" className={`inline-flex items-center justify-center bg-white text-gray-700 border ${neutralBorder} hover:bg-gray-50 font-semibold px-6 py-3 rounded-full transition-all duration-300 shadow-sm hover:shadow-md`}>
-                            Get Travel Assistance
+                            Get Trip Assistance
                         </Link>
                     </div>
                 </section>

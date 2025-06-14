@@ -54,6 +54,7 @@ interface RoomType {
   quantity_available: number | null;
   amenities: string | null; // JSON string
   images: string | null; // URLs, assuming comma-separated or JSON array string
+  has_active_bookings?: boolean; // Add this field
 }
 
 interface ApiResponse {
@@ -183,14 +184,24 @@ const RoomTypeCard = ({
 
         {/* Room card doesn't have a toggle like hotel card, only edit/delete. Keep justify-end */}
         <div className="flex items-center justify-end space-x-2 border-t border-gray-200 pt-4 mt-auto"> {/* Styled border top, padding top, space between buttons */}
+          {room.has_active_bookings && (
+            <div className="flex items-center text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full mr-auto">
+              <AlertTriangle size={12} className="mr-1" />
+              Has Bookings
+            </div>
+          )}
           <Link href={`/my-hotels/${hotelServiceId}/rooms/${room.id}/edit`} className="text-indigo-600 hover:text-indigo-800 p-1.5 rounded-md hover:bg-indigo-50 transition-colors" title="Edit Room Type"> {/* Styled link with colors, hover, rounded corners */}
             <Edit size={18} />
           </Link>
           <button
             onClick={() => onDelete(room.id)}
-            disabled={isDeleting === room.id}
-            className="text-red-500 hover:text-red-700 p-1.5 rounded-md hover:bg-red-50 transition-colors disabled:opacity-60 disabled:cursor-wait" /* Styled button with colors, hover, disabled, rounded corners */
-            title="Delete Room Type"
+            disabled={isDeleting === room.id || room.has_active_bookings}
+            className={`p-1.5 rounded-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+              room.has_active_bookings 
+                ? "text-gray-400 hover:text-gray-400" 
+                : "text-red-500 hover:text-red-700 hover:bg-red-50"
+            }`}
+            title={room.has_active_bookings ? "Cannot delete: Active bookings exist" : "Delete Room Type"}
           >
             {isDeleting === room.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
           </button>
@@ -307,6 +318,17 @@ function RoomListContent() {
 
 
   const handleDeleteRoom = async (roomId: number) => {
+    // Find the room to check its booking status
+    const room = roomTypes.find(r => r.id === roomId);
+    if (room?.has_active_bookings) {
+      toast({
+        variant: "destructive",
+        title: "Cannot Delete Room Type",
+        description: "This room type has active bookings. Complete or cancel existing bookings before deleting.",
+      });
+      return;
+    }
+
     if (!confirm("Are you sure you want to delete this room type? This action cannot be undone.")) {
       return;
     }
@@ -323,12 +345,22 @@ function RoomListContent() {
       setRoomTypes((prev) => prev.filter((r) => r.id !== roomId));
     } catch (error) {
       console.error("Error deleting room type:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Could not delete room type.",
-      });
+      const errorMessage = error instanceof Error ? error.message : "Could not delete room type.";
+      
+      // Check if it's a booking conflict error
+      if (errorMessage.includes("Active bookings exist")) {
+        toast({
+          variant: "destructive",
+          title: "Cannot Delete Room Type",
+          description: "This room type has active bookings. Cancel or complete existing bookings first before deleting.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: errorMessage,
+        });
+      }
     } finally {
       setIsDeleting(null);
     }

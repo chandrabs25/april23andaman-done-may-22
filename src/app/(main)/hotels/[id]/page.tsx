@@ -8,7 +8,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useFetch } from "@/hooks/useFetch";
 import type { Hotel, Room } from "@/types/hotel";
 import {
-  Loader2, AlertTriangle, MapPin, ChevronLeft, Users, IndianRupee, ListChecks, BedDouble, Wifi, ParkingCircle, Utensils, Briefcase, Building, Award, CheckCircle, Info, ImageOff, Eye, ShieldCheck, Clock, Home, Star, Coffee, TreePine, Dumbbell, Waves
+  Loader2, AlertTriangle, MapPin, ChevronLeft, Users, IndianRupee, ListChecks, BedDouble, Wifi, ParkingCircle, Utensils, Briefcase, Building, Award, CheckCircle, Info, ImageOff, Eye, ShieldCheck, Clock, Home, Star, Coffee, TreePine, Dumbbell, Waves, ChevronRight
 } from "lucide-react";
 
 // --- Import Common Styles from theme.ts ---
@@ -44,6 +44,20 @@ import {
   warningIconColor,
   listIconWrapperStyle,
 } from "@/styles/26themeandstyle";
+
+// --- Define Additional Common Styles ---
+const primaryButtonBgLocal = 'bg-gray-800';
+const primaryButtonHoverBg = 'hover:bg-gray-900';
+const primaryButtonText = 'text-white';
+
+const secondaryButtonBg = 'bg-white/20 backdrop-blur-sm';
+const secondaryButtonHoverBg = 'hover:bg-white/30';
+const secondaryButtonText = 'text-white';
+const secondaryButtonBorder = 'border border-white/40';
+
+const buttonPrimaryStyleLocal = `inline-flex items-center justify-center ${primaryButtonBgLocal} ${primaryButtonHoverBg} ${primaryButtonText} px-6 py-3 rounded-full font-medium transition-all duration-300 shadow-md`;
+const buttonSecondaryStyleHeroLocal = `inline-flex items-center justify-center ${secondaryButtonBg} ${secondaryButtonHoverBg} ${secondaryButtonText} ${secondaryButtonBorder} px-6 py-3 rounded-full font-medium transition-all duration-300`;
+// --- End Additional Common Styles ---
 
 // --- End Common Styles Import ---
 
@@ -185,7 +199,16 @@ const HotelDetailPage = () => {
   const hotelAmenities: string[] =
     (selectedHotel.facilities && Array.isArray(selectedHotel.facilities) && selectedHotel.facilities.length > 0)
       ? (selectedHotel as any).facilities
-      : ((selectedHotel as any).amenities ?? (selectedHotel as any).amenities_parsed ?? (selectedHotel as any).facilities_parsed ?? []);
+      : (
+          // Check for non-empty arrays in order of preference
+          ((selectedHotel as any).facilities_parsed && Array.isArray((selectedHotel as any).facilities_parsed) && (selectedHotel as any).facilities_parsed.length > 0) 
+            ? (selectedHotel as any).facilities_parsed
+            : ((selectedHotel as any).amenities && Array.isArray((selectedHotel as any).amenities) && (selectedHotel as any).amenities.length > 0)
+              ? (selectedHotel as any).amenities
+              : ((selectedHotel as any).amenities_parsed && Array.isArray((selectedHotel as any).amenities_parsed) && (selectedHotel as any).amenities_parsed.length > 0)
+                ? (selectedHotel as any).amenities_parsed
+                : []
+        );
 
   const hotelMealPlans: string[] =
     (selectedHotel.meal_plans && Array.isArray(selectedHotel.meal_plans) && selectedHotel.meal_plans.length > 0)
@@ -217,17 +240,8 @@ const HotelDetailPage = () => {
         </div>
       )}
       
-      {/* Sticky Header for Back Button - Themed */}
-      <div className={`bg-white shadow-md py-3 sticky top-0 z-40 border-b ${neutralBorderLight}`}>
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <Link href="/hotels" className={`${buttonSecondaryStyleHero} px-4 py-2 text-sm`}>
-            <ChevronLeft size={18} className="mr-1.5" /> Back to Hotels
-          </Link>
-        </div>
-      </div>
-      
-      {/* Adapted Hero-like section for Hotel Name and Main Image */}
-      <div className="relative h-[50vh] md:h-[60vh] w-full">
+      {/* Hero Section */}
+      <div className="relative h-[70vh] w-full">
           <Image
               src={mainImageUrl}
               alt={`Main image for ${selectedHotel.name}`}
@@ -244,10 +258,33 @@ const HotelDetailPage = () => {
               <ImageOff size={64} className={`${neutralIconColor} opacity-50`} />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+          
+          {/* Back Button Overlay */}
+          <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10">
+            <Link href="/hotels" className={buttonSecondaryStyleHeroLocal}>
+              <ChevronLeft size={18} className="mr-1.5" /> Back to Hotels
+            </Link>
+          </div>
+          
+          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 text-white">
               <div className="container mx-auto">
-                  <h1 className="text-3xl md:text-5xl font-bold mb-2 drop-shadow-lg">
+                  <nav className="text-sm text-white/80 mb-2" aria-label="Breadcrumb">
+                      <ol className="list-none p-0 inline-flex">
+                          <li className="flex items-center">
+                              <Link href="/" className="hover:text-white">Home</Link>
+                              <ChevronRight size={14} className="mx-1" />
+                          </li>
+                          <li className="flex items-center">
+                              <Link href="/hotels" className="hover:text-white">Hotels</Link>
+                              <ChevronRight size={14} className="mx-1" />
+                          </li>
+                          <li className="flex items-center">
+                              <span className="text-white font-medium line-clamp-1">{selectedHotel.name}</span>
+                          </li>
+                      </ol>
+                  </nav>
+                  <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-md">
                     {selectedHotel.name}
                     {isAdminPreview && typeof selectedHotel.is_admin_approved === 'number' && (
                       <span className={`ml-3 text-base align-middle font-medium px-3 py-1 rounded-full ${selectedHotel.is_admin_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -255,19 +292,13 @@ const HotelDetailPage = () => {
                       </span>
                     )}
                   </h1>
-                  <div className={`flex flex-wrap items-center text-sm md:text-base ${neutralTextLight} text-white/90 gap-x-4 gap-y-1 drop-shadow-sm`}>
-                      <span className="flex items-center">
-                        <MapPin size={16} className="mr-1.5" /> 
-                        {selectedHotel.address || (selectedHotel as any).street_address || 'Andaman & Nicobar Islands'}
-                      </span>
-                      {(selectedHotel as any).star_rating && (
-                        <span className="flex items-center">
-                          {Array.from({ length: (selectedHotel as any).star_rating }, (_, i) => (
-                            <Star key={i} size={16} className="text-yellow-400 fill-current mr-1" />
-                          ))}
-                          <span className="ml-1">{(selectedHotel as any).star_rating} Star Hotel</span>
-                        </span>
-                      )}
+                  <p className="text-xl md:text-2xl max-w-3xl mb-6 text-white/90">
+                    {selectedHotel.address || (selectedHotel as any).street_address || 'Andaman & Nicobar Islands'}
+                  </p>
+                  <div className="flex flex-wrap gap-4 items-center">
+                      <a href="#hotel-rooms" className={buttonPrimaryStyleLocal}>
+                          View Rooms <ChevronRight size={18} className="ml-2" />
+                      </a>
                   </div>
               </div>
           </div>
@@ -305,7 +336,7 @@ const HotelDetailPage = () => {
             {/* Tab Navigation - Themed */}
             <div className={`bg-white p-2 rounded-xl shadow-md mb-8 sticky top-[70px] z-30 border ${neutralBorderLight} overflow-x-auto whitespace-nowrap`}>
               <nav className="flex space-x-1 sm:space-x-2">
-                {['Overview', 'Rooms', 'Amenities', 'Location', 'Policies', 'Reviews'].map(tab => (
+                {['Overview', 'Rooms', 'Amenities', 'Location', 'Policies'].map(tab => (
                   <a key={tab} href={`#hotel-${tab.toLowerCase().replace(' ', '-')}`} 
                      className={`px-3.5 py-2.5 ${neutralTextLight} font-medium hover:${neutralBg} hover:${neutralText} rounded-lg transition-colors text-sm md:text-base focus:outline-none focus:ring-2 ${focusRingClass}`}>
                     {tab}
@@ -445,17 +476,6 @@ const HotelDetailPage = () => {
                     </ul>
                   </div>
                 )}
-              </DetailSection>
-
-               {/* Guest Reviews Section - Themed as a contextual card (info) */}
-              <DetailSection id="hotel-reviews" title="Guest Reviews" icon={Info}>
-                  <div className={`${infoBg} p-5 rounded-xl border ${infoBorder}`}>
-                      <div className="flex items-center mb-2">
-                          <Info size={20} className={`${infoIconColor} mr-2`} />
-                          <h4 className={`text-md font-semibold ${infoText}`}>Review Information</h4>
-                      </div>
-                      <p className={`${neutralTextLight} text-sm`}>Guest reviews are not yet available for this hotel. Be the first to share your experience!</p>
-                  </div>
               </DetailSection>
 
               <DetailSection id="hotel-location" title="Location" icon={MapPin} className="border-b-0 pb-0">

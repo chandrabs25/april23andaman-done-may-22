@@ -337,11 +337,18 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       const roomTypeToDelete = await db.getRoomTypeById(roomId); // Fetch the room type data
       if (roomTypeToDelete?.images) {
         try {
-          const imageUrls: string[] = JSON.parse(roomTypeToDelete.images);
-          if (Array.isArray(imageUrls) && imageUrls.length > 0) {
+          // Use the new utility function to safely parse image URLs
+          const imageUrls = db.parseImageUrls(roomTypeToDelete.images);
+
+          if (imageUrls.length > 0) {
             console.log(`[RoomType Delete ID: ${roomId}, Hotel ID: ${serviceId}] Attempting to delete ${imageUrls.length} images from R2.`);
             for (const urlToDelete of imageUrls) {
               try {
+                if (!urlToDelete || typeof urlToDelete !== 'string') {
+                  console.warn(`[RoomType Delete ID: ${roomId}] Invalid URL format: ${urlToDelete}`);
+                  continue;
+                }
+                
                 const urlParts = new URL(urlToDelete);
                 if (urlParts.hostname === R2_PUBLIC_DOMAIN) {
                   const r2ObjectKey = urlParts.pathname.substring(1); // Remove leading '/'
@@ -360,10 +367,12 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
                 // Continue, don't fail the whole room type delete for a single R2 image delete error
               }
             }
+          } else {
+            console.log(`[RoomType Delete ID: ${roomId}] No valid image URLs found to delete from R2.`);
           }
         } catch (e) {
-          console.error(`[RoomType Delete ID: ${roomId}] Error parsing images JSON for R2 deletion:`, roomTypeToDelete.images, e);
-          // Continue with room type deletion even if images can't be parsed/deleted
+          console.error(`[RoomType Delete ID: ${roomId}] Error processing images for R2 deletion:`, roomTypeToDelete.images, e);
+          // Continue with room type deletion even if images can't be processed/deleted
         }
       }
     } else {
@@ -371,7 +380,17 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     }
     // --- End R2 Image Deletion Logic ---
 
-    // Optional: Check for active bookings associated with this room type?
+    // Check for active bookings associated with this room type
+    const hasActiveBookings = await db.roomHasActiveBookings(roomId);
+    if (hasActiveBookings) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: "Cannot delete room type: Active bookings exist. Please contact customers to cancel or reschedule their bookings first." 
+        },
+        { status: 409 } // Conflict status code
+      );
+    }
 
     // Use the database method to delete the room type
     const result = await db.deleteRoomType(roomId);

@@ -117,12 +117,12 @@ const Footer = () => {
               <li className="flex items-start">
                 {/* Using lighter primary color for accent on icons */}
                 <Phone size={16} className={`mr-2 mt-0.5 text-[${primaryColorLighter}] flex-shrink-0`} />
-                <span className={footerTextStyle.replace(' mb-4', '')}>+91 123-456-7890</span>
+                <span className={footerTextStyle.replace(' mb-4', '')}>+91 9474283999</span>
               </li>
               <li className="flex items-start">
                 <Mail size={16} className={`mr-2 mt-0.5 text-[${primaryColorLighter}] flex-shrink-0`} />
-                <a href="mailto:info@reachandaman.com" className={footerLinkStyle}>
-                  info@reachandaman.com
+                <a href="mailto:reachandamankvr@gmail.com" className={footerLinkStyle}>
+                  reachandamankvr@gmail.com
                 </a>
               </li>
               <li className={`${footerTextStyle.replace(' mb-4', '')} mt-2 pl-8`}>

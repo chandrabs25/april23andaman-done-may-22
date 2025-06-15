@@ -92,10 +92,10 @@ export default function AboutPage() {
               <div className="space-y-6 text-gray-700 text-base md:text-lg leading-relaxed">
                 {/* Updated background and border color */}
                 <p className={`bg-[${primaryColorLightestBg}] p-6 rounded-2xl border-l-4 border-[${primaryColor}] shadow-sm`}>
-                  Founded in 2023, Reach Andaman was born out of a passion for the breathtaking beauty of the Andaman Islands and a desire to share this hidden paradise with travelers from around the world. What began as a small team of local guides has grown into a comprehensive travel platform dedicated to providing authentic and memorable experiences.
+                  Founded in 2018, Reach Andaman was born out of a passion for the breathtaking beauty of the Andaman Islands and a desire to share this hidden paradise with travelers from around the world. What began as a small team of local guides has grown into a comprehensive travel platform dedicated to providing authentic and memorable experiences.
                 </p>
                 <p>
-                  Our journey started when our founder, a native Andamanese, recognized the need for a reliable travel service that could showcase the islands' natural wonders while respecting their delicate ecosystems and supporting local communities. Today, we continue to uphold these values as we help travelers discover the magic of the Andamans.
+                  Our journey started when our founder recognized the need for a reliable travel service that could showcase the islands' natural wonders while respecting their delicate ecosystems and supporting local communities. Today, we continue to uphold these values as we help travelers discover the magic of the Andamans.
                 </p>
 
                 {/* Added image */}
@@ -247,7 +247,7 @@ export default function AboutPage() {
                   <div className="relative w-36 h-36 sm:w-40 sm:h-40 mx-auto mb-5 rounded-full overflow-hidden shadow-md border-4 border-white">
                     <Image src="/images/team-2.jpg" alt="Elon Musk - Head of Operations" fill className="object-cover" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Elon Musk</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Rajesh</h3>
                   {/* Updated job title color */}
                   <p className={`text-[${primaryColorDarker}] font-medium text-sm mb-3`}>Head of Operations</p>
                   <div className="flex justify-center space-x-3">
@@ -269,7 +269,7 @@ export default function AboutPage() {
                   <div className="relative w-36 h-36 sm:w-40 sm:h-40 mx-auto mb-5 rounded-full overflow-hidden shadow-md border-4 border-white">
                     <Image src="/images/team-3.jpg" alt="Mia Khalifa - Lead Tour Guide" fill className="object-cover" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Mia Khalifa</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Vijay</h3>
                   {/* Updated job title color */}
                   <p className={`text-[${primaryColorDarker}] font-medium text-sm mb-3`}>Lead Tour Guide</p>
                   <div className="flex justify-center space-x-3">
@@ -291,7 +291,7 @@ export default function AboutPage() {
                   <div className="relative w-36 h-36 sm:w-40 sm:h-40 mx-auto mb-5 rounded-full overflow-hidden shadow-md border-4 border-white">
                     <Image src="/images/team-4.jpg" alt="Sunny Leone - Customer Relations" fill className="object-cover" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Sunny Leone</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Priya</h3>
                   {/* Updated job title color */}
                   <p className={`text-[${primaryColorDarker}] font-medium text-sm mb-3`}>Customer Relations</p>
                   <div className="flex justify-center space-x-3">

@@ -175,8 +175,8 @@ export default function ContactPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">Phone</h3>
                       {/* Updated hover text color */}
-                      <a href="tel:+913192123456" className={`text-gray-700 hover:text-[${primaryColorDarker}] block transition-colors`}>+91 3192 123456</a>
-                      <a href="tel:+919876543210" className={`text-gray-700 hover:text-[${primaryColorDarker}] block transition-colors`}>+91 9876 543210</a>
+                      <a href="tel:+913192123456" className={`text-gray-700 hover:text-[${primaryColorDarker}] block transition-colors`}>+91 9474283999</a>
+                      <a href="tel:+919876543210" className={`text-gray-700 hover:text-[${primaryColorDarker}] block transition-colors`}>+91 9476000999</a>
                     </div>
                   </div>
 
@@ -189,8 +189,8 @@ export default function ContactPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">Email</h3>
                       {/* Updated hover text color */}
-                      <a href="mailto:info@reachandaman.com" className={`text-gray-700 hover:text-[${primaryColorDarker}] block break-all transition-colors`}>info@reachandaman.com</a>
-                      <a href="mailto:support@reachandaman.com" className={`text-gray-700 hover:text-[${primaryColorDarker}] block break-all transition-colors`}>support@reachandaman.com</a>
+                      <a href="mailto:reachandamankvr@gmail.com" className={`text-gray-700 hover:text-[${primaryColorDarker}] block break-all transition-colors`}>reachandamankvr@gmail.com</a>
+                      <a href="mailto:reachandamankvr@gmail.com" className={`text-gray-700 hover:text-[${primaryColorDarker}] block break-all transition-colors`}>reachandamankvr@gmail.com</a>
                     </div>
                   </div>
 
@@ -203,7 +203,7 @@ export default function ContactPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">Office Address</h3>
                       <p className="text-gray-700">
-                        45 Marine Drive, Phoenix Bay<br />
+                        KVR Building, Babu Lane, Aberdeen Bazaar, Sri Vijayapuram<br />
                         Port Blair, Andaman & Nicobar Islands<br />
                         India - 744101
                       </p>
